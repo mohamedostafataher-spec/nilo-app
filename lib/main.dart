@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
@@ -31,9 +32,10 @@ class Msg {
   final String text;
   final String? link;
   final List<List<String>> srcs;
-  Msg(this.user, this.text, {this.link, this.srcs = const []});
-  Map<String, dynamic> toJson() => {'u': user, 't': text, 'l': link, 's': srcs};
-  static Msg fromJson(Map<String, dynamic> j) => Msg(j['u'] == true, j['t'] as String, link: j['l'] as String?, srcs: ((j['s'] as List?) ?? []).map((e) => List<String>.from(e)).toList());
+  final String? img;
+  Msg(this.user, this.text, {this.link, this.srcs = const [], this.img});
+  Map<String, dynamic> toJson() => {'u': user, 't': text, 'l': link, 's': srcs, 'i': img};
+  static Msg fromJson(Map<String, dynamic> j) => Msg(j['u'] == true, j['t'] as String, link: j['l'] as String?, srcs: ((j['s'] as List?) ?? []).map((e) => List<String>.from(e)).toList(), img: j['i'] as String?);
 }
 
 class Conv {
@@ -90,6 +92,7 @@ class _ChatPageState extends State<ChatPage> {
   final scroll = ScrollController();
   final stt = SpeechToText();
   final tts = FlutterTts();
+  final player = AudioPlayer();
   bool sttOk = false, hands = false, wake = true, busy = false, speak = true;
   String status = '';
 
@@ -254,9 +257,53 @@ class _ChatPageState extends State<ChatPage> {
     await tts.setPitch(1.0);
   }
 
+  Future<bool> neuralSpeak(String t) async {
+    try {
+      final r = await http.post(Uri.parse('https://nilo-eg.vercel.app/api/tts'),
+          headers: {'Content-Type': 'application/json'}, body: jsonEncode({'text': t})).timeout(const Duration(seconds: 25));
+      if (r.statusCode != 200) return false;
+      final j = jsonDecode(utf8.decode(r.bodyBytes));
+      final a = j['audio'] as String?;
+      if (a == null || !hands) return a != null;
+      final done = Completer<void>();
+      final sub = player.onPlayerComplete.listen((_) { if (!done.isCompleted) done.complete(); });
+      await player.play(BytesSource(base64Decode(a), mimeType: 'audio/wav'));
+      await done.future.timeout(const Duration(seconds: 60), onTimeout: () {});
+      await sub.cancel();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<Msg?> special(String t) async {
+    const base = 'https://nilo-eg.vercel.app';
+    if (RegExp(r'(ارسم|رسم|اعمل.{0,12}(صورة|صوره)|صمم.{0,12}(صورة|صوره|لوجو)|ولد.{0,8}(صورة|صوره)|لوجو)').hasMatch(t)) {
+      try {
+        final r = await http.post(Uri.parse('$base/api/gen'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'mode': 'img', 'prompt': t, 'mem': mem})).timeout(const Duration(seconds: 40));
+        final p = jsonDecode(utf8.decode(r.bodyBytes))['prompt'] as String;
+        final u = 'https://image.pollinations.ai/prompt/${Uri.encodeComponent(p)}?width=768&height=768&nologo=true&seed=${DateTime.now().millisecondsSinceEpoch % 1000000}';
+        return Msg(false, 'اتفضل الصورة (دوس عليها تفتحها).', img: u, link: u);
+      } catch (_) {
+        return Msg(false, 'معرفتش أعمل الصورة دلوقتي، جرب تاني كمان شوية.');
+      }
+    }
+    if (RegExp(r'(بوربوينت|باوربوينت|بور بوينت|powerpoint|pptx|عرض تقديمي|presentation|سلايدات|slides)', caseSensitive: false).hasMatch(t) ||
+        (RegExp(r'(pdf|بي دي اف|وورد|word|docx|ملف|مستند|تقرير|سي في|\bcv\b|سيرة ذاتية|خطاب)', caseSensitive: false).hasMatch(t) && RegExp(r'(اعمل|اكتب|جهز|حضر|عايز|اطلع|make|create|write)', caseSensitive: false).hasMatch(t))) {
+      final u = '$base/?q=${Uri.encodeComponent(t)}';
+      return Msg(false, 'الملفات (PowerPoint/Word/PDF) بتتجهز وتتحمل من صفحة نيلو على المتصفح. دوس "افتح" وهيجهزهالك هناك.', link: u);
+    }
+    if (RegExp(r'((دور|ابحث|لاقي|قدملي|قدم)\S*.{0,15}(شغل|وظيف)|مساعد الشغل|job)', caseSensitive: false).hasMatch(t)) {
+      return Msg(false, 'مساعد الشغل (بحث وظايف، تقديم جاهز، متابعة طلباتك) على صفحة نيلو في المتصفح. دوس "افتح".', link: '$base/?jobs=1');
+    }
+    return null;
+  }
+
   Future<void> speakText(String t) async {
     if (!hands) return;
     await tts.stop();
+    await player.stop();
+    if (await neuralSpeak(t)) return;
     final clean = t.replaceAll(RegExp(r'https?://\S+'), '').replaceAll(RegExp(r'[*#_`>\-]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
     final c = clean.length > 600 ? clean.substring(0, 600) : clean;
     for (final p in RegExp(r'[^.!؟?،\n]+[.!؟?\n]?').allMatches(c).map((m) => m.group(0)!.trim()).where((x) => x.isNotEmpty)) {
@@ -271,7 +318,7 @@ class _ChatPageState extends State<ChatPage> {
     ctrl.clear();
     setState(() { msgs.add(Msg(true, t)); busy = true; status = 'بفكر…'; });
     toBottom();
-    final l = local(t);
+    final l = local(t) ?? await special(t);
     String reply;
     if (l != null) {
       setState(() => msgs.add(l));
@@ -362,10 +409,11 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: const Color(0xFF13261F),
         title: const Text('نيلو  Nilo', style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: .5)),
         actions: [
+          IconButton(tooltip: 'مساعد الشغل', icon: const Icon(Icons.work_outline), onPressed: () => openLink('https://nilo-eg.vercel.app/?jobs=1')),
           TextButton.icon(
               onPressed: !sttOk ? null : () {
                 setState(() { hands = !hands; wake = true; });
-                if (hands) { listen(); } else { stt.stop(); setState(() => status = ''); }
+                if (hands) { listen(); } else { stt.stop(); tts.stop(); player.stop(); setState(() => status = ''); }
               },
               icon: Icon(hands ? Icons.mic : Icons.mic_none, color: hands ? kGreen : null),
               label: Text('مكالمة', style: TextStyle(color: hands ? kGreen : null))),
@@ -387,6 +435,7 @@ class _ChatPageState extends State<ChatPage> {
                       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * .85),
                       decoration: BoxDecoration(color: m.user ? kGreen : const Color(0xFF1A2F27), borderRadius: BorderRadius.circular(16)),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        if (m.img != null) GestureDetector(onTap: () => openLink(m.img!), child: Padding(padding: const EdgeInsets.only(bottom: 8), child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(m.img!, loadingBuilder: (c, w, p) => p == null ? w : const SizedBox(height: 120, child: Center(child: CircularProgressIndicator())), errorBuilder: (c, e, st) => const Text('الصورة ماطلعتش'))))),
                         SelectableText(m.text, style: const TextStyle(height: 1.6, fontSize: 16)),
                         if (m.link != null) TextButton(onPressed: () => openLink(m.link!), child: const Text('افتح ↗')),
                         if (m.srcs.isNotEmpty) const Padding(padding: EdgeInsets.only(top: 6), child: Text('المصادر:', style: TextStyle(fontSize: 12, color: Color(0xFFA6CDBB)))),
