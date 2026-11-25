@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -30,6 +31,15 @@ class Msg {
   final String text;
   final String? link;
   Msg(this.user, this.text, {this.link});
+  Map<String, dynamic> toJson() => {'u': user, 't': text, 'l': link};
+  static Msg fromJson(Map<String, dynamic> j) => Msg(j['u'] == true, j['t'] as String, link: j['l'] as String?);
+}
+
+class Conv {
+  String id;
+  String title;
+  List<Msg> msgs;
+  Conv(this.id, this.title, this.msgs);
 }
 
 class ChatPage extends StatefulWidget {
@@ -39,10 +49,42 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
-  final msgs = <Msg>[
-    Msg(false,
-        'يا أهلاً! أنا نيلو، صاحبك اللي فاهم مصر. اسألني في أي حاجة: ورق حكومي، فواتير، جيش، أسعار، شغل. اكتب عربي أو فرانكو أو دوس على المايك.')
-  ];
+  static const greet = 'يا أهلاً! أنا نيلو، صاحبك اللي فاهم مصر. اسألني في أي حاجة: ورق حكومي، فواتير، جيش، أسعار، شغل. اكتب عربي أو فرانكو أو دوس على المايك.';
+  List<Msg> msgs = [Msg(false, greet)];
+  final convs = <Conv>[];
+  Conv? cur;
+  List<String> mem = [];
+  SharedPreferences? prefs;
+
+  Future<void> loadAll() async {
+    prefs = await SharedPreferences.getInstance();
+    mem = prefs!.getStringList('mem') ?? [];
+    final raw = prefs!.getString('convs');
+    if (raw != null) {
+      for (final c in jsonDecode(raw) as List) {
+        convs.add(Conv(c['id'], c['title'], (c['m'] as List).map((e) => Msg.fromJson(Map<String, dynamic>.from(e))).toList()));
+      }
+    }
+    newConv();
+  }
+
+  void newConv() {
+    final c = Conv(DateTime.now().millisecondsSinceEpoch.toString(), 'محادثة جديدة', [Msg(false, greet)]);
+    convs.insert(0, c);
+    cur = c;
+    msgs = c.msgs;
+    if (mounted) setState(() {});
+  }
+
+  void persist() {
+    if (cur != null && cur!.title == 'محادثة جديدة') {
+      final f = msgs.where((m) => m.user);
+      if (f.isNotEmpty) cur!.title = f.first.text.length > 36 ? f.first.text.substring(0, 36) : f.first.text;
+    }
+    final keep = convs.where((c) => c.msgs.any((m) => m.user)).take(30).map((c) => {'id': c.id, 'title': c.title, 'm': c.msgs.map((m) => m.toJson()).toList()}).toList();
+    prefs?.setString('convs', jsonEncode(keep));
+  }
+
   final ctrl = TextEditingController();
   final scroll = ScrollController();
   final stt = SpeechToText();
@@ -53,6 +95,7 @@ class _ChatPageState extends State<ChatPage> {
   @override
   void initState() {
     super.initState();
+    loadAll();
     tts.setLanguage('ar-EG');
     tts.awaitSpeakCompletion(true);
     stt.initialize(onError: (e) {
@@ -76,6 +119,21 @@ class _ChatPageState extends State<ChatPage> {
   Msg? local(String t0) {
     final t = nd(t0.trim()).replaceAll(RegExp(r'[؟?!.,،]+$'), '');
     final now = DateTime.now();
+    var mm = RegExp(r'^(?:افتكر|اعرف|خليك فاكر)\s+(?:اني|إني|ان|أن)?\s*(.+)$').firstMatch(t);
+    if (mm != null) {
+      mem.add(mm.group(1)!);
+      if (mem.length > 30) mem = mem.sublist(mem.length - 30);
+      prefs?.setStringList('mem', mem);
+      return Msg(false, 'تمام، هفتكر إن ${mm.group(1)}. المعلومة محفوظة على موبايلك بس.');
+    }
+    if (RegExp(r'^(انت فاكر ايه عني|ايه اللي فاكره عني|فاكر ايه)').hasMatch(t)) {
+      return Msg(false, mem.isEmpty ? 'لسه مفيش حاجة محفوظة. قولي "افتكر إني ..."' : 'فاكر عنك: ${mem.join('، ')}');
+    }
+    if (RegExp(r'^(انسى كل حاجة|امسح الذاكرة)').hasMatch(t)) {
+      mem = [];
+      prefs?.setStringList('mem', mem);
+      return Msg(false, 'تمام، مسحت كل اللي كنت فاكره عنك.');
+    }
     if (RegExp(r'^(الساعة كام|الساعه كام|كام الساعة)').hasMatch(t)) {
       return Msg(false,
           'الساعة دلوقتي ${now.hour % 12 == 0 ? 12 : now.hour % 12}:${now.minute.toString().padLeft(2, '0')} ${now.hour >= 12 ? 'مساءً' : 'صباحاً'}');
@@ -173,7 +231,7 @@ class _ChatPageState extends State<ChatPage> {
 
   String sys() {
     final n = DateTime.now();
-    return 'انت "نيلو" (Nilo)، مساعد ذكي مصري صميم، صاحب المستخدم. دمك خفيف ودافي وبتتكلم بالعامية المصرية الطبيعية (مش فصحى ومش ترجمة حرفية). لو المستخدم كتب فرانكو/Arabizi رد بنفس الأسلوب. خليك مختصر وواضح وخطوات مرقمة للإجراءات. تخصصك الحياة في مصر: أوراق حكومية، فواتير، تجنيد، جامعات، شغل، ضرايب، أسعار بالجنيه، وأي سؤال عام. أمانة: الأسعار والرسوم والقوانين بتتغير، ماتخترعش أرقام أو لينكات؛ لو مش متأكد قول كده وانصحه يتأكد من الجهة الرسمية (بوابة مصر الرقمية digital.gov.eg). في المواضيع الرسمية اختم بـ "اتأكد من الجهة الرسمية قبل ما تتحرك." التاريخ والوقت دلوقتي: $n';
+    return 'انت "نيلو" (Nilo)، مساعد ذكي مصري صميم، صاحب المستخدم. دمك خفيف ودافي وبتتكلم بالعامية المصرية الطبيعية (مش فصحى ومش ترجمة حرفية). لو المستخدم كتب فرانكو/Arabizi رد بنفس الأسلوب. خليك مختصر وواضح وخطوات مرقمة للإجراءات. تخصصك الحياة في مصر: أوراق حكومية، فواتير، تجنيد، جامعات، شغل، ضرايب، أسعار بالجنيه، وأي سؤال عام. أمانة: الأسعار والرسوم والقوانين بتتغير، ماتخترعش أرقام أو لينكات؛ لو مش متأكد قول كده وانصحه يتأكد من الجهة الرسمية (بوابة مصر الرقمية digital.gov.eg). في المواضيع الرسمية اختم بـ "اتأكد من الجهة الرسمية قبل ما تتحرك." ${mem.isEmpty ? '' : 'معلومات اتقال إنها عن المستخدم (استخدمها بطبيعية لو مناسبة بس): ${mem.join('؛ ')}. '}التاريخ والوقت دلوقتي: $n';
   }
 
   Future<void> speakText(String t) async {
@@ -213,6 +271,7 @@ class _ChatPageState extends State<ChatPage> {
       }
       setState(() => msgs.add(Msg(false, reply)));
     }
+    persist();
     toBottom();
     await speakText(reply);
     setState(() { busy = false; status = ''; });
@@ -252,6 +311,29 @@ class _ChatPageState extends State<ChatPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      drawer: Drawer(
+        backgroundColor: const Color(0xFF0B1511),
+        child: SafeArea(
+          child: Column(children: [
+            Padding(
+                padding: const EdgeInsets.all(12),
+                child: FilledButton.icon(
+                    onPressed: () { newConv(); Navigator.pop(context); },
+                    icon: const Icon(Icons.add),
+                    label: const Text('محادثة جديدة'))),
+            Expanded(
+                child: ListView(children: [
+              for (final c in convs.where((c) => c.msgs.any((m) => m.user) || c == cur))
+                ListTile(
+                  selected: c == cur,
+                  title: Text(c.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () { setState(() { convs.remove(c); if (c == cur) newConv(); }); persist(); }),
+                  onTap: () { setState(() { cur = c; msgs = c.msgs; }); Navigator.pop(context); toBottom(); },
+                ),
+            ])),
+          ]),
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: const Color(0xFF13261F),
         title: const Text('نيلو  Nilo', style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: .5)),
