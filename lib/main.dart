@@ -368,7 +368,7 @@ class _ChatPageState extends State<ChatPage> {
                 if (hands) { listen(); } else { stt.stop(); setState(() => status = ''); }
               },
               icon: Icon(hands ? Icons.mic : Icons.mic_none, color: hands ? kGreen : null),
-              label: Text('صوت', style: TextStyle(color: hands ? kGreen : null))),
+              label: Text('مكالمة', style: TextStyle(color: hands ? kGreen : null))),
         ],
       ),
       body: Column(children: [
