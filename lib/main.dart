@@ -97,7 +97,7 @@ class _ChatPageState extends State<ChatPage> {
   void initState() {
     super.initState();
     loadAll();
-    tts.setLanguage('ar-EG');
+    initTts();
     tts.awaitSpeakCompletion(true);
     stt.initialize(onError: (e) {
       if (hands && !busy) Future.delayed(const Duration(milliseconds: 600), listen);
@@ -235,10 +235,34 @@ class _ChatPageState extends State<ChatPage> {
     return 'انت "نيلو" (Nilo)، مساعد ذكي مصري صميم، صاحب المستخدم. دمك خفيف ودافي وبتتكلم بالعامية المصرية الطبيعية (مش فصحى ومش ترجمة حرفية). لو المستخدم كتب فرانكو/Arabizi رد بنفس الأسلوب. خليك مختصر وواضح وخطوات مرقمة للإجراءات. تخصصك الحياة في مصر: أوراق حكومية، فواتير، تجنيد، جامعات، شغل، ضرايب، أسعار بالجنيه، وأي سؤال عام. أمانة: الأسعار والرسوم والقوانين بتتغير، ماتخترعش أرقام أو لينكات؛ لو مش متأكد قول كده وانصحه يتأكد من الجهة الرسمية (بوابة مصر الرقمية digital.gov.eg). في المواضيع الرسمية اختم بـ "اتأكد من الجهة الرسمية قبل ما تتحرك." ${mem.isEmpty ? '' : 'معلومات اتقال إنها عن المستخدم (استخدمها بطبيعية لو مناسبة بس): ${mem.join('؛ ')}. '}التاريخ والوقت دلوقتي: $n';
   }
 
+  Future<void> initTts() async {
+    await tts.setLanguage('ar-EG');
+    try {
+      final vs = await tts.getVoices as List;
+      Map? best; int bs = -1;
+      for (final v in vs) {
+        final m = Map.from(v as Map);
+        final loc = (m['locale'] ?? '').toString().replaceAll('_', '-').toLowerCase();
+        final name = (m['name'] ?? '').toString().toLowerCase();
+        if (!loc.startsWith('ar')) continue;
+        var sc = (loc == 'ar-eg' ? 100 : 0) + (name.contains('network') ? 20 : 0) + (name.contains('x-') ? 5 : 0);
+        if (sc > bs) { bs = sc; best = m; }
+      }
+      if (best != null) await tts.setVoice({'name': best['name'].toString(), 'locale': best['locale'].toString()});
+    } catch (_) {}
+    await tts.setSpeechRate(0.47);
+    await tts.setPitch(1.0);
+  }
+
   Future<void> speakText(String t) async {
-    if (!speak) return;
+    if (!hands) return;
     await tts.stop();
-    await tts.speak(t.replaceAll(RegExp(r'[*#_`]'), '').substring(0, t.length > 500 ? 500 : t.length));
+    final clean = t.replaceAll(RegExp(r'https?://\S+'), '').replaceAll(RegExp(r'[*#_`>\-]'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
+    final c = clean.length > 600 ? clean.substring(0, 600) : clean;
+    for (final p in RegExp(r'[^.!؟?،\n]+[.!؟?\n]?').allMatches(c).map((m) => m.group(0)!.trim()).where((x) => x.isNotEmpty)) {
+      if (!hands) break;
+      await tts.speak(p);
+    }
   }
 
   Future<void> send(String t) async {
@@ -338,7 +362,6 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: const Color(0xFF13261F),
         title: const Text('نيلو  Nilo', style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: .5)),
         actions: [
-          IconButton(icon: Icon(speak ? Icons.volume_up : Icons.volume_off), onPressed: () { setState(() => speak = !speak); tts.stop(); }),
           TextButton.icon(
               onPressed: !sttOk ? null : () {
                 setState(() { hands = !hands; wake = true; });
