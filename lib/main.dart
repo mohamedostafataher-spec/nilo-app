@@ -30,9 +30,10 @@ class Msg {
   final bool user;
   final String text;
   final String? link;
-  Msg(this.user, this.text, {this.link});
-  Map<String, dynamic> toJson() => {'u': user, 't': text, 'l': link};
-  static Msg fromJson(Map<String, dynamic> j) => Msg(j['u'] == true, j['t'] as String, link: j['l'] as String?);
+  final List<List<String>> srcs;
+  Msg(this.user, this.text, {this.link, this.srcs = const []});
+  Map<String, dynamic> toJson() => {'u': user, 't': text, 'l': link, 's': srcs};
+  static Msg fromJson(Map<String, dynamic> j) => Msg(j['u'] == true, j['t'] as String, link: j['l'] as String?, srcs: ((j['s'] as List?) ?? []).map((e) => List<String>.from(e)).toList());
 }
 
 class Conv {
@@ -254,22 +255,21 @@ class _ChatPageState extends State<ChatPage> {
     } else {
       final hist = msgs.where((m) => m.link == null).toList();
       final tail = hist.length > 12 ? hist.sublist(hist.length - 12) : hist;
+      var srcs = <List<String>>[];
       try {
-        final r = await http.post(Uri.parse('https://text.pollinations.ai/openai'),
+        final r = await http.post(Uri.parse('https://nilo-eg.vercel.app/api/chat'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
-              'model': 'openai-fast',
-              'messages': [
-                {'role': 'system', 'content': sys()},
-                ...tail.map((m) => {'role': m.user ? 'user' : 'assistant', 'content': m.text})
-              ]
+              'messages': tail.map((m) => {'role': m.user ? 'user' : 'assistant', 'content': m.text}).toList(),
+              'mem': mem
             })).timeout(const Duration(seconds: 60));
-        reply = (jsonDecode(utf8.decode(r.bodyBytes))['choices'][0]['message']['content'] as String)
-            .trim().replaceAll('**', '').replaceAll(RegExp(r'^#+\s*', multiLine: true), '');
+        final j = jsonDecode(utf8.decode(r.bodyBytes));
+        reply = (j['text'] as String).trim();
+        srcs = ((j['sources'] as List?) ?? []).map((e) => [e['title'] as String, e['url'] as String]).toList();
       } catch (e) {
         reply = 'حصلت مشكلة في الاتصال، جرب تاني كمان شوية.';
       }
-      setState(() => msgs.add(Msg(false, reply)));
+      setState(() => msgs.add(Msg(false, reply, srcs: srcs)));
     }
     persist();
     toBottom();
@@ -366,6 +366,8 @@ class _ChatPageState extends State<ChatPage> {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         SelectableText(m.text, style: const TextStyle(height: 1.6, fontSize: 16)),
                         if (m.link != null) TextButton(onPressed: () => openLink(m.link!), child: const Text('افتح ↗')),
+                        if (m.srcs.isNotEmpty) const Padding(padding: EdgeInsets.only(top: 6), child: Text('المصادر:', style: TextStyle(fontSize: 12, color: Color(0xFFA6CDBB)))),
+                        for (final sr in m.srcs) InkWell(onTap: () => openLink(sr[1]), child: Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Text('🔗 ${sr[0]}', style: const TextStyle(fontSize: 13, color: Color(0xFF8FE0B9), decoration: TextDecoration.underline)))),
                       ]),
                     ),
                   );
