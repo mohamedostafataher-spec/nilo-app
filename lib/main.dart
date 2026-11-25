@@ -296,6 +296,9 @@ class _ChatPageState extends State<ChatPage> {
     if (RegExp(r'((دور|ابحث|لاقي|قدملي|قدم)\S*.{0,15}(شغل|وظيف)|مساعد الشغل|job)', caseSensitive: false).hasMatch(t)) {
       return Msg(false, 'مساعد الشغل (بحث وظايف، تقديم جاهز، متابعة طلباتك) على صفحة نيلو في المتصفح. دوس "افتح".', link: '$base/?jobs=1');
     }
+    if (RegExp(r'(خطة تسويق|استراتيجية تسويق|تقويم محتوى|حملة اعلان|حملة إعلان|نصوص اعلان|سكريبت مبيعات|رسائل مبيعات|شركة تسويق|شركة مبيعات|الرد على الاعتراضات)').hasMatch(t)) {
+      return Msg(false, 'قسم شركة التسويق والمبيعات (استراتيجية، محتوى، إعلانات، سكريبتات، عروض) على صفحة نيلو في المتصفح. دوس "افتح".', link: '$base/?co=1');
+    }
     return null;
   }
 
@@ -409,6 +412,7 @@ class _ChatPageState extends State<ChatPage> {
         backgroundColor: const Color(0xFF13261F),
         title: const Text('نيلو  Nilo', style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: .5)),
         actions: [
+          IconButton(tooltip: 'شركة تسويق ومبيعات', icon: const Icon(Icons.storefront_outlined), onPressed: () => openLink('https://nilo-eg.vercel.app/?co=1')),
           IconButton(tooltip: 'مساعد الشغل', icon: const Icon(Icons.work_outline), onPressed: () => openLink('https://nilo-eg.vercel.app/?jobs=1')),
           TextButton.icon(
               onPressed: !sttOk ? null : () {
