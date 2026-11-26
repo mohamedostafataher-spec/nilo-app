@@ -12,6 +12,8 @@ import 'data.dart';
 import 'main.dart';
 import 'extras.dart';
 import 'net.dart';
+import 'phrasebook.dart';
+import 'talk.dart';
 
 void toast(BuildContext c, String m) => ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(m)));
 Future<void> openUrl(String u) => launchUrl(Uri.parse(u), mode: LaunchMode.externalApplication);
@@ -70,9 +72,10 @@ class TouristHome extends StatelessWidget {
   Widget build(BuildContext context) {
     final items = <List<Object>>[
       ['Translate', 'ترجمة 52 لغة (نص وفويس)', Icons.translate, () => const TranslatePage()],
+      ['Live talk', 'مكالمة مترجمة بين موبايلين', Icons.headset_mic, () => const TalkPage()],
       ['Face to face', 'وجهاً لوجه', Icons.people, () => const FacePage()],
       ['Camera', 'منيو ولافتات', Icons.photo_camera, () => const CameraPage()],
-      ['Phrasebook', 'عبارات المواقف', Icons.chat_bubble_outline, () => const PhrasesPage(title: 'Phrasebook', data: kPhrases, tag: 'ph')],
+      ['Phrasebook', 'عبارات المواقف', Icons.chat_bubble_outline, () => const PhrasebookPage()],
       ['Stay Safe', 'سعر عادل وأمان', Icons.shield, () => const SafePage()],
       ['Places & weather', 'أماكن وطقس', Icons.place, () => const PlacesPage()],
       ['Emergency & medical', 'طوارئ وكارت طبي', Icons.local_hospital, () => const EmergencyPage()],
@@ -101,7 +104,7 @@ class TouristHome extends StatelessWidget {
                   onTap: () => Navigator.of(context).push(niloRoute((items[n][3] as Widget Function())())),
                   child: Container(
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: const Color(0xFF1F2429), border: Border.all(color: kGreen.withOpacity(0.5)), borderRadius: BorderRadius.circular(14)),
+                    decoration: BoxDecoration(color: const Color(0xFF12304D), border: Border.all(color: kGreen.withOpacity(0.5)), borderRadius: BorderRadius.circular(14)),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(items[n][2] as IconData, color: kGreen),
                       const SizedBox(height: 6),

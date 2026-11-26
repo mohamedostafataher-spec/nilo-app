@@ -271,7 +271,7 @@ class OfficialPage extends StatelessWidget {
           const SizedBox(height: 12),
           for (final i in _items)
             Card(
-              color: const Color(0xFF1F2429),
+              color: const Color(0xFF12304D),
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(14),

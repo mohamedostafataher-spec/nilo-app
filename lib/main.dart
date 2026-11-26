@@ -19,7 +19,7 @@ void main() {
 }
 
 const kGreen = Color(0xFFD9A441);
-const kBg = Color(0xFF16191D);
+const kBg = Color(0xFF0B1F33);
 
 class NiloApp extends StatelessWidget {
   const NiloApp({super.key});
