@@ -9,7 +9,9 @@ import 'screens.dart';
 /// Phrasebook for a visitor: you read the meaning in YOUR language,
 /// and show / play the phrase in the language of the person you talk to.
 class PhrasebookPage extends StatefulWidget {
-  const PhrasebookPage({super.key});
+  final Map<String, List<String>> data;
+  final String title;
+  const PhrasebookPage({super.key, this.data = kPhrases, this.title = 'Phrasebook • عبارات'});
   @override
   State<PhrasebookPage> createState() => _PhrasebookPageState();
 }
@@ -17,7 +19,7 @@ class PhrasebookPage extends StatefulWidget {
 class _PhrasebookPageState extends State<PhrasebookPage> {
   String me = 'en'; // my language (meaning)
   String they = 'ar'; // language shown/played to the other person
-  late String cat = kPhrases.keys.first;
+  late String cat = widget.data.keys.first;
   final cache = <String, String>{};
   bool loading = false;
   SharedPreferences? _p;
@@ -47,7 +49,7 @@ class _PhrasebookPageState extends State<PhrasebookPage> {
   String _text(String ar, String lang) => lang == 'ar' ? ar : (cache[_key(ar, lang)] ?? '');
 
   Future<void> _fill() async {
-    final list = kPhrases[cat]!;
+    final list = widget.data[cat]!;
     setState(() => loading = true);
     var changed = false;
     for (final ar in list) {
@@ -134,9 +136,9 @@ class _PhrasebookPageState extends State<PhrasebookPage> {
 
   @override
   Widget build(BuildContext context) {
-    final list = kPhrases[cat]!;
+    final list = widget.data[cat]!;
     return Scaffold(
-      appBar: AppBar(title: const Text('Phrasebook • عبارات'), backgroundColor: kBg),
+      appBar: AppBar(title: Text(widget.title), backgroundColor: kBg),
       body: ListView(padding: const EdgeInsets.all(14), children: [
         Row(children: [
           _drop('I speak • لغتي', me, (v) => _set(m: v)),
@@ -146,7 +148,7 @@ class _PhrasebookPageState extends State<PhrasebookPage> {
         SizedBox(
           height: 44,
           child: ListView(scrollDirection: Axis.horizontal, children: [
-            for (final c in kPhrases.keys)
+            for (final c in widget.data.keys)
               Padding(
                 padding: const EdgeInsets.only(left: 8),
                 child: ChoiceChip(label: Text(c), selected: c == cat, onSelected: (_) => _set(c: c)),

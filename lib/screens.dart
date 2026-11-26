@@ -326,7 +326,7 @@ class _SafePageState extends State<SafePage> {
           const Text('• Report crime to the tourist police: 126 (UK FCDO).', textDirection: TextDirection.ltr),
           TextButton(onPressed: () => openUrl('https://www.gov.uk/foreign-travel-advice/egypt/safety-and-security'), child: const Text('gov.uk safety advice')),
           const Divider(height: 28),
-          OutlinedButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PhrasesPage(title: 'Polite no and fair price', data: kSafe, tag: 'sf'))), child: const Text('جمل الأمان (رفض مهذب، تاكسي، سيدات، أكل)')),
+          OutlinedButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PhrasebookPage(title: 'Polite no and fair price • رفض مهذب وسعر عادل', data: kSafe))), child: const Text('جمل الأمان (رفض مهذب، تاكسي، سيدات، أكل)')),
         ]),
       );
 }
