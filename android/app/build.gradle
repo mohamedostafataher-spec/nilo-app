@@ -1,6 +1,7 @@
 import java.util.Properties
 
-val keyProps = Properties().apply { val f = file("key.properties"); if (f.exists()) load(f.inputStream()) }
+def keyProps = new Properties()
+if (file("key.properties").exists()) { keyProps.load(new FileInputStream(file("key.properties"))) }
 
 plugins {
     id "com.android.application"
@@ -30,16 +31,16 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
-        versionCode = 14
-        versionName = "1.4"
+        versionCode 14
+        versionName "1.4"
     }
 
     signingConfigs {
-        create("nilo") {
-            storeFile = file(keyProps.getProperty("storeFile"))
-            storePassword = keyProps.getProperty("storePassword")
-            keyAlias = keyProps.getProperty("keyAlias")
-            keyPassword = keyProps.getProperty("keyPassword")
+        nilo {
+            storeFile file(keyProps.getProperty("storeFile"))
+            storePassword keyProps.getProperty("storePassword")
+            keyAlias keyProps.getProperty("keyAlias")
+            keyPassword keyProps.getProperty("keyPassword")
         }
     }
 
@@ -47,7 +48,7 @@ android {
         release {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("nilo")
+            signingConfig = signingConfigs.nilo
         }
     }
 }
