@@ -59,8 +59,13 @@ for _ in range(3):
     tap_text('Start') or tap_text('Skip'); time.sleep(3)
 time.sleep(2); shot('home')
 shot('first_run_1')
-tap_text('Continue'); time.sleep(2); shot('first_run_2')
-tap_text('phone region'); time.sleep(4); shot('first_run_3')
+tap_text('Continue'); time.sleep(3); shot('first_run_2')
+import subprocess
+def dump(tag):
+    o = subprocess.run('adb logcat -d | grep -E "FATAL|AndroidRuntime|flutter|Exception|Error" | tail -60', shell=True, capture_output=True, text=True).stdout
+    open(f'{OUT}/log_{tag}.txt','w').write(o)
+dump('before_phone_region')
+tap_text('phone region'); time.sleep(4); shot('first_run_3'); dump('after_phone_region')
 if not tap_text('Get my passport') :
     pass
 tap_class('EditText'); adb('shell','input','text','Traveler'); adb('shell','input','keyevent','4'); time.sleep(1); tap_text('18 or older'); time.sleep(1); shot('first_run_4'); tap_text('Get my passport'); time.sleep(4); shot('home_with_world')
