@@ -27,8 +27,8 @@ class BubbleService : AccessibilityService() {
     private lateinit var wm: WindowManager
     private var bubble: TextView? = null
     private var panel: View? = null
-    private val codes = arrayOf("ar", "en", "ru", "de", "fr", "it", "es", "pl", "uk", "tr")
-    private val names = arrayOf("عربي", "English", "Русский", "Deutsch", "Français", "Italiano", "Español", "Polski", "Українська", "Türkçe")
+    private val codes = Langs.codes
+    private val names = Langs.names
     private var li = 0
     private var seq = 0
     private var lastOut = ""
@@ -161,14 +161,25 @@ class BubbleService : AccessibilityService() {
         root.addView(sc, LinearLayout.LayoutParams(-1, dp(300)))
         val row = LinearLayout(this)
         row.gravity = Gravity.CENTER
-        val lb = Button(this)
-        lb.text = "إلى: " + names[li]
-        lb.setOnClickListener {
-            li = (li + 1) % codes.size
-            getSharedPreferences("nilo_tr", Context.MODE_PRIVATE).edit().putString("bub", codes[li]).apply()
-            lb.text = "إلى: " + names[li]
-            translateAgain(res)
+        val hs = android.widget.HorizontalScrollView(this)
+        val chips = LinearLayout(this)
+        val lbs = ArrayList<Button>()
+        for (k in codes.indices) {
+            val c = Button(this)
+            c.text = names[k]
+            c.isAllCaps = false
+            c.alpha = if (k == li) 1f else 0.55f
+            c.setOnClickListener {
+                li = k
+                getSharedPreferences("nilo_tr", Context.MODE_PRIVATE).edit().putString("bub", codes[li]).apply()
+                for (j in lbs.indices) lbs[j].alpha = if (j == k) 1f else 0.55f
+                translateAgain(res)
+            }
+            lbs.add(c)
+            chips.addView(c)
         }
+        hs.addView(chips)
+        root.addView(hs)
         val cp = Button(this); cp.text = "📋"
         cp.setOnClickListener {
             if (lastOut.isNotEmpty()) {
@@ -178,7 +189,7 @@ class BubbleService : AccessibilityService() {
         }
         val x = Button(this); x.text = "✕"
         x.setOnClickListener { closePanel() }
-        row.addView(lb); row.addView(cp); row.addView(x)
+        row.addView(cp); row.addView(x)
         root.addView(row)
         val p = lp(resources.displayMetrics.widthPixels - dp(24), WindowManager.LayoutParams.WRAP_CONTENT, Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL)
         p.y = dp(24)

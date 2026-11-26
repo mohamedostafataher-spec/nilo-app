@@ -24,8 +24,8 @@ import java.net.URL
 
 // Popup translator opened from the text-selection menu or the Share sheet of any app.
 class TranslateActivity : Activity() {
-    private val codes = arrayOf("ar", "ru", "en", "de", "fr", "it", "es", "pl", "uk", "tr")
-    private val names = arrayOf("عربي مصري", "Русский", "English", "Deutsch", "Français", "Italiano", "Español", "Polski", "Українська", "Türkçe")
+    private val codes = Langs.codes
+    private val names = Langs.names
     private var src: String = ""
     private var clipMode = false
     private var loaded = false
