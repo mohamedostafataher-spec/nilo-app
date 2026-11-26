@@ -3,6 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
+import 'dart:ui' show PlatformDispatcher;
 import 'main.dart';
 import 'screens.dart' show toast;
 
@@ -106,6 +109,24 @@ class Passport {
   static void finishChapter(int i) { if (i >= chapter) { _p.setInt('w_chapter', i + 1); addStamp('chapter-$i'); addXp(25); } }
 }
 
+/// Detects the country on the device. Asks for approximate (coarse) location, turns it into a country code with Android's geocoder,
+/// keeps ONLY the code and drops the coordinates. Falls back to the phone's region setting. Returns '' if nothing usable.
+Future<String> detectCountry({required bool allowGps}) async {
+  if (allowGps) {
+    try {
+      var perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) perm = await Geolocator.requestPermission();
+      if (perm == LocationPermission.always || perm == LocationPermission.whileInUse) {
+        final pos = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.low)).timeout(const Duration(seconds: 15));
+        final pm = await placemarkFromCoordinates(pos.latitude, pos.longitude).timeout(const Duration(seconds: 10));
+        final cc = pm.isNotEmpty ? (pm.first.isoCountryCode ?? '') : '';
+        if (cc.isNotEmpty) return cc.toUpperCase();
+      }
+    } catch (_) {}
+  }
+  return PlatformDispatcher.instance.locale.countryCode?.toUpperCase() ?? '';
+}
+
 class CountryPickerPage extends StatelessWidget {
   const CountryPickerPage({super.key});
   @override
@@ -132,6 +153,28 @@ class WorldCard extends StatefulWidget {
 }
 
 class _WorldCardState extends State<WorldCard> {
+  Future<void> _detect() async {
+    final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
+      title: const Text('Find your country'),
+      content: const Text('Nilo can use your approximate location once to work out your country. Only the country code is saved, on this phone and in your profile. Your coordinates are not stored. The Android geocoder service turns the position into a country name, so the position is sent to it for that moment. Location can be faked, so this only reduces cheating. If you say no, Nilo uses your phone region setting instead.', style: TextStyle(height: 1.5)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No, use phone region')),
+        FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Allow once')),
+      ],
+    ));
+    if (ok == null) return;
+    final cc = await detectCountry(allowGps: ok);
+    if (!mounted) return;
+    if (kWorld.any((c) => c[0] == cc)) {
+      Passport.country = cc; Passport.addStamp('home-$cc');
+      toast(context, 'Detected: ${countryOf(cc)[3]} ${countryOf(cc)[1]}');
+      setState(() {});
+    } else {
+      toast(context, cc.isEmpty ? 'Could not detect. Pick your country.' : 'Country $cc is not in Nilo yet. Pick the closest one.');
+      await _pick();
+    }
+  }
+
   Future<void> _pick() async {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => const CountryPickerPage()));
     if (mounted) setState(() {});
@@ -141,8 +184,8 @@ class _WorldCardState extends State<WorldCard> {
   Widget build(BuildContext context) {
     final code = Passport.country;
     if (code.isEmpty) {
-      return _box(InkWell(onTap: _pick, child: const Padding(padding: EdgeInsets.all(16),
-        child: Row(children: [Text('🌍', style: TextStyle(fontSize: 34)), SizedBox(width: 12), Expanded(child: Text('Pick your home country to start your story\nاختار بلدك وابدأ حكايتك', style: TextStyle(fontSize: 16, height: 1.4))), Icon(Icons.chevron_right)]))));
+      return _box(InkWell(onTap: _detect, child: const Padding(padding: EdgeInsets.all(16),
+        child: Row(children: [Text('🌍', style: TextStyle(fontSize: 34)), SizedBox(width: 12), Expanded(child: Text('Tap to detect your country and start your story\nاضغط نحدد بلدك ونبدأ حكايتك', style: TextStyle(fontSize: 16, height: 1.4))), Icon(Icons.chevron_right)]))));
     }
     final c = countryOf(code);
     return _box(Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
