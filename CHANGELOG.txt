@@ -1,4 +1,4 @@
-New one-screen first run: country from network/SIM, nickname, 18+ line
-New floating navigation bar with the raised write button
-New full-screen write page and a send animation (skippable)
+New story feed: circles, masonry cards, New / Popular / Mine, profile card
+Real weather and real day/night on the Nile home (tap the chip to change city)
+New one-screen first run, floating nav bar, full-screen write page with send animation
 Smaller download size
