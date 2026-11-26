@@ -250,9 +250,15 @@ class ChapterPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(c[0] as String, style: const TextStyle(fontSize: 15)), backgroundColor: kBg),
       body: ListView(padding: const EdgeInsets.all(18), children: [
-        Text(c[2] as String, style: const TextStyle(fontSize: 17, height: 1.6)),
-        const SizedBox(height: 14),
-        Directionality(textDirection: TextDirection.rtl, child: Text(c[3] as String, style: const TextStyle(fontSize: 17, height: 1.7, color: Colors.white70))),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(color: const Color(0xFFF1E3C3), borderRadius: BorderRadius.circular(8), boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 12, offset: Offset(0, 6))]),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Directionality(textDirection: TextDirection.ltr, child: Text(c[2] as String, style: const TextStyle(fontSize: 17, height: 1.65, color: Color(0xFF3B2A18), fontFamily: 'serif'))),
+            const Divider(color: Color(0xFF9B7B4B)),
+            Directionality(textDirection: TextDirection.rtl, child: Text(c[3] as String, style: const TextStyle(fontSize: 17, height: 1.8, color: Color(0xFF3B2A18)))),
+          ]),
+        ),
         const SizedBox(height: 20),
         Text(c[4] as String, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
@@ -271,12 +277,40 @@ class PassportPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Nilo Passport • الباسبور'), backgroundColor: kBg),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        Text('⭐ ${Passport.xp} XP   🔥 ${Passport.streak} days   📜 ${Passport.papyri} papyri sent', style: const TextStyle(fontSize: 17)),
-        const SizedBox(height: 12),
-        if (s.isEmpty) const Text('No stamps yet. Pick a country, solve the daily puzzle, learn a word, or send a papyrus.', style: TextStyle(color: Colors.white70)),
-        Wrap(spacing: 10, runSpacing: 10, children: [
-          for (final x in s) Chip(label: Text(_label(x))),
-        ]),
+        Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF14365A), Color(0xFF0A1F36)]),
+            border: Border.all(color: kGreen, width: 2),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(children: [
+            const Text('☥', style: TextStyle(fontSize: 40, color: kGreen)),
+            const Text('NILO PASSPORT', style: TextStyle(fontSize: 20, letterSpacing: 4, color: kGreen, fontWeight: FontWeight.w800)),
+            const Text('جواز سفر نيلو', style: TextStyle(fontSize: 15, color: kGreen)),
+            const SizedBox(height: 10),
+            Text('⭐ ${Passport.xp} XP   🔥 ${Passport.streak} days   📜 ${Passport.papyri} sent', style: const TextStyle(fontSize: 15)),
+          ]),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: const Color(0xFFF1E3C3), borderRadius: BorderRadius.circular(12)),
+          child: Column(children: [
+            if (s.isEmpty) const Text('No stamps yet. Pick a country, solve the daily puzzle, learn a word, or send a papyrus.', style: TextStyle(color: Color(0xFF5B4630))),
+            Wrap(spacing: 12, runSpacing: 12, children: [
+              for (var i = 0; i < s.length; i++)
+                Transform.rotate(
+                  angle: ((i * 7) % 11 - 5) * 0.04,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(border: Border.all(color: [const Color(0xFF9B2C2C), const Color(0xFF1E4E8C), const Color(0xFF2C6B3F)][i % 3], width: 2), borderRadius: BorderRadius.circular(i.isEven ? 30 : 6)),
+                    child: Text(_label(s[i]), style: TextStyle(color: [const Color(0xFF9B2C2C), const Color(0xFF1E4E8C), const Color(0xFF2C6B3F)][i % 3], fontWeight: FontWeight.w700)),
+                  ),
+                ),
+            ]),
+          ]),
+        ),
         const SizedBox(height: 14),
         const Text('Stored on this phone only. Stamps are for fun.', style: TextStyle(fontSize: 12, color: Colors.white54)),
       ]),
@@ -384,7 +418,25 @@ class _BgPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size s) {
     final rect = Offset.zero & s;
-    canvas.drawRect(rect, Paint()..shader = const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF0B1F33), Color(0xFF0E2A45), Color(0xFF123556)]).createShader(rect));
+    final h = DateTime.now().hour;
+    final night = h >= 19 || h < 5;
+    final dusk = (h >= 17 && h < 19) || (h >= 5 && h < 7);
+    final cols = night
+        ? const [Color(0xFF050E1A), Color(0xFF0A1B30), Color(0xFF0E2A45)]
+        : dusk
+            ? const [Color(0xFF2A2548), Color(0xFF7A4A55), Color(0xFFB87A4B)]
+            : const [Color(0xFF1B4F7A), Color(0xFF2E7BA6), Color(0xFF5BA6C4)];
+    canvas.drawRect(rect, Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: cols).createShader(rect));
+    if (night) {
+      final star = Paint()..color = Colors.white.withOpacity(0.55);
+      for (var i = 0; i < 40; i++) {
+        final tw = 0.4 + 0.6 * ((math.sin(t * 2 * math.pi * 2 + i) + 1) / 2);
+        canvas.drawCircle(Offset((i * 37 % 100) / 100 * s.width, (i * 61 % 100) / 100 * s.height * 0.55), 0.8 + (i % 3) * 0.4, star..color = Colors.white.withOpacity(0.5 * tw));
+      }
+      canvas.drawCircle(Offset(s.width * 0.82, s.height * 0.1), 18, Paint()..color = const Color(0xFFF3E9C6));
+    } else {
+      canvas.drawCircle(Offset(s.width * 0.8, s.height * (dusk ? 0.18 : 0.1)), dusk ? 30 : 24, Paint()..color = (dusk ? const Color(0xFFFFB066) : const Color(0xFFFFE9A8)).withOpacity(0.9));
+    }
     final tau = 2 * math.pi;
     for (var i = 0; i < 3; i++) {
       final base = s.height * (0.80 + i * 0.07);

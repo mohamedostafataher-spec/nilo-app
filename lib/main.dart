@@ -12,6 +12,7 @@ import 'data.dart';
 import 'extras.dart';
 import 'screens.dart';
 import 'world.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +31,7 @@ class NiloApp extends StatelessWidget {
         title: 'نيلو Nilo',
         debugShowCheckedModeBanner: false,
         theme: ThemeData.dark(useMaterial3: true).copyWith(
+            textTheme: GoogleFonts.cairoTextTheme(ThemeData.dark(useMaterial3: true).textTheme),
             scaffoldBackgroundColor: kBg,
             colorScheme: const ColorScheme.dark(primary: kGreen)),
         builder: (c, w) => Directionality(textDirection: TextDirection.rtl, child: w!),
