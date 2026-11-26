@@ -35,6 +35,55 @@ class LangDrop extends StatelessWidget {
       );
 }
 
+Future<void> saveTr(String o, String t, String to) async {
+  final p = await SharedPreferences.getInstance();
+  final l = (jsonDecode(p.getString('saved') ?? '[]') as List).cast<Map<String, dynamic>>().toList();
+  l.insert(0, {'o': o, 't': t, 'l': to});
+  await p.setString('saved', jsonEncode(l.take(200).toList()));
+}
+
+class SavedPage extends StatefulWidget {
+  const SavedPage({super.key});
+  @override
+  State<SavedPage> createState() => _SavedPageState();
+}
+
+class _SavedPageState extends State<SavedPage> {
+  List<Map<String, dynamic>> l = [];
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((p) {
+      if (mounted) setState(() => l = (jsonDecode(p.getString('saved') ?? '[]') as List).cast<Map<String, dynamic>>().toList());
+    });
+  }
+
+  Future<void> _del(int i) async {
+    final p = await SharedPreferences.getInstance();
+    setState(() => l.removeAt(i));
+    await p.setString('saved', jsonEncode(l));
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Saved • المحفوظات'), backgroundColor: kBg),
+        body: l.isEmpty
+            ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('لسه مفيش حاجة محفوظة. دوس النجمة تحت أي ترجمة وهتلاقيها هنا، وتشتغل من غير نت (النص بس، الصوت من الجهاز).', textAlign: TextAlign.center)))
+            : ListView(padding: const EdgeInsets.all(12), children: [
+                for (var i = 0; i < l.length; i++)
+                  Card(
+                    color: const Color(0xFF12304D),
+                    child: ListTile(
+                      title: Text(l[i]['t'].toString(), style: const TextStyle(fontSize: 19)),
+                      subtitle: Text(l[i]['o'].toString()),
+                      leading: IconButton(icon: const Icon(Icons.volume_up), onPressed: () => speak(l[i]['t'].toString(), l[i]['l'].toString())),
+                      trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => _del(i)),
+                    ),
+                  ),
+              ]),
+      );
+}
+
 class ResultCard extends StatelessWidget {
   final TrResult r;
   final String to;
@@ -45,7 +94,7 @@ class ResultCard extends StatelessWidget {
       return Padding(padding: const EdgeInsets.all(8), child: Text('⚠ ${r.error.isEmpty ? 'مفيش نتيجة' : r.error}', style: const TextStyle(color: Colors.orangeAccent)));
     }
     return Card(
-      color: const Color(0xFF1F2328),
+      color: const Color(0xFF12304D),
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -57,6 +106,7 @@ class ResultCard extends StatelessWidget {
           Row(children: [
             IconButton(icon: const Icon(Icons.copy), onPressed: () { Clipboard.setData(ClipboardData(text: r.translation)); toast(context, 'اتنسخت'); }),
             IconButton(icon: const Icon(Icons.volume_up), onPressed: () async { if (!await speak(r.translation, to) && context.mounted) toast(context, 'الجهاز مفيهوش صوت للغة دي'); }),
+            IconButton(icon: const Icon(Icons.star_border), onPressed: () async { await saveTr(r.original, r.translation, to); if (context.mounted) toast(context, 'اتحفظت في المحفوظات'); }),
           ]),
           const Text('ترجمة آلية: ممكن تغلط', style: TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
@@ -73,6 +123,7 @@ class TouristHome extends StatelessWidget {
     final items = <List<Object>>[
       ['Translate', 'ترجمة 52 لغة (نص وفويس)', Icons.translate, () => const TranslatePage()],
       ['Live talk', 'مكالمة مترجمة بين موبايلين', Icons.headset_mic, () => const TalkPage()],
+      ['Saved', 'محفوظاتي (أوفلاين)', Icons.star, () => const SavedPage()],
       ['Face to face', 'وجهاً لوجه', Icons.people, () => const FacePage()],
       ['Camera', 'منيو ولافتات', Icons.photo_camera, () => const CameraPage()],
       ['Phrasebook', 'عبارات المواقف', Icons.chat_bubble_outline, () => const PhrasebookPage()],
@@ -274,7 +325,7 @@ class _PhrasesPageState extends State<PhrasesPage> {
         DropdownButton<String>(value: sit, isExpanded: true, items: [for (final s in widget.data.keys) DropdownMenuItem(value: s, child: Text(s))], onChanged: (v) { if (v != null) setState(() => sit = v); }),
         for (final ph in list)
           Card(
-            color: const Color(0xFF1F2328),
+            color: const Color(0xFF12304D),
             child: ListTile(
               title: Text(ph),
               subtitle: Text(loading.contains('$lang|$ph') ? '...' : (cache['$lang|$ph'] as String? ?? 'دوس للمعنى'), textDirection: TextDirection.ltr),
@@ -459,7 +510,7 @@ class _FacePageState extends State<FacePage> {
   Widget half(int side, String text, String lang, ValueChanged<String> onLang) => Expanded(
         child: Container(
           width: double.infinity,
-          color: side == 1 ? const Color(0xFF1B2A3A) : const Color(0xFF1F2328),
+          color: side == 1 ? const Color(0xFF1B2A3A) : const Color(0xFF12304D),
           padding: const EdgeInsets.all(12),
           child: Column(children: [
             SizedBox(width: 200, child: LangDrop(value: lang, onChanged: onLang)),
@@ -498,6 +549,8 @@ class _PlacesPageState extends State<PlacesPage> {
   String osm = '', osmErr = '';
   bool osmBusy = false;
   String pagesErr = '';
+  String guideLang = 'en', guideTr = '';
+  bool guideBusy = false;
 
   @override
   void initState() { super.initState(); load(); }
@@ -532,6 +585,22 @@ class _PlacesPageState extends State<PlacesPage> {
     } catch (e) { if (mounted) setState(() => pagesErr = 'Could not load: $e'); }
   }
 
+  Future<void> readGuide() async {
+    if (guideLang == 'en') {
+      if (!await speak(guide, 'en') && mounted) toast(context, 'الجهاز مفيهوش صوت للغة دي');
+      return;
+    }
+    setState(() => guideBusy = true);
+    final r = await trText(guide, 'en', guideLang);
+    if (!mounted) return;
+    setState(() { guideBusy = false; if (r.ok) guideTr = r.translation; });
+    if (r.ok) {
+      if (!await speak(r.translation, guideLang) && mounted) toast(context, 'الجهاز مفيهوش صوت للغة دي');
+    } else {
+      toast(context, r.error.isEmpty ? 'الترجمة فشلت' : r.error);
+    }
+  }
+
   Future<void> loadOsm(String tag, String val) async {
     final d = kDest[di];
     setState(() { osmBusy = true; osm = ''; osmErr = ''; });
@@ -557,8 +626,8 @@ class _PlacesPageState extends State<PlacesPage> {
           const Text('Loaded live from open sources each time: Wikivoyage, Wikipedia, OpenStreetMap, Open-Meteo. Nothing here is written or checked by Nilo.', style: TextStyle(fontSize: 12, color: Colors.white60)),
           DropdownButton<int>(value: di, isExpanded: true, items: [for (var i = 0; i < kDest.length; i++) DropdownMenuItem(value: i, child: Text(kDest[i][0] as String))], onChanged: (v) { if (v != null) { di = v; load(); } }),
           Text('Loaded: $stamp', style: const TextStyle(fontSize: 11, color: Colors.white38)),
-          if (weather.isNotEmpty) Card(color: const Color(0xFF1F2328), child: Padding(padding: const EdgeInsets.all(12), child: Text('Weather\n$weather\nSource: Open-Meteo'))),
-          if (guide.isNotEmpty) Card(color: const Color(0xFF1F2328), child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${kDest[di][0]} travel guide', style: const TextStyle(fontWeight: FontWeight.bold)), Text(guide, textDirection: TextDirection.ltr), TextButton(onPressed: () => openUrl(guideUrl), child: const Text('Wikivoyage (CC BY-SA), community-written, may be out of date'))]))),
+          if (weather.isNotEmpty) Card(color: const Color(0xFF12304D), child: Padding(padding: const EdgeInsets.all(12), child: Text('Weather\n$weather\nSource: Open-Meteo'))),
+          if (guide.isNotEmpty) Card(color: const Color(0xFF12304D), child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${kDest[di][0]} travel guide', style: const TextStyle(fontWeight: FontWeight.bold)), Text(guide, textDirection: TextDirection.ltr), Row(children: [Expanded(child: DropdownButton<String>(isExpanded: true, value: guideLang, items: [for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text(kNames[i], overflow: TextOverflow.ellipsis))], onChanged: (v) => setState(() { guideLang = v ?? 'en'; guideTr = ''; }))), IconButton(icon: guideBusy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.volume_up), onPressed: guideBusy ? null : readGuide)]), if (guideTr.isNotEmpty) Text(guideTr), TextButton(onPressed: () => openUrl(guideUrl), child: const Text('Wikivoyage (CC BY-SA), community-written, may be out of date'))]))),
           const Text('Places nearby (Wikipedia)', style: TextStyle(fontWeight: FontWeight.bold)),
           if (pagesErr.isNotEmpty) Text(pagesErr),
           for (final p in pages) ListTile(title: Text((p['title'] ?? '').toString(), textDirection: TextDirection.ltr), subtitle: Text((p['extract'] ?? '').toString(), textDirection: TextDirection.ltr), onTap: () => openUrl('https://en.wikipedia.org/?curid=${p['pageid']}')),
