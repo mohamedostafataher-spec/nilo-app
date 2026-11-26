@@ -25,7 +25,27 @@ class Sb {
         if (auth && _token != null) 'Authorization': 'Bearer $_token',
       };
 
+  static String? _healed;
+  /// Signs in and guarantees a profiles row exists (stories, reactions, comments, papyri all need it).
   static Future<bool> signIn() async {
+    final ok = await _signIn0();
+    if (ok && uid != null && _healed != uid) {
+      try {
+        final p = await SharedPreferences.getInstance();
+        var n = (p.getString('b_nick') ?? '').trim();
+        if (n.length < 2) n = Passport.nickname.trim();
+        final has = await get('profiles?select=id&id=eq.$uid') as List;
+        if (has.isEmpty && n.length >= 2 && (p.getBool('b_age') ?? true)) {
+          await post('profiles', {'id': uid, 'nick': n, 'lang': p.getString('b_lang') ?? 'en', 'age_ok': true}, upsert: true);
+          await p.setBool('b_age', true); await p.setString('b_nick', n);
+        }
+        if (has.isNotEmpty || n.length >= 2) _healed = uid;
+      } catch (_) {}
+    }
+    return ok;
+  }
+
+  static Future<bool> _signIn0() async {
     final p = await SharedPreferences.getInstance();
     final rt = p.getString('sb_rt');
     if (rt != null) {
