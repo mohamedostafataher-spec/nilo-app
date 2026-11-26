@@ -55,7 +55,7 @@ class AudioCaptureService : Service() {
         startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION)
         try {
             val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            val p = mpm.getMediaProjection(i.getIntExtra("rc", 0), i.getParcelableExtra("data")!!)
+            val p = mpm.getMediaProjection(i.getIntExtra("rc", 0), i.getParcelableExtra<Intent>("data")!!)!!
             p.registerCallback(object : MediaProjection.Callback() {}, null)
             proj = p
             val cfg = AudioPlaybackCaptureConfiguration.Builder(p)
