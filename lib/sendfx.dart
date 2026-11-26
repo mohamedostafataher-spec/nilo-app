@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
 import 'world.dart' show Passport;
+import 'sfx.dart';
 
 /// The send sequence (about 4 seconds, tap to skip): the page settles, rolls up, a wax seal drops,
 /// a cord ties it, it lands on a felucca and sails off. Pure drawing, no assets.
@@ -24,7 +25,7 @@ class _SendSequenceState extends State<SendSequence> with SingleTickerProviderSt
       if (!mounted) return;
       if (p.getBool('f_reduce_motion') ?? false) { _finish(); return; }
       _c.addListener(() {
-        if (!_sealTick && _c.value > 0.37) { _sealTick = true; HapticFeedback.heavyImpact(); }
+        if (!_sealTick && _c.value > 0.37) { _sealTick = true; HapticFeedback.heavyImpact(); Sfx.play('send'); }
       });
       _c.forward().whenComplete(_finish);
     });

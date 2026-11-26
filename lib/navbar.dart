@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'main.dart';
+import 'sfx.dart';
 
 /// Hand-drawn Egyptian-style icons (no asset files, so no size cost).
 enum NiloIcon { nile, messages, send, stories, passport }
@@ -75,7 +76,7 @@ class NiloNavBar extends StatelessWidget {
       return Expanded(
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () { HapticFeedback.selectionClick(); onTab(i); },
+          onTap: () { HapticFeedback.selectionClick(); Sfx.play('tab'); onTab(i); },
           child: TweenAnimationBuilder<double>(
             tween: Tween(begin: 0, end: sel ? 1 : 0),
             duration: const Duration(milliseconds: 280),
