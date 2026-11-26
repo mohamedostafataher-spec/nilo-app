@@ -63,30 +63,26 @@ shot('auth_signin')
 tap_text('Create an account'); time.sleep(1); shot('auth_signup'); tap_text('Back to sign in'); time.sleep(1)
 tap_text('Forgot password'); time.sleep(1); shot('auth_forgot'); tap_text('Back to sign in'); time.sleep(1)
 tap_text('Continue as guest'); time.sleep(3)
-time.sleep(8)
-for _ in range(3):
-    if tap_text('Skip'): break
-    time.sleep(5)
-time.sleep(6)
-for _ in range(3):
-    if any('Translate' in t or 'Phrasebook' in t for t,_,_ in nodes()): break
-    tap_text('Start') or tap_text('Skip'); time.sleep(3)
-time.sleep(2); shot('home')
-shot('first_run_1')
-tap_text('Continue'); time.sleep(3); shot('first_run_2')
+time.sleep(10); shot('first_run')
 import subprocess
 def dump(tag):
     o = subprocess.run('adb logcat -d | grep -E "FATAL|AndroidRuntime|flutter|Exception|Error" | tail -60', shell=True, capture_output=True, text=True).stdout
     open(f'{OUT}/log_{tag}.txt','w').write(o)
-dump('before_phone_region')
-tap_text('phone region'); time.sleep(4); shot('first_run_3'); dump('after_phone_region')
-if not tap_text('Get my passport') :
-    pass
-tap_class('EditText'); adb('shell','input','text','Traveler'); hide_kb(); time.sleep(1); tap_text('18 or older'); time.sleep(1); shot('first_run_4'); tap_text('Get my passport'); time.sleep(4); shot('home_with_world')
-time.sleep(5); shot('home_scene2')
-tap_text('رسايل'); time.sleep(5); shot('tab_messages')
-for t in ['حكاية','جواز']:
-    if tap_text(t): time.sleep(3); shot('tab_'+t)
+dump('first_run')
+tap_class('EditText'); adb('shell','input','text','Traveler'); hide_kb(); time.sleep(1); tap_text('I am 18'); time.sleep(1); shot('first_run_filled')
+tap_text('Get my passport'); time.sleep(8); shot('home'); time.sleep(4); shot('home2')
+tap_text('رسايل'); time.sleep(4); shot('tab_messages')
+tap_text('حكاياتي'); time.sleep(4); shot('tab_story')
+tap_text('قصص'); time.sleep(4); shot('tab_stories')
+tap_text('جواز'); time.sleep(4); shot('tab_passport')
+tap_text('النيل'); time.sleep(3)
+tap_text('ابعت بردية'); time.sleep(5); shot('write_page')
+tap_class('EditText'); adb('shell','input','text','Hello%sfrom%sEgypt'); time.sleep(1); shot('write_typed'); hide_kb(); time.sleep(1)
+tap_text('Send into the Nile'); 
+for i in range(1, 6):
+    time.sleep(0.8); shot('send_%d' % i)
+time.sleep(6); shot('journey')
+dump('after_send')
 tap_text('قصص'); time.sleep(5); shot('tab_stories'); tap_text('النيل'); time.sleep(2); tap_text('Tools'); time.sleep(2); shot('tab_Tools'); tap_text('Translation hub'); time.sleep(2); shot('hub_translate'); back(); tap_text('Travel help hub'); time.sleep(2); shot('hub_travel'); back()
 for tile in ['Translate', 'Phrasebook', 'Stay Safe', 'Places', 'Emergency', 'Official services', 'Floating button', 'Face to face', 'Saved']:
     if tap_text(tile):
