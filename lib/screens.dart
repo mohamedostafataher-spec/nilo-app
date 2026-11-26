@@ -76,6 +76,7 @@ class TouristHome extends StatelessWidget {
       ['Stay Safe', 'سعر عادل وأمان', Icons.shield, () => const SafePage()],
       ['Places & weather', 'أماكن وطقس', Icons.place, () => const PlacesPage()],
       ['Emergency & medical', 'طوارئ وكارت طبي', Icons.local_hospital, () => const EmergencyPage()],
+      ['Floating button', 'زر عايم للترجمة (خطوات التفعيل)', Icons.bubble_chart, () => const FloatPage()],
       ['App audio capture', 'ترجمة صوت التطبيقات (أندرويد 10+)', Icons.graphic_eq, () => const CapturePage()],
       ['Official services', 'خدمات رسمية', Icons.account_balance, () => const OfficialPage()],
       ['Chat & sales', 'دردشة نيلو', Icons.forum, () => const ModeGate()],
@@ -600,5 +601,35 @@ class CapturePage extends StatelessWidget {
             ),
           ]),
         ),
+      );
+}
+
+class FloatPage extends StatelessWidget {
+  const FloatPage({super.key});
+  Future<void> _call(BuildContext c, String m) async {
+    try {
+      await const MethodChannel('nilo/native').invokeMethod(m);
+    } catch (_) {
+      toast(c, 'مش متاح على الجهاز ده');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('الزر العايم • Floating button'), backgroundColor: kBg),
+        body: ListView(padding: const EdgeInsets.all(18), children: [
+          const Text('الزر ده بيستخدم خدمة "إمكانية الوصول" عشان يقرا النص اللي على الشاشة ويترجمه. التفعيل بيحتاج خطوات من إعدادات أندرويد، ومتجرّبش لسه على أجهزة كتير.', style: TextStyle(height: 1.5)),
+          const SizedBox(height: 14),
+          const Text('1. اضغط "افتح معلومات التطبيق" تحت.\n2. اضغط النقط التلاتة فوق على اليمين، ثم "السماح بالإعدادات المقيّدة" (Allow restricted settings). لو الاختيار مش ظاهر، افتح إعدادات إمكانية الوصول وجرب تفعّل نيلو مرة الأول، وبعدين ارجع هنا.\n3. اضغط "افتح إعدادات إمكانية الوصول"، اختار نيلو وفعّله.', style: TextStyle(height: 1.7)),
+          const SizedBox(height: 10),
+          const Directionality(
+            textDirection: TextDirection.ltr,
+            child: Text('Android blocks accessibility for apps installed outside Google Play ("Restricted setting"). Open App info, tap the three-dot menu, choose "Allow restricted settings", then enable Nilo in Accessibility. The exact wording varies by phone brand and Android version.', style: TextStyle(color: Colors.white70, height: 1.5)),
+          ),
+          const SizedBox(height: 18),
+          SizedBox(height: 48, child: ElevatedButton(onPressed: () => _call(context, 'appinfo'), child: const Text('افتح معلومات التطبيق'))),
+          const SizedBox(height: 10),
+          SizedBox(height: 48, child: ElevatedButton(onPressed: () => _call(context, 'a11y'), child: const Text('افتح إعدادات إمكانية الوصول'))),
+        ]),
       );
 }
