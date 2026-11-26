@@ -1,0 +1,32 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>نيلو • Nilo</title><meta name="theme-color" content="#0b2239">
+<style>
+body{margin:0;background:#0b2239;color:#f4ead2;font-family:system-ui,"Segoe UI",Tahoma,sans-serif;line-height:1.6}
+main{max-width:520px;margin:0 auto;padding:28px 18px 60px;text-align:center}
+h1{font-size:40px;margin:10px 0 0;color:#e0a63b}.sub{opacity:.8;margin:0 0 20px}
+.card{background:#12304d;border:1px solid #2a4f74;border-radius:18px;padding:18px;margin:14px 0;text-align:start}
+a.btn{display:block;background:#e0a63b;color:#1a1204;font-weight:700;text-decoration:none;padding:14px;border-radius:30px;margin:10px 0;text-align:center}
+a.btn.alt{background:transparent;color:#e0a63b;border:1px solid #e0a63b}
+.meta{font-size:14px;opacity:.85}ol{padding-inline-start:22px;margin:6px 0}li{margin:4px 0}
+img.qr{width:170px;height:170px;background:#fff;border-radius:12px;padding:8px}
+small{opacity:.7}ul{padding-inline-start:20px}
+</style></head><body><main>
+<h1>نيلو • Nilo</h1><p class="sub">تطبيق مصري خالص • Made in Egypt</p>
+<div class="card"><div class="meta" id="meta">…</div>
+<a class="btn" id="a64" href="#">تحميل (أغلب الموبايلات) • Download</a>
+<a class="btn alt" id="aun" href="#">نسخة شاملة • Universal (if "not compatible")</a></div>
+<div class="card"><b>جديد في النسخة • What's new</b><ul id="log"></ul></div>
+<div class="card"><b>طريقة التثبيت</b><ol><li>افتح الرابط من موبايل أندرويد.</li><li>لما يطلب، اسمح بالتثبيت من المتصفح.</li><li>افتح الملف واضغط تثبيت.</li></ol>
+<b>How to install</b><ol><li>Open this page on an Android phone.</li><li>Allow installs from your browser when asked.</li><li>Open the file and tap Install.</li></ol>
+<small>Unsigned by Google Play. Android may show a warning. Updates install over the old version.</small></div>
+<div class="card" style="text-align:center"><img class="qr" src="qr.svg" alt="QR"><p class="meta">Scan to open on your phone • امسح الكود</p>
+</div>
+</main><script>
+fetch('version.json?'+Date.now()).then(r=>r.json()).then(v=>{
+const mb=n=>(n/1048576).toFixed(1)+' MB';
+document.getElementById('meta').textContent='v'+v.version+' • '+v.date+' • '+mb(v.arm64_bytes)+' (arm64) / '+mb(v.universal_bytes)+' (universal)';
+document.getElementById('a64').href=v.arm64_url;document.getElementById('aun').href=v.universal_url;
+document.getElementById('log').innerHTML=v.changelog.map(x=>'<li></li>').join('');
+[...document.querySelectorAll('#log li')].forEach((li,i)=>li.textContent=v.changelog[i]);
+}).catch(()=>{document.getElementById('meta').textContent='تعذر تحميل بيانات النسخة • could not load version info'});
+</script></body></html>
