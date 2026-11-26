@@ -66,6 +66,9 @@ String L(String s) {
 }
 
 const kPairs = <List<String>>[
+  [r'''Waiting for someone to catch your papyrus. Replies will appear here.''', r'''مستني حد يمسك بوردتك. الردود هتظهر هنا.'''],
+  [r'''Could not send. Check your connection and try again.''', r'''مبعتش. اتأكد من النت وجرّب تاني.'''],
+  [r'''Like''', r'''إعجاب'''],
   [r'''No friend with that code, or you cannot send to them.''', r'''مفيش صديق بالكود ده، أو مينفعش تبعتله.'''],
   [r'''Friend's Nilo code (optional, sends only to them)''', r'''كود نيلو بتاع صاحبك (اختياري، بيتبعت له هو بس)'''],
   [r'''Translate, travel, connect • ترجم، سافر، تواصل''', r'''ترجم، سافر، تواصل'''],

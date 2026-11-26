@@ -116,7 +116,7 @@ class _StoriesTabState extends State<StoriesTab> {
       selected: mine,
       backgroundColor: Colors.black26,
       selectedColor: Colors.white30,
-      label: Text(rs.isEmpty ? e : '$e ${rs.length}'),
+      label: Text(e == '❤️' ? (rs.isEmpty ? '❤️ ${L('Like')}' : '❤️ ${rs.length}') : (rs.isEmpty ? e : '$e ${rs.length}')),
       onSelected: (_) async {
         try {
           if (mine) { await Sb.delete('story_reactions?story_id=eq.${s['id']}&user_id=eq.${Sb.uid}'); }

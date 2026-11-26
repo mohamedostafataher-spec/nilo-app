@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'i18n.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -600,11 +601,16 @@ class _ThreadPageState extends State<ThreadPage> {
   String get bid => widget.bottle['id'].toString();
   String get other => (widget.bottle['author'] == Sb.uid ? widget.bottle['catcher'] : widget.bottle['author'])?.toString() ?? '';
 
+  Timer? _poll;
   @override
   void initState() {
     super.initState();
     _load();
+    _poll = Timer.periodic(const Duration(seconds: 10), (_) => _load());
   }
+
+  @override
+  void dispose() { _poll?.cancel(); c.dispose(); super.dispose(); }
 
   Future<void> _load() async {
     try {
@@ -626,7 +632,7 @@ class _ThreadPageState extends State<ThreadPage> {
       c.clear();
       await _load();
     } catch (e) {
-      if (mounted) toast(context, 'Could not send: $e');
+      if (mounted) toast(context, L('Could not send. Check your connection and try again.'));
     }
   }
 
@@ -679,6 +685,7 @@ class _ThreadPageState extends State<ThreadPage> {
   Widget build(BuildContext context) {
     final b = widget.bottle;
     final closed = b['status'] == 'closed';
+    final waiting = b['catcher'] == null && b['author'] == Sb.uid;
     return Scaffold(
       appBar: AppBar(title: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus'), backgroundColor: kBg, actions: [
         IconButton(icon: Icon(Icons.flag_outlined), tooltip: L('Report'), onPressed: _report),
@@ -693,7 +700,9 @@ class _ThreadPageState extends State<ThreadPage> {
             Padding(padding: EdgeInsets.all(8), child: Text(L('Safety: never send money or ID details. Meet only in public places. Report anything wrong.'), style: TextStyle(fontSize: 11, color: Colors.white38))),
           ]),
         ),
-        if (!closed)
+        if (waiting)
+          Padding(padding: const EdgeInsets.all(14), child: Text(L('Waiting for someone to catch your papyrus. Replies will appear here.'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)))
+        else if (!closed)
           Padding(
             padding: const EdgeInsets.all(8),
             child: Row(children: [

@@ -302,7 +302,7 @@ class _ScenePainter extends CustomPainter {
         final tw = 0.4 + 0.6 * ((math.sin(t * 4 * math.pi + i) + 1) / 2);
         canvas.drawCircle(Offset((i * 37 % 100) / 100 * w, (i * 61 % 100) / 100 * horizon), 0.8 + (i % 3) * 0.4, Paint()..color = Colors.white.withOpacity(0.55 * tw));
       }
-      canvas.drawCircle(Offset(w * 0.78, h * 0.15), 24, Paint()..color = const Color(0xFFF3E9C6));
+      canvas.drawCircle(Offset(w * 0.86, h * 0.31), 22, Paint()..color = const Color(0xFFF3E9C6));
     } else {
       final sc = Offset(w * 0.68, horizon - 20);
       canvas.drawCircle(sc, 80, Paint()..color = const Color(0x33FFE9A8));
