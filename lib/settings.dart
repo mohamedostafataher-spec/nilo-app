@@ -8,6 +8,7 @@ import 'auth.dart';
 import 'extras.dart' show niloRoute;
 import 'home.dart' show TouristHome;
 import 'store.dart';
+import 'notify.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const kPrivacy = '''Privacy Policy • سياسة الخصوصية
@@ -104,7 +105,21 @@ class _SettingsPageState extends State<SettingsPage> {
           title: const Text('Calm mode • وضع الهدوء'),
           subtitle: const Text('Fewer notifications, no send animation', style: TextStyle(fontSize: 12)),
           value: Passport.flag('calm', false),
-          onChanged: (v) => setState(() { Passport.setFlag('calm', v); Passport.setFlag('reduce_motion', v); }),
+          onChanged: (v) async { Passport.setFlag('calm', v); Passport.setFlag('reduce_motion', v); if (v) { Passport.setFlag('daily', false); await Notify.disable(); } setState(() {}); },
+        ),
+        SwitchListTile(
+          title: const Text('Daily reminder • تذكير يومي'),
+          subtitle: const Text('One quiet notification a day. Off by default.', style: TextStyle(fontSize: 12)),
+          value: Passport.flag('daily', false) && !Passport.flag('calm', false),
+          onChanged: (v) async {
+            if (Passport.flag('calm', false)) { toast(context, 'Calm mode is on. Turn it off first.'); return; }
+            if (v) {
+              final ok = await Notify.enableDaily();
+              if (!ok) { if (mounted) toast(context, 'Notifications are not allowed on this phone.'); return; }
+            } else { await Notify.disable(); }
+            Passport.setFlag('daily', v);
+            if (mounted) setState(() {});
+          },
         ),
         ListTile(leading: const Icon(Icons.storefront), title: Text('Store • المتجر  (${Passport.reeds} 🌿)'), subtitle: const Text('Spend Reeds on looks for your send animation'), onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const StorePage())); setState(() {}); }),
         const Divider(),
