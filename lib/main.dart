@@ -440,6 +440,7 @@ class _ChatPageState extends State<ChatPage> {
         actions: [
           IconButton(tooltip: 'غرفة المبيعات', icon: const Icon(Icons.trending_up), onPressed: () => openLink('https://nilo-eg.vercel.app/?sales=1')),
           IconButton(tooltip: 'شركة تسويق ومبيعات', icon: const Icon(Icons.storefront_outlined), onPressed: () => openLink('https://nilo-eg.vercel.app/?co=1')),
+          IconButton(tooltip: 'مترجم', icon: const Icon(Icons.translate), onPressed: () => openLink('https://nilo-eg.vercel.app/translate.html')),
           IconButton(tooltip: 'مساعد الشغل', icon: const Icon(Icons.work_outline), onPressed: () => openLink('https://nilo-eg.vercel.app/?jobs=1')),
           TextButton.icon(
               onPressed: !sttOk ? null : () {
