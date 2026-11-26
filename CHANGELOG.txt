@@ -1,0 +1,4 @@
+New one-screen first run: country from network/SIM, nickname, 18+ line
+New floating navigation bar with the raised write button
+New full-screen write page and a send animation (skippable)
+Smaller download size

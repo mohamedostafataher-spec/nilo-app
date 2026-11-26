@@ -34,3 +34,28 @@ jobs:
         with:
           name: nilo-apk-arm64
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+      - name: Publish download page (Vercel)
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          pip install segno -q
+          mkdir -p pub && cp site/index.html site/vercel.json pub/
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk pub/Nilo.apk
+          cp build/app/outputs/flutter-apk/app-release.apk pub/Nilo-universal.apk
+          SITE=https://nilo-dl.vercel.app
+          python3 - <<'PY'
+          import json, os, datetime, segno, re
+          v = re.search(r'versionName "([^"]+)"', open('android/app/build.gradle').read()).group(1)
+          c = re.search(r'versionCode (\d+)', open('android/app/build.gradle').read()).group(1)
+          sz = lambda f: os.path.getsize('pub/' + f)
+          site = 'https://nilo-dl.vercel.app'
+          d = {'version': v + ' (' + c + ')', 'date': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC'),
+               'arm64_bytes': sz('Nilo.apk'), 'universal_bytes': sz('Nilo-universal.apk'),
+               'arm64_url': site + '/Nilo.apk', 'universal_url': site + '/Nilo-universal.apk',
+               'changelog': [l.strip() for l in open('CHANGELOG.txt') if l.strip()],
+               'commit': os.environ.get('GITHUB_SHA', '')[:7]}
+          json.dump(d, open('pub/version.json', 'w'), ensure_ascii=False)
+          segno.make(site, error='m').save('pub/qr.svg', scale=8, border=2)
+          PY
+          cat pub/version.json
+          cd pub && npx --yes vercel@latest deploy --prod --yes --name nilo-dl --token "$VERCEL_TOKEN"
