@@ -98,7 +98,13 @@ class _SettingsPageState extends State<SettingsPage> {
         }),
         ListTile(leading: const Icon(Icons.person), title: const Text('Profile • الملف'), subtitle: Text(Passport.nickname.isEmpty ? 'Set a nickname' : Passport.nickname), onTap: _editName),
         sw('Sound • الصوت', 'Sound effects in the app', 'sound'),
-        sw('Reduce motion • حركة أقل', 'Fewer animations (saves battery)', 'reduce_motion'),
+        SwitchListTile(title: const Text('Reduce motion • حركة أقل'), subtitle: const Text('Skips the send animation', style: TextStyle(fontSize: 12)), value: Passport.flag('reduce_motion', false), onChanged: (v) => setState(() => Passport.setFlag('reduce_motion', v))),
+        SwitchListTile(
+          title: const Text('Calm mode • وضع الهدوء'),
+          subtitle: const Text('Fewer notifications, no send animation', style: TextStyle(fontSize: 12)),
+          value: Passport.flag('calm', false),
+          onChanged: (v) => setState(() { Passport.setFlag('calm', v); Passport.setFlag('reduce_motion', v); }),
+        ),
         const Divider(),
         const ListTile(leading: Icon(Icons.shield), title: Text('Papyrus & Stories safety'), subtitle: Text('18+ only (self-declared). No links or phone numbers. Report or block anyone. Content hides after reports. Meet only in public places.')),
         ListTile(leading: const Icon(Icons.lock), title: const Text('Privacy policy • الخصوصية'), onTap: () => _go(const TextDocPage('Privacy Policy', kPrivacy))),
@@ -107,8 +113,8 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.share),
           title: const Text('Invite a friend • ادعُ صديق'),
-          subtitle: const Text('Copies the download link'),
-          onTap: () { Clipboard.setData(const ClipboardData(text: 'Nilo • https://fbfvjihrbzsqlwmoejiq.supabase.co/storage/v1/object/public/app/Nilo.apk')); toast(context, 'Link copied'); },
+          subtitle: const Text('Copies the download page link'),
+          onTap: () { Clipboard.setData(const ClipboardData(text: 'Nilo • https://nilo-dl.vercel.app')); toast(context, 'Link copied'); },
         ),
         ListTile(leading: const Icon(Icons.bug_report), title: const Text('Report a problem • أبلغ عن مشكلة'), onTap: () => openUrl('mailto:mohamedostafataher@gmail.com?subject=Nilo%20problem')),
         ListTile(

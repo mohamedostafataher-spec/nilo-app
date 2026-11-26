@@ -21,7 +21,7 @@ class _SendSequenceState extends State<SendSequence> with SingleTickerProviderSt
     super.initState();
     SharedPreferences.getInstance().then((p) {
       if (!mounted) return;
-      if (p.getBool('reduce_motion') ?? false) { _finish(); return; }
+      if (p.getBool('f_reduce_motion') ?? false) { _finish(); return; }
       _c.addListener(() {
         if (!_sealTick && _c.value > 0.37) { _sealTick = true; HapticFeedback.heavyImpact(); }
       });
