@@ -12,7 +12,11 @@ import 'data.dart';
 import 'extras.dart';
 import 'screens.dart';
 
-void main() => runApp(const NiloApp());
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  FlutterError.onError = (d) => FlutterError.presentError(d);
+  runZonedGuarded(() => runApp(const NiloApp()), (e, s) => debugPrint('nilo error: $e'));
+}
 
 const kGreen = Color(0xFFD9A441);
 const kBg = Color(0xFF16191D);
