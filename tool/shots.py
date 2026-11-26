@@ -50,7 +50,7 @@ for _ in range(3):
     if any('Translate' in t or 'Phrasebook' in t for t,_,_ in nodes()): break
     tap_text('Start') or tap_text('Skip'); time.sleep(3)
 time.sleep(2); shot('home')
-tap_text('Pick your home'); time.sleep(2); shot('country_picker'); tap_text('Egypt'); time.sleep(2); shot('home_with_world')
+tap_text('Tap to detect'); time.sleep(2); shot('detect_notice'); tap_text('No, use phone'); time.sleep(4); shot('after_detect'); tap_text('Egypt'); time.sleep(2); shot('home_with_world')
 for t in ['Daily puzzle','Story 1','Passport']:
     if tap_text(t):
         time.sleep(3); shot(t.replace(' ','_'))
