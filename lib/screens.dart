@@ -713,7 +713,7 @@ class FloatPage extends StatelessWidget {
           const SizedBox(height: 14),
           Text(L('1. اضغط "افتح معلومات التطبيق" تحت.\n2. اضغط النقط التلاتة فوق على اليمين، ثم "السماح بالإعدادات المقيّدة" (Allow restricted settings). لو الاختيار مش ظاهر، افتح إعدادات إمكانية الوصول وجرب تفعّل نيلو مرة الأول، وبعدين ارجع هنا.\n3. اضغط "افتح إعدادات إمكانية الوصول"، اختار نيلو وفعّله.'), style: TextStyle(height: 1.7)),
           const SizedBox(height: 10),
-          const Directionality(
+          Directionality(
             textDirection: TextDirection.ltr,
             child: Text(L('Android blocks accessibility for apps installed outside Google Play ("Restricted setting"). Open App info, tap the three-dot menu, choose "Allow restricted settings", then enable Nilo in Accessibility. The exact wording varies by phone brand and Android version.'), style: TextStyle(color: Colors.white70, height: 1.5)),
           ),

@@ -163,7 +163,7 @@ class _TalkPageState extends State<TalkPage> {
   Widget _lobby() => ListView(padding: const EdgeInsets.all(18), children: [
         Text(L('كل واحد على موبايله. واحد يعمل غرفة ويبعت الكود للتاني، والتاني يدخل بيه. بتتكلم، والتاني يسمع ترجمتك بلغته بعد ثواني.'), style: TextStyle(height: 1.5)),
         const SizedBox(height: 8),
-        const Directionality(
+        Directionality(
           textDirection: TextDirection.ltr,
           child: Text(L('Turn-based, not instant: each sentence takes a few seconds. Needs internet on both phones. Text (not your voice) goes through the free public ntfy.sh relay, so anyone who guesses the room code could read it. Do not share private details.'), style: TextStyle(fontSize: 12, color: Colors.white60, height: 1.4)),
         ),

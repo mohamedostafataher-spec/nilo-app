@@ -133,7 +133,7 @@ class _SplashGateState extends State<SplashGate> with SingleTickerProviderStateM
               const SizedBox(height: 18),
               Opacity(
                 opacity: Curves.easeIn.transform(((_c.value - 0.4) / 0.6).clamp(0.0, 1.0)),
-                child: const Directionality(
+                child: Directionality(
                   textDirection: TextDirection.ltr,
                   child: Text(L('نيلو  |  NILO'), style: TextStyle(color: kNavy, fontSize: 30, fontWeight: FontWeight.bold)),
                 ),

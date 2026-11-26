@@ -440,7 +440,7 @@ class _WorldCardState extends State<WorldCard> {
   Widget build(BuildContext context) {
     final code = Passport.country;
     if (code.isEmpty) {
-      return _box(InkWell(onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => FirstRunPage(next: const _Back()))); if (mounted) setState(() {}); }, child: const Padding(padding: EdgeInsets.all(16),
+      return _box(InkWell(onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => FirstRunPage(next: const _Back()))); if (mounted) setState(() {}); }, child: Padding(padding: EdgeInsets.all(16),
         child: Row(children: [Text(L('🌍'), style: TextStyle(fontSize: 34)), SizedBox(width: 12), Expanded(child: Text(L('Nai is waiting. Begin your story\nناي مستنيك. ابدأ حكايتك'), style: TextStyle(fontSize: 16, height: 1.4))), Icon(Icons.chevron_right)]))));
     }
     final c = countryOf(code);
@@ -674,12 +674,12 @@ class PassportPage extends StatelessWidget {
     decoration: BoxDecoration(
       gradient: const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF16406B), Color(0xFF0B2542)]),
       border: Border.all(color: gold, width: 2.5), borderRadius: BorderRadius.circular(16),
-      boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4))],
+      boxShadow: [BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4))],
     ),
     child: Container(
-      margin: const EdgeInsets.all(8),
+      margin: EdgeInsets.all(8),
       decoration: BoxDecoration(border: Border.all(color: gold.withOpacity(.5)), borderRadius: BorderRadius.circular(10)),
-      child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Text(L('𓂀'), style: TextStyle(fontSize: 44, color: gold)),
         SizedBox(height: 4),
         Text(L('NILO'), style: TextStyle(fontSize: 26, letterSpacing: 10, color: gold, fontWeight: FontWeight.w800)),
@@ -960,12 +960,12 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
   }
 
   Future<void> _choose() async {
-    final r = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const CountryPickerPage()));
+    final r = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => CountryPickerPage()));
     if (!mounted) return;
     if (r == true && Passport.country.isNotEmpty) setState(() => code = Passport.country);
   }
 
-  void _rules() => showModalBottomSheet(context: context, backgroundColor: const Color(0xFF12304D), builder: (_) => const Padding(
+  void _rules() => showModalBottomSheet(context: context, backgroundColor: Color(0xFF12304D), builder: (_) => Padding(
         padding: EdgeInsets.all(20),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(L('Rules • القواعد'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kGreen)),
