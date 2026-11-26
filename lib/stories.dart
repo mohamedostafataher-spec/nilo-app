@@ -128,6 +128,109 @@ class _StoriesTabState extends State<StoriesTab> {
     );
   }
 
+  int filter = 0; // 0 new, 1 popular, 2 mine
+  String? who;
+
+  int _score(Map s) => ((s['story_reactions'] ?? []) as List).length * 2 + ((s['story_comments'] ?? []) as List).length;
+
+  void _profile(Map s) {
+    final a = s['author'];
+    final mine = l.where((x) => (x as Map)['author'] == a).length;
+    showModalBottomSheet(context: context, backgroundColor: const Color(0xFF0E2A45), builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Text(_flag((s['country'] ?? '').toString()), style: const TextStyle(fontSize: 46)),
+      const SizedBox(height: 6),
+      Text((s['nick'] ?? '').toString(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 4),
+      Text('$mine ${mine == 1 ? 'story' : 'stories'} in the last 24 hours • حكايات آخر ٢٤ ساعة', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+      const SizedBox(height: 12),
+      Wrap(spacing: 8, children: [
+        FilledButton.tonal(onPressed: () { Navigator.pop(context); setState(() => who = a as String?); }, child: const Text('Show only their stories')),
+      ]),
+    ]))));
+  }
+
+  Widget _circles() {
+    final seen = <String>{};
+    final au = <Map>[];
+    for (final x in l) {
+      final m = x as Map;
+      if (seen.add(m['author'].toString())) au.add(m);
+    }
+    return SizedBox(height: 92, child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 12), children: [
+      for (final m in au)
+        GestureDetector(
+          onTap: () => setState(() => who = who == m['author'] ? null : m['author'] as String?),
+          onLongPress: () => _profile(m),
+          child: Container(width: 70, margin: const EdgeInsets.symmetric(horizontal: 4), child: Column(children: [
+            Container(
+              width: 58, height: 58, alignment: Alignment.center,
+              decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: who == m['author'] ? Colors.white : kGreen, width: 3), color: const Color(0xFF12304D)),
+              child: Text(_flag((m['country'] ?? '').toString()), style: const TextStyle(fontSize: 26)),
+            ),
+            const SizedBox(height: 4),
+            Text((m['nick'] ?? '').toString(), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11)),
+          ])),
+        ),
+    ]));
+  }
+
+  Widget _card(Map s) {
+    final c = _bgs[((s['mood'] ?? 0) as int) % _bgs.length];
+    final body = (s['body'] ?? '').toString();
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: c), borderRadius: BorderRadius.circular(18)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Expanded(child: GestureDetector(onTap: () => _profile(s), child: Text('${_flag((s['country'] ?? '').toString())} ${s['nick'] ?? ''}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 13)))),
+          Text(_ago((s['created_at'] ?? '').toString()), style: const TextStyle(color: Colors.white70, fontSize: 11)),
+          InkWell(onTap: () => _menu(s), child: const Padding(padding: EdgeInsets.all(2), child: Icon(Icons.more_vert, color: Colors.white70, size: 18))),
+        ]),
+        const SizedBox(height: 8),
+        if (s['media_path'] != null) ...[_media(s), const SizedBox(height: 8)],
+        if (body.isNotEmpty) Text(body, style: TextStyle(fontSize: body.length < 40 ? 20 : 15, height: 1.35, color: Colors.white, fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        Wrap(spacing: 4, runSpacing: 4, children: [
+          for (final e in const ['❤️', '😂', '🔥']) _react(s, e),
+          ActionChip(backgroundColor: Colors.black26, label: Text('💬 ${((s['story_comments'] ?? []) as List).length}'), onPressed: () => Navigator.of(context).push(niloRoute(CommentsPage(story: s)))),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _feed() {
+    var items = l.map((x) => Map<String, dynamic>.from(x as Map)).toList();
+    if (filter == 2) items = items.where((s) => s['author'] == Sb.uid).toList();
+    if (who != null) items = items.where((s) => s['author'] == who).toList();
+    if (filter == 1) items.sort((a, b) => _score(b).compareTo(_score(a)));
+    final left = <Widget>[], right = <Widget>[];
+    var hl = 0, hr = 0;
+    for (final s in items) {
+      final h = 90 + ((s['body'] ?? '').toString().length) * 1.2 + (s['media_path'] != null ? 300 : 0);
+      if (hl <= hr) { left.add(_card(s)); hl += h.round(); } else { right.add(_card(s)); hr += h.round(); }
+    }
+    return RefreshIndicator(
+      onRefresh: _load,
+      child: ListView(padding: const EdgeInsets.fromLTRB(8, 4, 8, 90), children: [
+        _circles(),
+        SingleChildScrollView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 6), child: Row(children: [
+          for (final e in const [[0, 'New • الأحدث'], [1, 'Popular • الأشهر'], [2, 'Mine • حكاياتي']])
+            Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: ChoiceChip(label: Text(e[1] as String), selected: filter == e[0], onSelected: (_) => setState(() => filter = e[0] as int))),
+        ])),
+        const SizedBox(height: 8),
+        if (items.isEmpty)
+          const Padding(padding: EdgeInsets.all(30), child: Text('Nothing here yet.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)))
+        else
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Column(children: left))),
+            Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Column(children: right))),
+          ]),
+        const Padding(padding: EdgeInsets.all(12), child: Text('Text and photos. Stories vanish after 24 hours. Tap ⋮ to report or block. Long-press a circle for a profile card.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),
+      ]),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -148,42 +251,7 @@ class _StoriesTabState extends State<StoriesTab> {
                   ? Center(child: Text(err))
                   : l.isEmpty
                       ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No stories yet today.\nBe the first. Stories disappear after 24 hours.', textAlign: TextAlign.center)))
-                      : ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(14, 8, 14, 90),
-                          itemCount: l.length + 1,
-                          itemBuilder: (_, i) {
-                            if (i == l.length) return const Padding(padding: EdgeInsets.all(12), child: Text('Text only. Stories vanish after 24 hours. Tap ⋮ to report or block.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54)));
-                            final s = Map<String, dynamic>.from(l[i] as Map);
-                            final c = _bgs[((s['mood'] ?? 0) as int) % _bgs.length];
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: c), borderRadius: BorderRadius.circular(20)),
-                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                                Row(children: [
-                                  Text('${_flag((s['country'] ?? '').toString())} ${s['nick'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white)),
-                                  const SizedBox(width: 8),
-                                  Text(_ago((s['created_at'] ?? '').toString()), style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                                  const Spacer(),
-                                  InkWell(onTap: () => _menu(s), child: const Padding(padding: EdgeInsets.all(4), child: Icon(Icons.more_vert, color: Colors.white70))),
-                                ]),
-                                const SizedBox(height: 10),
-                                if (s['media_path'] != null) ...[_media(s), const SizedBox(height: 10)],
-                                if (((s['body'] ?? '') as String).isNotEmpty)
-                                Text((s['body'] ?? '').toString(), style: const TextStyle(fontSize: 19, height: 1.4, color: Colors.white, fontWeight: FontWeight.w600)),
-                                const SizedBox(height: 12),
-                                Wrap(spacing: 6, runSpacing: 6, children: [
-                                  for (final e in const ['❤️', '😂', '😮', '👏', '🔥']) _react(s, e),
-                                  ActionChip(
-                                    backgroundColor: Colors.black26,
-                                    label: Text('💬 ${((s['story_comments'] ?? []) as List).length}'),
-                                    onPressed: () => Navigator.of(context).push(niloRoute(CommentsPage(story: s))),
-                                  ),
-                                ]),
-                              ]),
-                            );
-                          },
-                        ),
+                      : _feed(),
     );
   }
 }
