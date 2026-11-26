@@ -69,26 +69,11 @@
             android:taskAffinity=""
             android:excludeFromRecents="true"
             android:theme="@android:style/Theme.Translucent.NoTitleBar">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
         </activity>
         <service
             android:name=".AudioCaptureService"
             android:exported="false"
             android:foregroundServiceType="mediaProjection"/>
-        <activity-alias
-            android:name=".ClipLauncher"
-            android:targetActivity=".TranslateActivity"
-            android:exported="true"
-            android:label="ترجمة الحافظة"
-            android:icon="@mipmap/ic_launcher">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-            </intent-filter>
-        </activity-alias>
         <service
             android:name=".BubbleService"
             android:exported="true"

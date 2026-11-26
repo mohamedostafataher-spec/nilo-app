@@ -76,6 +76,7 @@ class TouristHome extends StatelessWidget {
       ['Stay Safe', 'سعر عادل وأمان', Icons.shield, () => const SafePage()],
       ['Places & weather', 'أماكن وطقس', Icons.place, () => const PlacesPage()],
       ['Emergency & medical', 'طوارئ وكارت طبي', Icons.local_hospital, () => const EmergencyPage()],
+      ['App audio capture', 'ترجمة صوت التطبيقات (أندرويد 10+)', Icons.graphic_eq, () => const CapturePage()],
       ['Official services', 'خدمات رسمية', Icons.account_balance, () => const OfficialPage()],
       ['Chat & sales', 'دردشة نيلو', Icons.forum, () => const ModeGate()],
     ];
@@ -569,5 +570,35 @@ class _PlacesPageState extends State<PlacesPage> {
           if (osmErr.isNotEmpty) Text(osmErr),
           const Text('© OpenStreetMap contributors. Volunteer data: may be missing or outdated.', style: TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
+      );
+}
+
+class CapturePage extends StatelessWidget {
+  const CapturePage({super.key});
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('ترجمة صوت التطبيقات'), backgroundColor: kBg),
+        body: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('بتسجل الصوت اللي بيطلع من موبايلك (فيديو أو فويس) وتترجمه. أندرويد 10 أو أحدث. أندرويد بيطلب إذنك كل مرة.\nبعض التطبيقات بتمنع التسجيل والمكالمات مش بتتسجل. جرّب الأول، ولو طلع فاضي استخدم المايك أو مشاركة الملف.', style: TextStyle(height: 1.5)),
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity, height: 50,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(backgroundColor: kGreen, foregroundColor: Colors.black),
+                icon: const Icon(Icons.fiber_manual_record),
+                label: const Text('ابدأ التسجيل'),
+                onPressed: () async {
+                  try {
+                    await const MethodChannel('nilo/native').invokeMethod('capture');
+                  } catch (_) {
+                    toast(context, 'مش متاح على الجهاز ده');
+                  }
+                },
+              ),
+            ),
+          ]),
+        ),
       );
 }
