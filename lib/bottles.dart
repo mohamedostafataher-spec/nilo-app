@@ -192,7 +192,7 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
       } else { failed = true; }
     } else if (ageOk && nick.isNotEmpty) {
       final ok = await Sb.signIn();
-      if (!ok) failed = true;
+      if (!ok) failed = true; else { try { await Sb.post('profiles', {'id': Sb.uid, 'nick': nick, 'lang': lang, 'age_ok': true}, upsert: true); } catch (_) {} }
     }
     if (mounted) setState(() { ready = ageOk && nick.isNotEmpty && !failed; busy = false; });
   }
@@ -354,6 +354,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
         ]),
       )).then((_) { if (mounted) focus.requestFocus(); });
 
+  final friend = TextEditingController();
   Future<void> _send() async {
     final t = c.text.trim();
     if (t.length < 3) { toast(context, 'Write at least a few words'); return; }
@@ -362,12 +363,19 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
     if (!Passport.useInk()) { toast(context, 'Out of ink. New ink at 12:00, or solve the daily puzzle for +3.'); return; }
     setState(() => busy = true);
     try {
-      await Sb.post('bottles', {'author': Sb.uid, 'kind': kind, 'place': kind == 'place' ? place : null, 'body': t, 'lang': writeLang});
+      try { await Sb.post('profiles', {'id': Sb.uid, 'nick': nick.isEmpty ? Passport.nickname.trim() : nick, 'lang': lang, 'age_ok': true}, upsert: true); } catch (_) {}
+      final fc = friend.text.trim().toLowerCase();
+      if (fc.isNotEmpty) {
+        final ok = await Sb.rpc('send_direct', {'p_code': fc, 'p_kind': kind, 'p_place': kind == 'place' ? place : null, 'p_body': t, 'p_lang': writeLang});
+        if (ok != true) throw Exception(L('No friend with that code, or you cannot send to them.'));
+      } else {
+        await Sb.post('bottles', {'author': Sb.uid, 'kind': kind, 'place': kind == 'place' ? place : null, 'body': t, 'lang': writeLang});
+      }
       HapticFeedback.mediumImpact();
       focus.unfocus();
       if (mounted) setState(() => flying = true);
     } catch (e) {
-      if (mounted) { setState(() { busy = false; flying = false; }); toast(context, 'Could not send: $e'); }
+      if (mounted) { setState(() { busy = false; flying = false; }); toast(context, L('Could not send. Check your connection and try again.')); }
     }
   }
 
@@ -411,6 +419,10 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
                   for (final k in [['free', 'Hello • أهلا'], ['place', 'About a place • مكان'], ['phrase', 'Phrase • جملة']])
                     Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(label: Text(k[1]), selected: kind == k[0], onSelected: (_) => setState(() => kind = k[0]))),
                 ]),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 6, 18, 0),
+                child: TextField(controller: friend, maxLength: 12, autocorrect: false, decoration: InputDecoration(counterText: '', isDense: true, prefixIcon: const Icon(Icons.person_add_alt, size: 18), hintText: L('Friend\'s Nilo code (optional, sends only to them)'))),
               ),
               if (kind == 'place')
                 Padding(

@@ -66,6 +66,8 @@ String L(String s) {
 }
 
 const kPairs = <List<String>>[
+  [r'''No friend with that code, or you cannot send to them.''', r'''مفيش صديق بالكود ده، أو مينفعش تبعتله.'''],
+  [r'''Friend's Nilo code (optional, sends only to them)''', r'''كود نيلو بتاع صاحبك (اختياري، بيتبعت له هو بس)'''],
   [r'''Translate, travel, connect • ترجم، سافر، تواصل''', r'''ترجم، سافر، تواصل'''],
   [r'''Report this profile''', r'''بلّغ عن البروفايل ده'''],
   [r'''Display name • الاسم''', r'''الاسم المعروض'''],
