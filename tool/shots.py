@@ -69,8 +69,8 @@ def dump(tag):
     o = subprocess.run('adb logcat -d | grep -E "FATAL|AndroidRuntime|flutter|Exception|Error" | tail -60', shell=True, capture_output=True, text=True).stdout
     open(f'{OUT}/log_{tag}.txt','w').write(o)
 dump('first_run')
-tap_class('EditText'); adb('shell','input','text','Traveler'); hide_kb(); time.sleep(1); tap_text('I am 18'); time.sleep(1); shot('first_run_filled')
-tap_text('Get my passport'); time.sleep(8); shot('home'); time.sleep(4); shot('home2')
+adb('shell','input','tap','540','1043'); time.sleep(1); adb('shell','input','text','Traveler'); hide_kb(); time.sleep(1); adb('shell','input','tap','171','1163'); time.sleep(1); shot('first_run_filled')
+adb('shell','input','tap','540','1286'); time.sleep(8); shot('home'); time.sleep(4); shot('home2')
 tap_text('رسايل'); time.sleep(4); shot('tab_messages')
 tap_text('حكاياتي'); time.sleep(4); shot('tab_story')
 tap_text('قصص'); time.sleep(4); shot('tab_stories')
