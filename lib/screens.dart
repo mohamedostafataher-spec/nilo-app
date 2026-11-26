@@ -11,6 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'data.dart';
 import 'main.dart';
 import 'extras.dart';
+import 'bottles.dart';
 import 'net.dart';
 import 'phrasebook.dart';
 import 'talk.dart';
@@ -123,6 +124,7 @@ class TouristHome extends StatelessWidget {
     final items = <List<Object>>[
       ['Translate', 'ترجمة 52 لغة (نص وفويس)', Icons.translate, () => const TranslatePage()],
       ['Live talk', 'مكالمة مترجمة بين موبايلين', Icons.headset_mic, () => const TalkPage()],
+      ['Nile Bottles', 'رسالة في زجاجة مع ناس من العالم', Icons.water_drop, () => const BottlesPage()],
       ['Saved', 'محفوظاتي (أوفلاين)', Icons.star, () => const SavedPage()],
       ['Face to face', 'وجهاً لوجه', Icons.people, () => const FacePage()],
       ['Camera', 'منيو ولافتات', Icons.photo_camera, () => const CameraPage()],
