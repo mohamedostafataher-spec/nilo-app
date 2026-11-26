@@ -49,6 +49,10 @@ adb('shell', 'pm', 'grant', 'eg.nilo.nilo_app', 'android.permission.RECORD_AUDIO
 adb('shell', 'monkey', '-p', 'eg.nilo.nilo_app', '-c', 'android.intent.category.LAUNCHER', '1')
 time.sleep(4); shot('splash')
 time.sleep(5)
+shot('auth_signin')
+tap_text('Create an account'); time.sleep(1); shot('auth_signup'); tap_text('Back to sign in'); time.sleep(1)
+tap_text('Forgot password'); time.sleep(1); shot('auth_forgot'); tap_text('Back to sign in'); time.sleep(1)
+tap_text('Continue as guest'); time.sleep(3)
 time.sleep(8)
 for _ in range(3):
     if tap_text('Skip'): break
