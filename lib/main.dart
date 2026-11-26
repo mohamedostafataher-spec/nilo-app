@@ -88,6 +88,11 @@ class _ModeGateState extends State<ModeGate> {
                 onTap: () => pick(m[0]),
               ),
             ),
+          const Spacer(),
+          const Center(child: Text('🇪🇬 تطبيق مصري خالص', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
+          const Center(child: Text('صُنع بواسطة Mohamed Mostafa', style: TextStyle(fontSize: 13, color: Colors.white60))),
+          const SizedBox(height: 2),
+          const Center(child: Text('بيشتغل بنموذج Gemini المجاني. الترجمة الآلية ممكن تغلط.', style: TextStyle(fontSize: 11, color: Colors.white38))),
         ]),
       ),
     );
