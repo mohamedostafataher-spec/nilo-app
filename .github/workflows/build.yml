@@ -62,4 +62,4 @@ jobs:
           segno.make(site, error='m').save('pub/qr.svg', scale=8, border=2)
           PY
           cat pub/version.json
-          cd pub && npx --yes vercel@latest deploy --prod --yes --name nilo-dl --token "$VERCEL_TOKEN"
+          rm -rf /tmp/pubx && cp -r pub /tmp/pubx && cd /tmp/pubx && npx --yes vercel@latest deploy --prod --yes --name nilo-dl --token "$VERCEL_TOKEN"
