@@ -121,6 +121,15 @@ class TranslateActivity : Activity() {
         val ac = Button(this); ac.text = "فعّل الزر العايم"
         ac.setOnClickListener { startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
         row.addView(cp); row.addView(op); row.addView(cl)
+        if (audioB64 != null || src.startsWith("مفيش صوت")) {
+            val rr = Button(this); rr.text = "🔁 سجّل تاني"
+            rr.setOnClickListener { startActivity(Intent(this, CaptureActivity::class.java)); finish() }
+            val mic = Button(this); mic.text = "🎤 بالمايك"
+            mic.setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://nilo-eg.vercel.app/translate.html"))); finish() }
+            val row2 = LinearLayout(this); row2.gravity = Gravity.CENTER
+            row2.addView(rr); row2.addView(mic)
+            root.addView(row2)
+        }
         root.addView(ac)
         root.addView(row)
         setContentView(root)
