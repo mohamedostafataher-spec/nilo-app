@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:math' as math;
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -93,8 +95,43 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
   late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat();
   int _real = 0;
   bool _checked = false;
+  int _city = 0;
+  int? _isDay;
+  String _wx = '';
+  static const _cities = [
+    ['القاهرة', 'Cairo', '30.0444', '31.2357'],
+    ['الجيزة', 'Giza', '29.9870', '31.2118'],
+    ['الأقصر', 'Luxor', '25.6872', '32.6396'],
+    ['أسوان', 'Aswan', '24.0889', '32.8998'],
+    ['الإسكندرية', 'Alexandria', '31.2001', '29.9187'],
+  ];
+  static String _icon(int c, bool day) {
+    if (c == 0) return day ? '☀️' : '🌙';
+    if (c <= 2) return day ? '🌤️' : '☁️';
+    if (c == 3 || c == 45 || c == 48) return '☁️';
+    if (c >= 95) return '⛈️';
+    if (c >= 51 && c <= 82) return '🌧️';
+    return '🌡️';
+  }
+  /// Real weather from Open-Meteo (free, no key). Nothing is shown if it can't be fetched.
+  Future<void> _weather() async {
+    final c = _cities[_city];
+    try {
+      final r = await http.get(Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=${c[2]}&longitude=${c[3]}&current=temperature_2m,weather_code,is_day&timezone=Africa%2FCairo')).timeout(const Duration(seconds: 10));
+      final cur = (jsonDecode(r.body) as Map)['current'] as Map;
+      final day = (cur['is_day'] as num).toInt();
+      final t = DateTime.now();
+      final hm = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+      if (mounted) setState(() {
+        _isDay = day;
+        _wx = '${c[0]} • ${c[1]}  ${_icon((cur['weather_code'] as num).toInt(), day == 1)} ${(cur['temperature_2m'] as num).round()}°  $hm';
+      });
+    } catch (_) {
+      if (mounted) setState(() => _wx = '');
+    }
+  }
   @override
-  void initState() { super.initState(); _count(); }
+  void initState() { super.initState(); _count(); _weather(); }
   @override
   void dispose() { _c.dispose(); super.dispose(); }
 
@@ -128,7 +165,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final h = DateTime.now().hour;
-    final night = h >= 19 || h < 5;
+    final night = _isDay == null ? (h >= 19 || h < 5) : _isDay == 0;
         final flagFor = Passport.country.isEmpty ? '🌍' : (kWorld.where((w) => w[0] == Passport.country).map((w) => w[3] as String).firstOrNull ?? '🌍');
     return Stack(children: [
       Positioned.fill(
@@ -193,6 +230,14 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
           ]),
         ),
       ),
+      if (_wx.isNotEmpty)
+        Positioned(
+          left: 16, top: MediaQuery.of(context).padding.top + 58,
+          child: GestureDetector(
+            onTap: () { setState(() => _city = (_city + 1) % _cities.length); _weather(); },
+            child: _chip(_wx),
+          ),
+        ),
       Positioned(
         left: 0, right: 0, bottom: 26,
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
