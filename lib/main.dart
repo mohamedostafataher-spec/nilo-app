@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'data.dart';
+import 'screens.dart';
 
 void main() => runApp(const NiloApp());
 
@@ -28,62 +30,11 @@ class NiloApp extends StatelessWidget {
       );
 }
 
-const kSite = 'https://nilo-eg.vercel.app';
 const kModes = [
   ['chat', 'chat', 'دردشة نيلو', 'اسأل واتكلم مع نيلو'],
   ['sales', 'sales', 'مبيعات', 'غرفة المبيعات والعملاء'],
   ['tr', 'tr', 'ترجمة', 'ترجمة نص وفويس ومحادثة'],
 ];
-
-class TouristHome extends StatelessWidget {
-  const TouristHome({super.key});
-  static const items = [
-    ['Translate', 'ترجمة 52 لغة', '/translate.html', Icons.translate],
-    ['Face to face', 'وجهاً لوجه', '/face.html', Icons.people],
-    ['Camera', 'كاميرا: منيو ولافتات', '/camera.html', Icons.photo_camera],
-    ['Phrasebook', 'عبارات المواقف', '/phrases.html', Icons.chat_bubble_outline],
-    ['Places & weather', 'أماكن وطقس', '/places.html', Icons.place],
-    ['Stay Safe', 'أمان ونصب', '/safe.html', Icons.shield],
-    ['Emergency & medical card', 'طوارئ وكارت طبي', '/tourist.html', Icons.local_hospital],
-    ['Install guide', 'تثبيت وشير', '/install.html', Icons.ios_share],
-  ];
-  Future<void> _open(String path) async {
-    await launchUrl(Uri.parse(kSite + path), mode: LaunchMode.externalApplication);
-  }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Nilo • نيلو'), backgroundColor: kBg),
-        body: ListView(padding: const EdgeInsets.all(14), children: [
-          const Text('Your pocket companion in Egypt\nرفيقك في مصر', style: TextStyle(fontSize: 18)),
-          const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 1.25,
-            children: [
-              for (final i in items)
-                InkWell(
-                  onTap: () => _open(i[2] as String),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(border: Border.all(color: kGreen.withOpacity(0.5)), borderRadius: BorderRadius.circular(8)),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(i[3] as IconData, color: kGreen),
-                      const SizedBox(height: 6),
-                      Text(i[0] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(i[1] as String, style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                    ]),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ModeGate())), child: const Text('دردشة نيلو والمبيعات • Chat and sales')),
-          const SizedBox(height: 14),
-          const Text('الصفحات بتتحدث من الموقع من غير تحديث التطبيق، وبتفتح في المتصفح. الترجمة آلية وممكن تغلط.\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa', style: TextStyle(fontSize: 12, color: Colors.white54)),
-        ]),
-      );
-}
 
 class ModeGate extends StatefulWidget {
   const ModeGate({super.key});
