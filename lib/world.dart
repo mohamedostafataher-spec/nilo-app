@@ -360,3 +360,94 @@ class _TripPainter extends CustomPainter {
   @override
   bool shouldRepaint(_TripPainter o) => o.t != t;
 }
+
+/// Animated background: deep gradient, moving Nile waves and drifting gold dust. Pure Flutter, no assets.
+class NileBackground extends StatefulWidget {
+  const NileBackground({super.key});
+  @override
+  State<NileBackground> createState() => _NileBackgroundState();
+}
+
+class _NileBackgroundState extends State<NileBackground> with SingleTickerProviderStateMixin {
+  late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 12))..repeat();
+  @override
+  void dispose() { _c.dispose(); super.dispose(); }
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+        child: RepaintBoundary(child: AnimatedBuilder(animation: _c, builder: (_, __) => CustomPaint(size: Size.infinite, painter: _BgPainter(_c.value)))),
+      );
+}
+
+class _BgPainter extends CustomPainter {
+  final double t;
+  _BgPainter(this.t);
+  @override
+  void paint(Canvas canvas, Size s) {
+    final rect = Offset.zero & s;
+    canvas.drawRect(rect, Paint()..shader = const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF0B1F33), Color(0xFF0E2A45), Color(0xFF123556)]).createShader(rect));
+    final tau = 2 * math.pi;
+    for (var i = 0; i < 3; i++) {
+      final base = s.height * (0.80 + i * 0.07);
+      final amp = 14.0 + i * 5;
+      final path = Path()..moveTo(0, s.height);
+      for (var x = 0.0; x <= s.width; x += 8) {
+        path.lineTo(x, base + math.sin((x / s.width * 2 + t * (i.isEven ? 1 : -1)) * tau) * amp);
+      }
+      path..lineTo(s.width, s.height)..close();
+      canvas.drawPath(path, Paint()..color = Color.fromRGBO(30 + i * 15, 90 + i * 20, 130 + i * 15, 0.22));
+    }
+    final dust = Paint()..color = const Color(0x33D9A441);
+    for (var i = 0; i < 24; i++) {
+      final px = (i * 97 % 100) / 100 * s.width;
+      final py = ((i * 53 % 100) / 100 + t * (0.15 + (i % 5) * 0.03)) % 1.0 * s.height * 0.8;
+      canvas.drawCircle(Offset(px + math.sin(t * tau + i) * 10, py), 1.2 + (i % 3) * 0.6, dust);
+    }
+  }
+  @override
+  bool shouldRepaint(_BgPainter o) => o.t != t;
+}
+
+/// Home tile with gradient, glow icon, press scale and haptic.
+class NiloTile extends StatefulWidget {
+  final IconData icon;
+  final String title, sub;
+  final VoidCallback onTap;
+  const NiloTile({super.key, required this.icon, required this.title, required this.sub, required this.onTap});
+  @override
+  State<NiloTile> createState() => _NiloTileState();
+}
+
+class _NiloTileState extends State<NiloTile> {
+  bool down = false;
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTapDown: (_) => setState(() => down = true),
+        onTapCancel: () => setState(() => down = false),
+        onTapUp: (_) => setState(() => down = false),
+        onTap: () { HapticFeedback.selectionClick(); widget.onTap(); },
+        child: AnimatedScale(
+          scale: down ? 0.95 : 1,
+          duration: const Duration(milliseconds: 120),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF173A5E), Color(0xFF0F2A47)]),
+              border: Border.all(color: kGreen.withOpacity(0.35)),
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 10, offset: const Offset(0, 4))],
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: kGreen.withOpacity(0.16), boxShadow: [BoxShadow(color: kGreen.withOpacity(0.25), blurRadius: 12)]),
+                child: Icon(widget.icon, color: kGreen, size: 22),
+              ),
+              const SizedBox(height: 8),
+              Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              const SizedBox(height: 2),
+              Text(widget.sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, color: Colors.white70, height: 1.25)),
+            ]),
+          ),
+        ),
+      );
+}

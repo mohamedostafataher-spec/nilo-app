@@ -139,41 +139,39 @@ class TouristHome extends StatelessWidget {
       ['Chat & sales', 'دردشة نيلو', Icons.forum, () => const ModeGate()],
     ];
     return Scaffold(
-      appBar: AppBar(title: const Text('Nilo • نيلو'), backgroundColor: kBg),
-      body: ListView(padding: const EdgeInsets.all(14), children: [
-        const WorldCard(),
-        const LiveCard(),
-        const Text('Your pocket companion\nرفيقك في السفر', style: TextStyle(fontSize: 18)),
-        const SizedBox(height: 12),
-        GridView.count(
-          crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 1.25,
-          children: [
-            for (var n = 0; n < items.length; n++)
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: Duration(milliseconds: 350 + n * 70),
-                curve: Curves.easeOutCubic,
-                builder: (_, v, child) => Opacity(opacity: v, child: Transform.translate(offset: Offset(0, 24 * (1 - v)), child: child)),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
-                  onTap: () => Navigator.of(context).push(niloRoute((items[n][3] as Widget Function())())),
-                  child: Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(color: const Color(0xFF12304D), border: Border.all(color: kGreen.withOpacity(0.5)), borderRadius: BorderRadius.circular(14)),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                      Icon(items[n][2] as IconData, color: kGreen),
-                      const SizedBox(height: 6),
-                      Text(items[n][0] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(items[n][1] as String, style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                    ]),
+      backgroundColor: kBg,
+      appBar: AppBar(title: const Text('Nilo • نيلو', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5)), backgroundColor: Colors.transparent, elevation: 0),
+      extendBodyBehindAppBar: false,
+      body: Stack(children: [
+        const Positioned.fill(child: NileBackground()),
+        ListView(padding: const EdgeInsets.all(14), children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1), duration: const Duration(milliseconds: 700), curve: Curves.easeOutCubic,
+            builder: (_, v, child) => Opacity(opacity: v, child: Transform.translate(offset: Offset(0, 18 * (1 - v)), child: child)),
+            child: const WorldCard(),
+          ),
+          const LiveCard(),
+          const Padding(padding: EdgeInsets.only(bottom: 10, top: 4), child: Text('Explore • استكشف', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: kGreen))),
+          GridView.count(
+            crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.15,
+            children: [
+              for (var n = 0; n < items.length; n++)
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 450 + n * 80),
+                  curve: Curves.easeOutBack,
+                  builder: (_, v, child) => Opacity(opacity: v.clamp(0.0, 1.0), child: Transform.scale(scale: 0.85 + 0.15 * v, child: child)),
+                  child: NiloTile(
+                    icon: items[n][2] as IconData, title: items[n][0] as String, sub: items[n][1] as String,
+                    onTap: () => Navigator.of(context).push(niloRoute((items[n][3] as Widget Function())())),
                   ),
                 ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const Text('الترجمة الآلية ممكن تغلط، راجع أي حاجة مهمة. مجاني، من غير حساب ولا إعلانات.\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa', style: TextStyle(fontSize: 12, color: Colors.white54)),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Text('الترجمة الآلية ممكن تغلط، راجع أي حاجة مهمة. مجاني، من غير حساب ولا إعلانات.\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa', style: TextStyle(fontSize: 12, color: Colors.white54)),
+        ]),
       ]),
     );
   }
