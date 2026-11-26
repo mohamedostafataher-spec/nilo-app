@@ -24,12 +24,12 @@ jobs:
           echo "$JKS" | base64 -d > android/app/nilo-release.jks
           printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=nilo\nstoreFile=nilo-release.jks\n' "$PW" "$PW" > android/app/key.properties
       - run: flutter pub get
-      - run: flutter build apk --release --no-tree-shake-icons --target-platform android-arm,android-arm64
+      - run: flutter build apk --release --no-tree-shake-icons --target-platform android-arm,android-arm64 --split-debug-info=build/dbg1 --obfuscate
       - uses: actions/upload-artifact@v4
         with:
           name: nilo-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-      - run: flutter build apk --release --no-tree-shake-icons --split-per-abi --target-platform android-arm64
+      - run: flutter build apk --release --no-tree-shake-icons --split-per-abi --target-platform android-arm64 --split-debug-info=build/dbg2 --obfuscate
       - uses: actions/upload-artifact@v4
         with:
           name: nilo-apk-arm64
