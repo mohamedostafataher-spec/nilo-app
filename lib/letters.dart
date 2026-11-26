@@ -120,7 +120,7 @@ class _LettersPageState extends State<LettersPage> {
                 Row(children: [
                   GestureDetector(
                     onTap: () async {
-                      final code = await showModalBottomSheet<String>(context: context, backgroundColor: const Color(0xFF0E2A45), isScrollControlled: true, builder: (_) => SafeArea(child: SizedBox(height: MediaQuery.of(context).size.height * 0.7, child: ListView(children: [for (final w in kWorld) ListTile(leading: Text(w[3] as String, style: const TextStyle(fontSize: 26)), title: Text('${w[1]} • ${w[2]}'), onTap: () => Navigator.pop(context, w[0] as String))]))));
+                      final code = await showModalBottomSheet<String>(context: context, backgroundColor: const Color(0xFF0E2A45), isScrollControlled: true, builder: (_) => SafeArea(child: SizedBox(height: MediaQuery.of(context).size.height * 0.7, child: ListView(children: [for (final w in kWorld) ListTile(leading: Text(w[3] as String, style: const TextStyle(fontSize: 26)), title: Text(L('${w[1]} • ${w[2]}')), onTap: () => Navigator.pop(context, w[0] as String))]))));
                       if (code != null) setState(() => cc = code);
                     },
                     child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)), child: Text('${countryOf(cc)[3]} $cc ▾')),

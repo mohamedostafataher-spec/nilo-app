@@ -63,7 +63,7 @@ class _StorePageState extends State<StorePage> {
             decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(14)),
             child: ListTile(
               leading: CircleAvatar(backgroundColor: it.color, radius: 16),
-              title: Text('${it.name} • ${it.ar}'),
+              title: Text(L('${it.name} • ${it.ar}')),
               subtitle: Text(it.slot == 'seal' ? 'Wax seal on your papyrus' : 'Felucca sail'),
               trailing: FilledButton(
                 onPressed: () => _tap(it),

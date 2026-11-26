@@ -76,7 +76,7 @@ class _CirclesPageState extends State<CirclesPage> {
   Future<void> _pick() async {
     final code = await showModalBottomSheet<String>(context: context, backgroundColor: const Color(0xFF0E2A45), isScrollControlled: true, builder: (_) => SafeArea(child: SizedBox(height: MediaQuery.of(context).size.height * 0.7, child: ListView(children: [
       Padding(padding: EdgeInsets.all(16), child: Text(L('Choose a destination • اختار وجهة'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
-      for (final w in kWorld) ListTile(leading: Text(w[3] as String, style: const TextStyle(fontSize: 26)), title: Text('${w[1]} • ${w[2]}'), onTap: () => Navigator.pop(context, w[0] as String)),
+      for (final w in kWorld) ListTile(leading: Text(w[3] as String, style: const TextStyle(fontSize: 26)), title: Text(L('${w[1]} • ${w[2]}')), onTap: () => Navigator.pop(context, w[0] as String)),
     ]))));
     if (code == null) return;
     final p = await SharedPreferences.getInstance();
