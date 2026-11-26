@@ -11,9 +11,11 @@ import 'package:url_launcher/url_launcher.dart';
 import 'data.dart';
 import 'extras.dart';
 import 'screens.dart';
+import 'world.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  Passport.init().then((_) => Passport.touch());
   FlutterError.onError = (d) => FlutterError.presentError(d);
   runZonedGuarded(() => runApp(const NiloApp()), (e, s) => debugPrint('nilo error: $e'));
 }

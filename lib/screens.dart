@@ -12,6 +12,7 @@ import 'data.dart';
 import 'main.dart';
 import 'extras.dart';
 import 'bottles.dart';
+import 'world.dart';
 import 'net.dart';
 import 'phrasebook.dart';
 import 'talk.dart';
@@ -124,7 +125,7 @@ class TouristHome extends StatelessWidget {
     final items = <List<Object>>[
       ['Translate', 'ترجمة 52 لغة (نص وفويس)', Icons.translate, () => const TranslatePage()],
       ['Live talk', 'مكالمة مترجمة بين موبايلين', Icons.headset_mic, () => const TalkPage()],
-      ['Nile Bottles', 'رسالة في زجاجة مع ناس من العالم', Icons.water_drop, () => const BottlesPage()],
+      ['Papyrus', 'بردية تسافر لبلاد العالم', Icons.mail, () => const BottlesPage()],
       ['Saved', 'محفوظاتي (أوفلاين)', Icons.star, () => const SavedPage()],
       ['Face to face', 'وجهاً لوجه', Icons.people, () => const FacePage()],
       ['Camera', 'منيو ولافتات', Icons.photo_camera, () => const CameraPage()],
@@ -140,7 +141,9 @@ class TouristHome extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Nilo • نيلو'), backgroundColor: kBg),
       body: ListView(padding: const EdgeInsets.all(14), children: [
-        const Text('Your pocket companion in Egypt\nرفيقك في مصر', style: TextStyle(fontSize: 18)),
+        const WorldCard(),
+        const LiveCard(),
+        const Text('Your pocket companion\nرفيقك في السفر', style: TextStyle(fontSize: 18)),
         const SizedBox(height: 12),
         GridView.count(
           crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
@@ -704,6 +707,31 @@ class FloatPage extends StatelessWidget {
           SizedBox(height: 48, child: ElevatedButton(onPressed: () => _call(context, 'appinfo'), child: const Text('افتح معلومات التطبيق'))),
           const SizedBox(height: 10),
           SizedBox(height: 48, child: ElevatedButton(onPressed: () => _call(context, 'a11y'), child: const Text('افتح إعدادات إمكانية الوصول'))),
+        ]),
+      );
+}
+
+
+/// Prominent card: live translation bubble over other apps.
+class LiveCard extends StatelessWidget {
+  const LiveCard({super.key});
+  Future<void> _call(BuildContext c, String m) async {
+    try { await const MethodChannel('nilo/native').invokeMethod(m); } catch (e) { if (c.mounted) toast(c, 'Could not open: $e'); }
+  }
+  @override
+  Widget build(BuildContext context) => Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(color: const Color(0xFF12304D), border: Border.all(color: kGreen), borderRadius: BorderRadius.circular(16)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Row(children: [Icon(Icons.bubble_chart, color: kGreen), SizedBox(width: 8), Text('ترجمة فورية • Instant translation', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))]),
+          const SizedBox(height: 6),
+          const Text('A floating bubble that translates what is on your screen, over any app. Turn it on once in Accessibility. If Android says the setting is restricted, use the steps page first.', style: TextStyle(color: Colors.white70, height: 1.4)),
+          const SizedBox(height: 10),
+          Wrap(spacing: 8, children: [
+            FilledButton(onPressed: () => _call(context, 'a11y'), child: const Text('فعّل الآن • Turn on')),
+            OutlinedButton(onPressed: () => Navigator.of(context).push(niloRoute(const FloatPage())), child: const Text('الخطوات • Steps')),
+          ]),
         ]),
       );
 }

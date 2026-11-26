@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data.dart';
 import 'main.dart';
+import 'world.dart';
 import 'net.dart';
 import 'screens.dart';
 
@@ -69,7 +70,7 @@ class Sb {
 
 String _bad(String s) {
   final t = s.toLowerCase();
-  if (RegExp(r'(https?://|www\.|\.com|\.net|\.org|@|t\.me|wa\.me)').hasMatch(t)) return 'No links or @ handles in bottles.';
+  if (RegExp(r'(https?://|www\.|\.com|\.net|\.org|@|t\.me|wa\.me)').hasMatch(t)) return 'No links or @ handles in papyri.';
   if (RegExp(r'[0-9٠-٩]{6,}').hasMatch(s)) return 'No phone numbers.';
   return '';
 }
@@ -136,7 +137,7 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Nile Bottles • زجاجة النيل'), backgroundColor: kBg),
+      appBar: AppBar(title: const Text('Papyrus • بردية'), backgroundColor: kBg),
       body: busy
           ? const Center(child: CircularProgressIndicator())
           : ready ? _home() : _gate(),
@@ -155,7 +156,7 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
     bool conf = false;
     return StatefulBuilder(builder: (c, set) => ListView(padding: const EdgeInsets.all(16), children: [
       _river(),
-      const Text('Send a message in a bottle down the Nile. Someone anywhere in the world finds it.', style: TextStyle(fontSize: 17, height: 1.4)),
+      const Text('Write a papyrus and watch it travel the world map. Someone anywhere finds it, and it turns into a symbol of their country.', style: TextStyle(fontSize: 17, height: 1.4)),
       const SizedBox(height: 10),
       const Text('Rules, for everyone:\n• 18 or older only. This is a self-declaration: Nilo cannot check your age.\n• Text only. No photos, links, phone numbers or social handles.\n• Never send money or share bank or ID details.\n• If you meet anyone, meet in a public place and tell a friend.\n• Report and block anyone who makes you uncomfortable.\n• Machine translation can be wrong.', style: TextStyle(height: 1.5, color: Colors.white70)),
       const SizedBox(height: 12),
@@ -163,7 +164,7 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
       DropdownButton<String>(
         value: lang,
         isExpanded: true,
-        items: [for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text('I read bottles in: ${kNames[i]}'))],
+        items: [for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text('I read papyri in: ${kNames[i]}'))],
         onChanged: (v) => set(() => lang = v ?? 'en'),
       ),
       CheckboxListTile(value: conf, onChanged: (v) => set(() => conf = v ?? false), title: const Text('I am 18 or older and I accept the rules')),
@@ -178,9 +179,9 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
         _river(),
         Text('Hi $nick', style: const TextStyle(fontSize: 18)),
         const SizedBox(height: 8),
-        _tile(Icons.send, 'Throw a bottle', 'Ask about a place, teach a phrase, or say hello', () => Navigator.push(context, MaterialPageRoute(builder: (_) => ThrowPage(lang: lang)))),
-        _tile(Icons.search, 'Catch a bottle', 'Pick one floating bottle from someone else', () => Navigator.push(context, MaterialPageRoute(builder: (_) => CatchPage(lang: lang)))),
-        _tile(Icons.inbox, 'My bottles', 'Replies and conversations', () => Navigator.push(context, MaterialPageRoute(builder: (_) => InboxPage(lang: lang)))),
+        _tile(Icons.send, 'Send a papyrus', 'Ask about a place, teach a phrase, or say hello', () => Navigator.push(context, MaterialPageRoute(builder: (_) => ThrowPage(lang: lang)))),
+        _tile(Icons.search, 'Catch a papyrus', 'Pick one papyrus from someone else', () => Navigator.push(context, MaterialPageRoute(builder: (_) => CatchPage(lang: lang)))),
+        _tile(Icons.inbox, 'My papyri', 'Replies and conversations', () => Navigator.push(context, MaterialPageRoute(builder: (_) => InboxPage(lang: lang)))),
         const SizedBox(height: 10),
         const Text('18+ self-declared. Text only. No links or numbers. Report and block in every conversation.', style: TextStyle(fontSize: 11, color: Colors.white38)),
       ]);
@@ -251,10 +252,11 @@ class _ThrowPageState extends State<ThrowPage> {
     if (t.length < 3) { toast(context, 'Write at least a few words'); return; }
     final b = _bad(t);
     if (b.isNotEmpty) { toast(context, b); return; }
+    if (!Passport.useInk()) { toast(context, 'Out of ink. New ink at 12:00, or solve the daily puzzle for +3.'); return; }
     setState(() => busy = true);
     try {
       await Sb.post('bottles', {'author': Sb.uid, 'kind': kind, 'place': kind == 'place' ? place : null, 'body': t, 'lang': writeLang});
-      if (mounted) { toast(context, 'Your bottle is floating down the Nile'); Navigator.pop(context); }
+      if (mounted) { Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PapyrusTripPage())); }
     } catch (e) {
       if (mounted) { setState(() => busy = false); toast(context, 'Could not send: $e'); }
     }
@@ -268,7 +270,7 @@ class _ThrowPageState extends State<ThrowPage> {
       'free': 'Say hello and tell a little about your day. No contact details.',
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Throw a bottle'), backgroundColor: kBg),
+      appBar: AppBar(title: const Text('Send a papyrus'), backgroundColor: kBg),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Wrap(spacing: 8, children: [
           for (final k in [['place', 'Place question'], ['phrase', 'Phrase to learn'], ['free', 'Hello']])
@@ -290,7 +292,7 @@ class _ThrowPageState extends State<ThrowPage> {
         TextField(controller: c, maxLines: 5, maxLength: 300, decoration: InputDecoration(hintText: hints[kind], border: const OutlineInputBorder())),
         const Text('Text only. No links, handles or phone numbers. Be kind. 18+ only.', style: TextStyle(fontSize: 11, color: Colors.white54)),
         const SizedBox(height: 8),
-        FilledButton.icon(onPressed: busy ? null : _send, icon: const Icon(Icons.send), label: const Text('Throw into the Nile')),
+        FilledButton.icon(onPressed: busy ? null : _send, icon: const Icon(Icons.send), label: const Text('Send into the world')),
       ]),
     );
   }
@@ -309,6 +311,7 @@ class _CatchPageState extends State<CatchPage> {
   String err = '';
 
   Future<void> _catch() async {
+    if (Passport.catchesLeft <= 0) { setState(() => err = 'You caught your 10 papyri for now. A new batch arrives at 12:00.'); return; }
     setState(() { busy = true; err = ''; });
     try {
       final r = await http.post(Uri.parse('$_sbUrl/rest/v1/rpc/catch_bottle'), headers: {'apikey': _sbKey, 'Content-Type': 'application/json', 'Authorization': 'Bearer ${Sb._token}'}, body: '{}').timeout(const Duration(seconds: 20));
@@ -319,6 +322,7 @@ class _CatchPageState extends State<CatchPage> {
         setState(() { busy = false; done = true; });
       } else {
         setState(() => busy = false);
+        Passport.useCatch();
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ThreadPage(bottle: Map<String, dynamic>.from(j as Map), lang: widget.lang)));
       }
     } catch (e) {
@@ -328,16 +332,16 @@ class _CatchPageState extends State<CatchPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Catch a bottle'), backgroundColor: kBg),
+        appBar: AppBar(title: const Text('Catch a papyrus'), backgroundColor: kBg),
         body: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             const Icon(Icons.water, size: 72, color: kGreen),
             const SizedBox(height: 12),
-            Text(done ? 'No bottles are floating right now. Throw one, and check back later.' : 'A random bottle from someone else will wash up. You can reply, report or block.', textAlign: TextAlign.center),
+            Text(done ? 'No papyri are travelling right now. Send one, and check back later.' : 'A random papyrus from someone else will arrive. You can reply, report or block.', textAlign: TextAlign.center),
             if (err.isNotEmpty) Text(err, style: const TextStyle(color: Colors.orangeAccent)),
             const SizedBox(height: 16),
-            FilledButton(onPressed: busy ? null : _catch, child: busy ? const CircularProgressIndicator() : const Text('Look for a bottle')),
+            FilledButton(onPressed: busy ? null : _catch, child: busy ? const CircularProgressIndicator() : Text('Look for a papyrus (${Passport.catchesLeft} left today)')),
           ]),
         ),
       );
@@ -373,13 +377,13 @@ class _InboxPageState extends State<InboxPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('My bottles'), backgroundColor: kBg),
+        appBar: AppBar(title: const Text('My papyri'), backgroundColor: kBg),
         body: busy
             ? const Center(child: CircularProgressIndicator())
             : err.isNotEmpty
                 ? Center(child: Text(err))
                 : l.isEmpty
-                    ? const Center(child: Text('Nothing yet. Throw or catch a bottle.'))
+                    ? const Center(child: Text('Nothing yet. Send or catch a papyrus.'))
                     : ListView(children: [
                         for (final b in l)
                           ListTile(
@@ -432,6 +436,7 @@ class _ThreadPageState extends State<ThreadPage> {
     if (b.isNotEmpty) { toast(context, b); return; }
     try {
       await Sb.post('replies', {'bottle_id': bid, 'author': Sb.uid, 'body': t});
+      Passport.addInk(1);
       c.clear();
       await _load();
     } catch (e) {
@@ -489,7 +494,7 @@ class _ThreadPageState extends State<ThreadPage> {
     final b = widget.bottle;
     final closed = b['status'] == 'closed';
     return Scaffold(
-      appBar: AppBar(title: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Bottle'), backgroundColor: kBg, actions: [
+      appBar: AppBar(title: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus'), backgroundColor: kBg, actions: [
         IconButton(icon: const Icon(Icons.flag_outlined), tooltip: 'Report', onPressed: _report),
         IconButton(icon: const Icon(Icons.block), tooltip: 'Block', onPressed: _block),
       ]),
