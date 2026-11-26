@@ -8,6 +8,7 @@ import 'world.dart';
 import 'net.dart';
 import 'bottles.dart';
 import 'screens.dart';
+import 'stories.dart';
 
 /// Main shell: one living Nile scene + simple bottom nav.
 class TouristHome extends StatefulWidget {
@@ -24,7 +25,7 @@ class _TouristHomeState extends State<TouristHome> {
       const NileScene(),
       const MessagesTab(),
       const StoryPage(),
-      const ToolsPage(),
+      const StoriesTab(),
       const PassportPage(),
     ];
     return Scaffold(
@@ -41,7 +42,7 @@ class _TouristHomeState extends State<TouristHome> {
                 [Icons.sailing, 'النيل'],
                 [Icons.chat_bubble_outline, 'رسايل'],
                 [Icons.menu_book_outlined, 'حكاية'],
-                [Icons.public, 'العالم'],
+                [Icons.auto_awesome_motion, 'قصص'],
                 [Icons.badge_outlined, 'جواز'],
               ].asMap().entries)
                 Expanded(
@@ -146,6 +147,8 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
             const SizedBox(width: 6),
             const Text('نيلو', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: kGreen)),
             const Spacer(),
+            GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const ToolsPage())), child: _chip('🧰 Tools')),
+            const SizedBox(width: 8),
             _chip('📜  ${Passport.ink}/10'),
             const SizedBox(width: 8),
             _chip(flagFor),

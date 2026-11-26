@@ -57,6 +57,11 @@ class Sb {
     return jsonDecode(utf8.decode(r.bodyBytes));
   }
 
+  static Future<void> delete(String path) async {
+    final r = await http.delete(Uri.parse('$_sbUrl/rest/v1/$path'), headers: _h()).timeout(const Duration(seconds: 20));
+    if (r.statusCode >= 300) throw Exception('${r.statusCode}');
+  }
+
   static Future<dynamic> post(String path, Map<String, dynamic> body, {bool upsert = false}) async {
     final h = _h();
     if (upsert) h['Prefer'] = 'resolution=merge-duplicates,return=representation';

@@ -320,7 +320,7 @@ class PassportPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = Passport.stamps;
     return Scaffold(
-      appBar: AppBar(title: const Text('Nilo Passport • الباسبور'), backgroundColor: kBg),
+      appBar: AppBar(title: const Text('Nilo Passport • الباسبور'), backgroundColor: kBg, actions: [TextButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolsPage())), icon: const Icon(Icons.apps, size: 18), label: const Text('Tools'))]),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Container(
           padding: const EdgeInsets.all(18),
