@@ -45,16 +45,17 @@ adb('shell', 'pm', 'grant', 'eg.nilo.nilo_app', 'android.permission.RECORD_AUDIO
 adb('shell', 'monkey', '-p', 'eg.nilo.nilo_app', '-c', 'android.intent.category.LAUNCHER', '1')
 time.sleep(4); shot('splash')
 time.sleep(5)
-for i in range(6):
-    if tap_text('Next') or tap_text('Start'):
-        time.sleep(1.2)
-    if i == 0: shot('onboarding')
+tap_text('Skip'); time.sleep(4)
+for _ in range(3):
+    if any('Translate' in t or 'Phrasebook' in t for t,_,_ in nodes()): break
+    tap_text('Start') or tap_text('Skip'); time.sleep(3)
 time.sleep(2); shot('home')
+open(OUT+'/labels.txt','w').write('\n'.join(t for t,_,_ in nodes()))
 adb('shell', 'input', 'swipe', '540', '1600', '540', '600'); time.sleep(1); shot('home_scrolled')
 adb('shell', 'input', 'swipe', '540', '600', '540', '1600'); time.sleep(1)
 for tile in ['Translate', 'Phrasebook', 'Stay Safe', 'Places', 'Emergency', 'Official services', 'Floating button', 'Face to face', 'Saved']:
     if tap_text(tile):
-        time.sleep(4); shot(tile.replace(' ', '_')); back()
+        time.sleep(4); shot(tile.replace(' ', '_')); back(); time.sleep(1)
 # Nile Bottles
 if tap_text('Nile Bottles'):
     time.sleep(3); shot('bottles_gate')
