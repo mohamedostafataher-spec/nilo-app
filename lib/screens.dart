@@ -122,54 +122,69 @@ class ToolsPage extends StatelessWidget {
   const ToolsPage({super.key});
   @override
   Widget build(BuildContext context) {
-    final items = <List<Object>>[
-      ['Translate', 'ترجمة 52 لغة (نص وفويس)', Icons.translate, () => const TranslatePage()],
-      ['Live talk', 'مكالمة مترجمة بين موبايلين', Icons.headset_mic, () => const TalkPage()],
-      ['Papyrus', 'بردية تسافر لبلاد العالم', Icons.mail, () => const BottlesPage()],
-      ['Saved', 'محفوظاتي (أوفلاين)', Icons.star, () => const SavedPage()],
-      ['Face to face', 'وجهاً لوجه', Icons.people, () => const FacePage()],
-      ['Camera', 'منيو ولافتات', Icons.photo_camera, () => const CameraPage()],
-      ['Phrasebook', 'عبارات المواقف', Icons.chat_bubble_outline, () => const PhrasebookPage()],
-      ['Stay Safe', 'سعر عادل وأمان', Icons.shield, () => const SafePage()],
-      ['Places & weather', 'أماكن وطقس', Icons.place, () => const PlacesPage()],
-      ['Emergency & medical', 'طوارئ وكارت طبي', Icons.local_hospital, () => const EmergencyPage()],
-      ['Floating button', 'زر عايم للترجمة (خطوات التفعيل)', Icons.bubble_chart, () => const FloatPage()],
-      ['App audio capture', 'ترجمة صوت التطبيقات (أندرويد 10+)', Icons.graphic_eq, () => const CapturePage()],
-      ['Official services', 'خدمات رسمية', Icons.account_balance, () => const OfficialPage()],
-      ['Chat & sales', 'دردشة نيلو', Icons.forum, () => const ModeGate()],
+    final hubs = <List<Object>>[
+      ['Translation hub', 'ترجمة: نص، فويس، مكالمة، كاميرا، وجهاً لوجه', Icons.translate, [
+        ['Translate', 'ترجمة 52 لغة (نص وفويس)', Icons.translate, () => const TranslatePage()],
+        ['Live talk', 'مكالمة مترجمة بين موبايلين', Icons.headset_mic, () => const TalkPage()],
+        ['Face to face', 'وجهاً لوجه', Icons.people, () => const FacePage()],
+        ['Camera', 'منيو ولافتات', Icons.photo_camera, () => const CameraPage()],
+        ['Floating button', 'زر عايم للترجمة (خطوات التفعيل)', Icons.bubble_chart, () => const FloatPage()],
+        ['App audio capture', 'ترجمة صوت التطبيقات (أندرويد 10+)', Icons.graphic_eq, () => const CapturePage()],
+        ['Saved', 'محفوظاتي (أوفلاين)', Icons.star, () => const SavedPage()],
+      ]],
+      ['Travel help hub', 'عبارات، أمان، طوارئ، أماكن، خدمات', Icons.luggage, [
+        ['Phrasebook', 'عبارات المواقف', Icons.chat_bubble_outline, () => const PhrasebookPage()],
+        ['Stay Safe', 'سعر عادل وأمان', Icons.shield, () => const SafePage()],
+        ['Emergency & medical', 'طوارئ وكارت طبي', Icons.local_hospital, () => const EmergencyPage()],
+        ['Places & weather', 'أماكن وطقس', Icons.place, () => const PlacesPage()],
+        ['Official services', 'خدمات رسمية', Icons.account_balance, () => const OfficialPage()],
+      ]],
+      ['Daily puzzle', 'لغز اليوم وكلمة اليوم', Icons.extension, [
+        ['Daily puzzle', 'لغز اليوم وكلمة اليوم', Icons.extension, () => const PuzzlePage()],
+      ]],
+      ['Chat & sales', 'دردشة نيلو', Icons.forum, [
+        ['Chat & sales', 'دردشة نيلو', Icons.forum, () => const ModeGate()],
+      ]],
     ];
+    Widget sub(String title, List items) => Scaffold(
+          backgroundColor: kBg,
+          appBar: AppBar(title: Text(title), backgroundColor: Colors.transparent, elevation: 0),
+          body: Stack(children: [
+            const Positioned.fill(child: NileBackground()),
+            ListView(padding: const EdgeInsets.all(14), children: [
+              for (final it in items)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: NiloTile(
+                    icon: (it as List)[2] as IconData, title: it[0] as String, sub: it[1] as String,
+                    onTap: () => Navigator.of(context).push(niloRoute((it[3] as Widget Function())())),
+                  ),
+                ),
+            ]),
+          ]),
+        );
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(title: const Text('Tools • أدوات', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5)), backgroundColor: Colors.transparent, elevation: 0),
-      extendBodyBehindAppBar: false,
+      appBar: AppBar(title: const Text('Tools • أدوات', style: TextStyle(fontWeight: FontWeight.w800)), backgroundColor: Colors.transparent, elevation: 0),
       body: Stack(children: [
         const Positioned.fill(child: NileBackground()),
         ListView(padding: const EdgeInsets.all(14), children: [
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: 1), duration: const Duration(milliseconds: 700), curve: Curves.easeOutCubic,
-            builder: (_, v, child) => Opacity(opacity: v, child: Transform.translate(offset: Offset(0, 18 * (1 - v)), child: child)),
-            child: const WorldCard(),
-          ),
-          const LiveCard(),
-          const Padding(padding: EdgeInsets.only(bottom: 10, top: 4), child: Text('Explore • استكشف', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: kGreen))),
-          GridView.count(
-            crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12, crossAxisSpacing: 12, childAspectRatio: 1.15,
-            children: [
-              for (var n = 0; n < items.length; n++)
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: Duration(milliseconds: 450 + n * 80),
-                  curve: Curves.easeOutBack,
-                  builder: (_, v, child) => Opacity(opacity: v.clamp(0.0, 1.0), child: Transform.scale(scale: 0.85 + 0.15 * v, child: child)),
-                  child: NiloTile(
-                    icon: items[n][2] as IconData, title: items[n][0] as String, sub: items[n][1] as String,
-                    onTap: () => Navigator.of(context).push(niloRoute((items[n][3] as Widget Function())())),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
+          for (final h in hubs)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: NiloTile(
+                icon: h[2] as IconData, title: h[0] as String, sub: h[1] as String,
+                onTap: () {
+                  final items = h[3] as List;
+                  if (items.length == 1) {
+                    Navigator.of(context).push(niloRoute(((items[0] as List)[3] as Widget Function())()));
+                  } else {
+                    Navigator.of(context).push(niloRoute(sub(h[0] as String, items)));
+                  }
+                },
+              ),
+            ),
+          const SizedBox(height: 10),
           const Text('الترجمة الآلية ممكن تغلط، راجع أي حاجة مهمة. مجاني، من غير حساب ولا إعلانات.\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa', style: TextStyle(fontSize: 12, color: Colors.white54)),
         ]),
       ]),
