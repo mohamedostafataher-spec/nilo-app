@@ -26,7 +26,11 @@ import java.net.URL
 class TranslateActivity : Activity() {
     private val codes = arrayOf("ar", "ru", "en", "de", "fr", "it", "es", "pl", "uk", "tr")
     private val names = arrayOf("عربي مصري", "Русский", "English", "Deutsch", "Français", "Italiano", "Español", "Polski", "Українська", "Türkçe")
-    private lateinit var src: String
+    private var src: String = ""
+    private var clipMode = false
+    private var loaded = false
+    private lateinit var sp: Spinner
+    private lateinit var orig: TextView
     private lateinit var res: TextView
     private lateinit var sub: TextView
     private var last = ""
@@ -47,19 +51,18 @@ class TranslateActivity : Activity() {
         title.text = "🌐 ترجمة نيلو"
         title.textSize = 18f
         root.addView(title)
-        val orig = TextView(this)
+        orig = TextView(this)
         orig.text = if (src.length > 400) src.substring(0, 400) + "…" else src
         orig.textSize = 14f
         orig.alpha = 0.7f
         orig.setPadding(0, pad / 2, 0, pad / 2)
         orig.layoutDirection = View.LAYOUT_DIRECTION_LTR
         root.addView(orig)
-        val sp = Spinner(this)
+        sp = Spinner(this)
         sp.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, names)
         val prefs = getSharedPreferences("nilo_tr", Context.MODE_PRIVATE)
-        val hasAr = src.any { it in '\u0600'..'\u06FF' }
-        val def = if (hasAr) prefs.getString("out", "ru") else "ar"
-        sp.setSelection(codes.indexOf(def).coerceAtLeast(0))
+        clipMode = src.isEmpty()
+        pickDefault()
         root.addView(sp)
         res = TextView(this)
         res.textSize = 20f
@@ -94,13 +97,34 @@ class TranslateActivity : Activity() {
         row.addView(cp); row.addView(op); row.addView(cl)
         root.addView(row)
         setContentView(root)
-        if (src.isEmpty()) { res.text = "مفيش نص."; return }
+        if (clipMode) { res.text = "بقرا الحافظة…"; }
         sp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
-                if (hasAr) prefs.edit().putString("out", codes[pos]).apply()
-                go(codes[pos])
+                if (src.any { it in '\u0600'..'\u06FF' }) getSharedPreferences("nilo_tr", Context.MODE_PRIVATE).edit().putString("out", codes[pos]).apply()
+                if (src.isNotEmpty()) go(codes[pos])
             }
             override fun onNothingSelected(p: AdapterView<*>?) {}
+        }
+    }
+
+    private fun pickDefault() {
+        val prefs = getSharedPreferences("nilo_tr", Context.MODE_PRIVATE)
+        val hasAr = src.any { it in '\u0600'..'\u06FF' }
+        val def = if (hasAr) prefs.getString("out", "ru") else "ar"
+        sp.setSelection(codes.indexOf(def).coerceAtLeast(0))
+    }
+
+    override fun onWindowFocusChanged(f: Boolean) {
+        super.onWindowFocusChanged(f)
+        if (f && clipMode && !loaded) {
+            loaded = true
+            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val t = cm.primaryClip?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.coerceToText(this)?.toString()?.trim() ?: ""
+            if (t.isEmpty()) { res.text = "الحافظة فاضية. انسخ الرسالة الأول (اضغط مطولاً ← نسخ) وافتح تاني."; return }
+            src = t
+            orig.text = if (t.length > 400) t.substring(0, 400) + "…" else t
+            pickDefault()
+            go(codes[sp.selectedItemPosition])
         }
     }
 
