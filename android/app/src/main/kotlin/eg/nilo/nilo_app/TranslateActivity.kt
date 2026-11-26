@@ -6,6 +6,7 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -34,6 +35,8 @@ class TranslateActivity : Activity() {
     private lateinit var res: TextView
     private lateinit var sub: TextView
     private var last = ""
+    private var audioB64: String? = null
+    private var audioMime = "audio/ogg"
     private var seq = 0
 
     override fun onCreate(b: Bundle?) {
@@ -41,6 +44,18 @@ class TranslateActivity : Activity() {
         var t: CharSequence? = intent.getCharSequenceExtra(Intent.EXTRA_PROCESS_TEXT)
         if (t == null) t = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)
         src = (t ?: "").toString().trim()
+        val au: Uri? = if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java) else @Suppress("DEPRECATION") intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+        if (au != null && (intent.type ?: "").let { it.startsWith("audio/") || it.startsWith("video/") }) {
+            try {
+                val bytes = contentResolver.openInputStream(au)!!.use { it.readBytes() }
+                if (bytes.size > 2_400_000) src = "الفويس طويل. افتحه في المترجم على الموقع."
+                else {
+                    audioB64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+                    audioMime = (contentResolver.getType(au) ?: intent.type ?: "audio/ogg").substringBefore(";")
+                    src = "🎙 فويس"
+                }
+            } catch (e: Exception) { src = "مقدرتش أفتح الفويس." }
+        }
         val dp = resources.displayMetrics.density
         val pad = (16 * dp).toInt()
         val root = LinearLayout(this)
@@ -104,7 +119,7 @@ class TranslateActivity : Activity() {
         sp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                 if (src.any { it in '\u0600'..'\u06FF' }) getSharedPreferences("nilo_tr", Context.MODE_PRIVATE).edit().putString("out", codes[pos]).apply()
-                if (src.isNotEmpty()) go(codes[pos])
+                if (src.isNotEmpty() && (audioB64 != null || !src.startsWith("الفويس طويل") && !src.startsWith("مقدرتش"))) go(codes[pos])
             }
             override fun onNothingSelected(p: AdapterView<*>?) {}
         }
@@ -142,14 +157,15 @@ class TranslateActivity : Activity() {
                 val c = URL("https://nilo-eg.vercel.app/api/tr").openConnection() as HttpURLConnection
                 c.requestMethod = "POST"
                 c.connectTimeout = 15000
-                c.readTimeout = 45000
+                c.readTimeout = 55000
                 c.doOutput = true
                 c.setRequestProperty("Content-Type", "application/json")
-                val body = JSONObject().put("text", src.take(1800)).put("to", to).toString()
+                val body = (if (audioB64 != null) JSONObject().put("audio", audioB64).put("mime", audioMime).put("from", "auto").put("to", to).put("tone", "natural") else JSONObject().put("text", src.take(1800)).put("to", to)).toString()
                 c.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
                 val s = (if (c.responseCode < 400) c.inputStream else c.errorStream).bufferedReader().readText()
                 val j = JSONObject(s)
                 out = j.optString("translation", "")
+                if (audioB64 != null && j.optString("original", "").isNotEmpty()) runOnUiThread { orig.text = j.optString("original") }
                 if (out.isEmpty()) note = j.optString("error", "الترجمة مش متاحة دلوقتي")
                 else note = (j.optString("rom", "") + " " + j.optString("note", "")).trim()
             } catch (e: Exception) { note = "مفيش اتصال بالنت" }
