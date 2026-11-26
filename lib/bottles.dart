@@ -8,6 +8,7 @@ import 'main.dart';
 import 'world.dart';
 import 'net.dart';
 import 'screens.dart';
+import 'sendfx.dart';
 
 const _sbUrl = 'https://fbfvjihrbzsqlwmoejiq.supabase.co';
 const _sbKey = 'sb_publishable_3Gw07lMxemop4QhYpgUszw_8jlkb5JP';
@@ -363,9 +364,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
       await Sb.post('bottles', {'author': Sb.uid, 'kind': kind, 'place': kind == 'place' ? place : null, 'body': t, 'lang': writeLang});
       HapticFeedback.mediumImpact();
       focus.unfocus();
-      setState(() => flying = true);
-      await _fly.forward();
-      if (mounted) { Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PapyrusTripPage())); }
+      if (mounted) setState(() => flying = true);
     } catch (e) {
       if (mounted) { setState(() { busy = false; flying = false; }); toast(context, 'Could not send: $e'); }
     }
@@ -388,11 +387,12 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
     final langName = kNames[kCodes.indexOf(writeLang).clamp(0, kNames.length - 1)];
     return Scaffold(
       backgroundColor: kBg,
-      body: SafeArea(
+      body: flying
+          ? SendSequence(onDone: () { if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PapyrusTripPage())); })
+          : SafeArea(
         child: Stack(children: [
-          AnimatedBuilder(
-            animation: _fly,
-            builder: (_, child) => Opacity(opacity: 1 - _fly.value, child: Transform.translate(offset: Offset(0, -380 * _fly.value), child: Transform.scale(scale: 1 - 0.7 * _fly.value, child: child))),
+          Opacity(
+            opacity: 1,
             child: Column(children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(4, 4, 12, 0),
