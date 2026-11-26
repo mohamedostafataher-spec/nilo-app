@@ -365,22 +365,40 @@ Future<String> detectCountry({required bool allowGps}) async {
   return PlatformDispatcher.instance.locale.countryCode?.toUpperCase() ?? '';
 }
 
-class CountryPickerPage extends StatelessWidget {
-  const CountryPickerPage({super.key});
+class CountryPickerPage extends StatefulWidget {
+  final bool stampHome;
+  const CountryPickerPage({super.key, this.stampHome = true});
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(L('Choose your home country • اختار بلدك')), backgroundColor: kBg),
-        body: ListView(children: [
-          for (final c in kWorld)
+  State<CountryPickerPage> createState() => _CountryPickerPageState();
+}
+
+class _CountryPickerPageState extends State<CountryPickerPage> {
+  String q = '';
+  @override
+  Widget build(BuildContext context) {
+    final ql = q.trim().toLowerCase();
+    final list = kWorld.where((c) => ql.isEmpty || (c[1] as String).toLowerCase().contains(ql) || (c[2] as String).contains(ql) || (c[0] as String).toLowerCase() == ql).toList();
+    return Scaffold(
+      appBar: AppBar(title: Text(L('Choose your home country • اختار بلدك')), backgroundColor: kBg),
+      body: Column(children: [
+        Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 4), child: TextField(decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: L('Find your country • دوّر على بلدك')), onChanged: (v) => setState(() => q = v))),
+        Expanded(child: ListView(children: [
+          for (final c in list)
             ListTile(
               leading: Text(c[3] as String, style: const TextStyle(fontSize: 28)),
               title: Text(L('${c[1]} • ${c[2]}')),
-              subtitle: Text(Ui.rtl ? 'الرمز: ${c[6]} ${c[7]}' : 'Symbol: ${c[6]} ${c[7]}'),
-              onTap: () { Passport.country = c[0] as String; Passport.addStamp('home-${c[0]}'); Navigator.pop(context, true); },
+              subtitle: (c[8] as String).isEmpty ? null : Text(Ui.rtl ? 'الرمز: ${c[6]} ${c[7]}' : 'Symbol: ${c[6]} ${c[7]}'),
+              onTap: () {
+                if (widget.stampHome) { Passport.country = c[0] as String; Passport.addStamp('home-${c[0]}'); }
+                Navigator.pop(context, widget.stampHome ? true : c[0]);
+              },
             ),
-          Padding(padding: EdgeInsets.all(16), child: Text(L('More countries are coming. Only your country code is saved, on this phone.'), style: TextStyle(color: Colors.white54, fontSize: 12))),
-        ]),
-      );
+          if (list.isEmpty) Padding(padding: const EdgeInsets.all(24), child: Text(L('Nothing to show'), textAlign: TextAlign.center)),
+          Padding(padding: const EdgeInsets.all(16), child: Text(L('All countries are listed. Only your country code is saved, on this phone.'), style: const TextStyle(color: Colors.white54, fontSize: 12))),
+        ])),
+      ]),
+    );
+  }
 }
 
 /// Top card on the home screen: home world, streak, daily word, daily puzzle, chapter.

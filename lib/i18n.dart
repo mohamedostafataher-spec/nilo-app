@@ -66,6 +66,12 @@ String L(String s) {
 }
 
 const kPairs = <List<String>>[
+  [r'''Notable places • أماكن مميزة''', r'''أماكن مميزة'''],
+  [r'''UNESCO World Heritage sites, loaded live from Wikidata (CC0). Not a complete list of places worth visiting, and some entries are regions or groups of sites. Tap to read more on Wikipedia (English).''', r'''مواقع التراث العالمي لليونسكو، بتتحمل مباشرة من Wikidata (CC0). مش قائمة كاملة بالأماكن المميزة، وبعض العناصر مناطق أو مجموعات مواقع. دوس لقراءة المزيد على ويكيبيديا (إنجليزي).'''],
+  [r'''No UNESCO sites found for this country in Wikidata.''', r'''مفيش مواقع يونسكو للدولة دي في Wikidata.'''],
+  [r'''Data: Wikidata (CC0). Links: Wikipedia (CC BY-SA).''', r'''البيانات: Wikidata (CC0). الروابط: ويكيبيديا (CC BY-SA).'''],
+  [r'''Find your country • دوّر على بلدك''', r'''دوّر على بلدك'''],
+  [r'''All countries are listed. Only your country code is saved, on this phone.''', r'''كل الدول موجودة. بيتحفظ كود دولتك بس، على التليفون.'''],
   [r'''Enter the code and a new password (8+ characters)''', r'''اكتب الكود وكلمة سر جديدة (٨ حروف أو أكتر)'''],
   [r'''Set new password''', r'''عيّن كلمة سر جديدة'''],
   [r'''Privacy Policy''', r'''سياسة الخصوصية'''],
