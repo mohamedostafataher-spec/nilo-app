@@ -24,8 +24,74 @@ class NiloApp extends StatelessWidget {
             scaffoldBackgroundColor: kBg,
             colorScheme: const ColorScheme.dark(primary: kGreen)),
         builder: (c, w) => Directionality(textDirection: TextDirection.rtl, child: w!),
-        home: const ChatPage(),
+        home: const ModeGate(),
       );
+}
+
+const kSite = 'https://nilo-eg.vercel.app';
+const kModes = [
+  ['chat', '💬', 'دردشة نيلو', 'اسأل واتكلم مع نيلو'],
+  ['sales', '📈', 'مبيعات', 'غرفة المبيعات والعملاء'],
+  ['tr', '🌐', 'ترجمة', 'ترجمة نص وفويس ومحادثة'],
+];
+
+class ModeGate extends StatefulWidget {
+  const ModeGate({super.key});
+  @override
+  State<ModeGate> createState() => _ModeGateState();
+}
+
+class _ModeGateState extends State<ModeGate> {
+  String? mode;
+  bool ready = false;
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((p) {
+      setState(() { mode = p.getString('mode'); ready = true; });
+    });
+  }
+
+  Future<void> pick(String m) async {
+    final p = await SharedPreferences.getInstance();
+    await p.setString('mode', m);
+    if (m == 'chat') {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const ChatPage()));
+    } else {
+      setState(() => mode = m);
+      await launchUrl(Uri.parse(m == 'sales' ? '$kSite/?sales=1' : '$kSite/translate.html'), mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!ready) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (mode == 'chat') return const ChatPage();
+    return Scaffold(
+      appBar: AppBar(title: const Text('نيلو Nilo')),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          const Text('محتاج إيه دلوقتي؟', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          const Text('هنفتحلك الشاشة دي بس، ومش هنفكرك بالباقي. تقدر تبدّل في أي وقت.', style: TextStyle(fontSize: 13, color: Colors.white60)),
+          const SizedBox(height: 16),
+          for (final m in kModes)
+            Card(
+              color: mode == m[0] ? const Color(0xFF16352A) : const Color(0xFF14241D),
+              child: ListTile(
+                leading: Text(m[1], style: const TextStyle(fontSize: 28)),
+                title: Text(m[2]),
+                subtitle: Text(m[3]),
+                trailing: mode == m[0] ? const Text('آخر اختيار', style: TextStyle(fontSize: 12, color: Colors.white54)) : null,
+                onTap: () => pick(m[0]),
+              ),
+            ),
+        ]),
+      ),
+    );
+  }
 }
 
 class Msg {
@@ -440,6 +506,7 @@ class _ChatPageState extends State<ChatPage> {
         actions: [
           IconButton(tooltip: 'غرفة المبيعات', icon: const Icon(Icons.trending_up), onPressed: () => openLink('https://nilo-eg.vercel.app/?sales=1')),
           IconButton(tooltip: 'شركة تسويق ومبيعات', icon: const Icon(Icons.storefront_outlined), onPressed: () => openLink('https://nilo-eg.vercel.app/?co=1')),
+          IconButton(tooltip: 'تبديل الوضع', icon: const Icon(Icons.apps), onPressed: () async { final p = await SharedPreferences.getInstance(); await p.remove('mode'); if (!mounted) return; Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const ModeGate())); }),
           IconButton(tooltip: 'مترجم', icon: const Icon(Icons.translate), onPressed: () => openLink('https://nilo-eg.vercel.app/translate.html')),
           IconButton(tooltip: 'مساعد الشغل', icon: const Icon(Icons.work_outline), onPressed: () => openLink('https://nilo-eg.vercel.app/?jobs=1')),
           TextButton.icon(
