@@ -57,6 +57,24 @@ class Sb {
     return jsonDecode(utf8.decode(r.bodyBytes));
   }
 
+  static String publicUrl(String path) => '$_sbUrl/storage/v1/object/public/stories/$path';
+
+  static Future<bool> upload(String path, List<int> bytes, String mime) async {
+    final r = await http.post(Uri.parse('$_sbUrl/storage/v1/object/stories/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token', 'Content-Type': mime}, body: bytes).timeout(const Duration(seconds: 90));
+    return r.statusCode < 300;
+  }
+
+  static Future<void> removeFile(String path) async {
+    try { await http.delete(Uri.parse('$_sbUrl/storage/v1/object/stories/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20)); } catch (_) {}
+  }
+
+  static Future<dynamic> rpc(String fn, [Map<String, dynamic>? args]) async {
+    final r = await http.post(Uri.parse('$_sbUrl/rest/v1/rpc/$fn'), headers: _h(), body: jsonEncode(args ?? {})).timeout(const Duration(seconds: 20));
+    if (r.statusCode >= 300) throw Exception('${r.statusCode}');
+    final t = utf8.decode(r.bodyBytes);
+    return t.isEmpty ? null : jsonDecode(t);
+  }
+
   static Future<void> delete(String path) async {
     final r = await http.delete(Uri.parse('$_sbUrl/rest/v1/$path'), headers: _h()).timeout(const Duration(seconds: 20));
     if (r.statusCode >= 300) throw Exception('${r.statusCode}');

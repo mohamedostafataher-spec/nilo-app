@@ -1,4 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:video_compress/video_compress.dart';
+import 'package:video_player/video_player.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
 import 'world.dart';
@@ -52,6 +56,7 @@ class _StoriesTabState extends State<StoriesTab> {
     if (!joined) { if (mounted) setState(() => busy = false); return; }
     try {
       if (!await Sb.signIn()) throw Exception('No connection');
+      _cleanup();
       final since = DateTime.now().toUtc().subtract(const Duration(hours: 24)).toIso8601String();
       final r = await Sb.get('stories?select=*,story_reactions(emoji,user_id),story_comments(id)&created_at=gte.$since&order=created_at.desc&limit=60');
       l = r as List;
@@ -59,6 +64,15 @@ class _StoriesTabState extends State<StoriesTab> {
       err = 'Could not load stories. Check your connection.';
     }
     if (mounted) setState(() => busy = false);
+  }
+
+  /// Crowd-sourced cleanup: any open app deletes files older than 25h, then expired rows.
+  Future<void> _cleanup() async {
+    try {
+      final l = await Sb.rpc('expired_objects') as List;
+      for (final n in l) { await Sb.removeFile(n.toString()); }
+      await Sb.rpc('purge_rows');
+    } catch (_) {}
   }
 
   Future<void> _write() async {
@@ -77,11 +91,20 @@ class _StoriesTabState extends State<StoriesTab> {
     ])));
     if (v == null) return;
     try {
-      if (v == 'del') { await Sb.delete('stories?id=eq.${s['id']}'); }
+      if (v == 'del') { await Sb.delete('stories?id=eq.${s['id']}'); if (s['media_path'] != null) await Sb.removeFile(s['media_path'].toString()); }
       if (v == 'rep') { await Sb.post('rpc/report_story', {'sid': s['id']}); if (mounted) toast(context, 'Reported. Thank you.'); }
       if (v == 'blk') { await Sb.post('blocks', {'blocker': Sb.uid, 'blocked': s['author']}); if (mounted) toast(context, 'Blocked.'); }
       _load();
     } catch (_) { if (mounted) toast(context, 'Did not work. Try again.'); }
+  }
+
+  Widget _media(Map s) {
+    final url = Sb.publicUrl(s['media_path'].toString());
+    if (s['media_type'] == 'video') return ClipView(url: url);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(14),
+      child: Image.network(url, fit: BoxFit.cover, height: 300, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox(height: 80, child: Center(child: Text('Photo expired', style: TextStyle(color: Colors.white70))))),
+    );
   }
 
   Widget _react(Map s, String e) {
@@ -145,6 +168,8 @@ class _StoriesTabState extends State<StoriesTab> {
                                   InkWell(onTap: () => _menu(s), child: const Padding(padding: EdgeInsets.all(4), child: Icon(Icons.more_vert, color: Colors.white70))),
                                 ]),
                                 const SizedBox(height: 10),
+                                if (s['media_path'] != null) ...[_media(s), const SizedBox(height: 10)],
+                                if (((s['body'] ?? '') as String).isNotEmpty)
                                 Text((s['body'] ?? '').toString(), style: const TextStyle(fontSize: 19, height: 1.4, color: Colors.white, fontWeight: FontWeight.w600)),
                                 const SizedBox(height: 12),
                                 Wrap(spacing: 6, runSpacing: 6, children: [
@@ -173,21 +198,69 @@ class StoryComposer extends StatefulWidget {
 class _StoryComposerState extends State<StoryComposer> {
   final c = TextEditingController();
   int mood = 0;
-  bool busy = false;
+  bool busy = false, mediaOk = true;
+  String status = '';
+  List<int>? bytes;
+  String? mime, ext, info;
+
+  @override
+  void initState() {
+    super.initState();
+    Sb.rpc('storage_ok').then((v) { if (mounted) setState(() => mediaOk = v == true); }).catchError((_) {});
+  }
+
+  Future<void> _pickPhoto(ImageSource src) async {
+    try {
+      final x = await ImagePicker().pickImage(source: src, maxWidth: 1080, maxHeight: 1080, imageQuality: 70);
+      if (x == null) return;
+      final b = await x.readAsBytes();
+      if (b.length > 5 * 1024 * 1024) { if (mounted) toast(context, 'Photo too large.'); return; }
+      setState(() { bytes = b; mime = 'image/jpeg'; ext = 'jpg'; info = 'Photo ready (${(b.length / 1024).round()} KB)'; });
+    } catch (_) { if (mounted) toast(context, 'Could not open the photo.'); }
+  }
+
+  Future<void> _pickClip(ImageSource src) async {
+    try {
+      final x = await ImagePicker().pickVideo(source: src, maxDuration: const Duration(seconds: 15));
+      if (x == null) return;
+      setState(() { busy = true; status = 'Making the clip small...'; });
+      final m = await VideoCompress.compressVideo(x.path, quality: VideoQuality.LowQuality, deleteOrigin: false, includeAudio: true);
+      final f = m?.file;
+      if (f == null) throw Exception('compress');
+      final b = await File(f.path).readAsBytes();
+      if (b.length > 5 * 1024 * 1024) { setState(() { busy = false; status = ''; }); if (mounted) toast(context, 'Clip too big. Record up to 15 seconds.'); return; }
+      if ((m?.duration ?? 0) > 16000) { setState(() { busy = false; status = ''; }); if (mounted) toast(context, 'Max 15 seconds.'); return; }
+      setState(() { bytes = b; mime = 'video/mp4'; ext = 'mp4'; busy = false; status = ''; info = 'Clip ready (${(b.length / 1024 / 1024).toStringAsFixed(1)} MB)'; });
+    } catch (_) {
+      if (mounted) { setState(() { busy = false; status = ''; }); toast(context, 'Could not prepare the clip.'); }
+    }
+  }
+
+  void _sheet(bool clip) {
+    showModalBottomSheet(context: context, backgroundColor: const Color(0xFF0E2A45), builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      ListTile(leading: const Icon(Icons.photo_camera), title: Text(clip ? 'Record a clip (max 15s)' : 'Take a photo'), onTap: () { Navigator.pop(context); clip ? _pickClip(ImageSource.camera) : _pickPhoto(ImageSource.camera); }),
+      ListTile(leading: const Icon(Icons.photo_library), title: const Text('Choose from gallery'), onTap: () { Navigator.pop(context); clip ? _pickClip(ImageSource.gallery) : _pickPhoto(ImageSource.gallery); }),
+    ])));
+  }
 
   Future<void> _post() async {
     final t = c.text.trim();
-    if (t.length < 3) { toast(context, 'Write a little more.'); return; }
+    if (bytes == null && t.length < 3) { toast(context, 'Write a little more, or add a photo or clip.'); return; }
     final bad = RegExp(r'(https?://|www\.|\.com|\.net|\.org|@|t\.me|wa\.me)').hasMatch(t.toLowerCase())
         ? 'No links or @ handles.'
         : RegExp(r'[0-9٠-٩]{6,}').hasMatch(t) ? 'No phone numbers.' : '';
     if (bad.isNotEmpty) { toast(context, bad); return; }
-    setState(() => busy = true);
+    setState(() { busy = true; status = 'Posting...'; });
     try {
-      await Sb.post('stories', {'author': Sb.uid, 'nick': widget.nick, 'country': Passport.country, 'body': t, 'mood': mood});
+      String? path;
+      if (bytes != null) {
+        path = '${Sb.uid}/${DateTime.now().millisecondsSinceEpoch}.$ext';
+        if (!await Sb.upload(path, bytes!, mime!)) throw Exception('upload');
+      }
+      await Sb.post('stories', {'author': Sb.uid, 'nick': widget.nick, 'country': Passport.country, 'body': t, 'mood': mood, if (path != null) 'media_path': path, if (path != null) 'media_type': mime == 'video/mp4' ? 'video' : 'image'});
       if (mounted) Navigator.pop(context, true);
-    } catch (_) {
-      if (mounted) { setState(() => busy = false); toast(context, 'Could not post. Try again.'); }
+    } catch (e) {
+      if (mounted) { setState(() { busy = false; status = ''; }); toast(context, '$e'.contains('limit') ? 'Daily limit reached: 3 photo/clip stories and 6 stories per day.' : 'Could not post. Try again.'); }
     }
   }
 
@@ -197,27 +270,77 @@ class _StoryComposerState extends State<StoryComposer> {
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(title: const Text('New story'), backgroundColor: kBg),
-      body: Padding(padding: const EdgeInsets.all(14), child: Column(children: [
+      body: SingleChildScrollView(padding: const EdgeInsets.all(14), child: Column(children: [
         Container(
-          padding: const EdgeInsets.all(16), height: 220,
+          padding: const EdgeInsets.all(16), height: 200,
           decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: col), borderRadius: BorderRadius.circular(20)),
           child: TextField(controller: c, maxLength: 200, maxLines: null, expands: true, style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.w600),
-              decoration: const InputDecoration(border: InputBorder.none, hintText: 'What happened today? (text only)', hintStyle: TextStyle(color: Colors.white60))),
+              decoration: const InputDecoration(border: InputBorder.none, hintText: 'What happened today?', hintStyle: TextStyle(color: Colors.white60))),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           for (var i = 0; i < _bgs.length; i++)
-            GestureDetector(onTap: () => setState(() => mood = i), child: Container(margin: const EdgeInsets.all(6), width: 34, height: 34, decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: _bgs[i]), border: Border.all(color: mood == i ? Colors.white : Colors.transparent, width: 3)))),
+            GestureDetector(onTap: () => setState(() => mood = i), child: Container(margin: const EdgeInsets.all(6), width: 30, height: 30, decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: _bgs[i]), border: Border.all(color: mood == i ? Colors.white : Colors.transparent, width: 3)))),
         ]),
         const SizedBox(height: 6),
-        const Text('Visible for 24 hours. No links, phone numbers or private photos. Your country flag is shown, never your location.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.white60)),
-        const Spacer(),
-        SizedBox(width: double.infinity, child: FilledButton(onPressed: busy ? null : _post, child: Text(busy ? '...' : 'Post story'))),
+        if (mediaOk)
+          Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            OutlinedButton.icon(onPressed: busy ? null : () => _sheet(false), icon: const Icon(Icons.image), label: const Text('Photo')),
+            const SizedBox(width: 10),
+            OutlinedButton.icon(onPressed: busy ? null : () => _sheet(true), icon: const Icon(Icons.videocam), label: const Text('Clip (15s)')),
+          ])
+        else
+          const Text('Photos and clips are paused today (storage is full). Text stories still work.', textAlign: TextAlign.center, style: TextStyle(color: Colors.amber)),
+        if (info != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text('✓ $info', style: const TextStyle(color: kGreen, fontWeight: FontWeight.w700))),
+        const SizedBox(height: 10),
+        const Text('Visible for 24 hours. Photos and clips are shown to other adults, so no nudity, no minors, no private or ID documents. Anyone can report; a reported photo or clip is hidden at once. Your country flag is shown, never your location. Limit: 3 photo/clip stories and 6 stories per day.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.white60)),
+        const SizedBox(height: 16),
+        SizedBox(width: double.infinity, child: FilledButton(onPressed: busy ? null : _post, child: Text(busy ? (status.isEmpty ? '...' : status) : 'Post story'))),
       ])),
     );
   }
 }
 
+class ClipView extends StatefulWidget {
+  final String url;
+  const ClipView({super.key, required this.url});
+  @override
+  State<ClipView> createState() => _ClipViewState();
+}
+
+class _ClipViewState extends State<ClipView> {
+  VideoPlayerController? v;
+  bool loading = false;
+  @override
+  void dispose() { v?.dispose(); super.dispose(); }
+  Future<void> _start() async {
+    if (v != null) { v!.value.isPlaying ? await v!.pause() : await v!.play(); setState(() {}); return; }
+    setState(() => loading = true);
+    try {
+      v = VideoPlayerController.networkUrl(Uri.parse(widget.url));
+      await v!.initialize();
+      v!.setLooping(true);
+      await v!.play();
+    } catch (_) { v = null; }
+    if (mounted) setState(() => loading = false);
+  }
+  @override
+  Widget build(BuildContext context) {
+    final ready = v != null && v!.value.isInitialized;
+    return GestureDetector(
+      onTap: _start,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          height: 300, width: double.infinity, color: Colors.black38,
+          child: ready
+              ? FittedBox(fit: BoxFit.cover, clipBehavior: Clip.hardEdge, child: SizedBox(width: v!.value.size.width, height: v!.value.size.height, child: VideoPlayer(v!)))
+              : Center(child: loading ? const CircularProgressIndicator() : const Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.play_circle_fill, size: 64, color: Colors.white), Text('Tap to play clip', style: TextStyle(color: Colors.white70))])),
+        ),
+      ),
+    );
+  }
+}
 
 class CommentsPage extends StatefulWidget {
   final Map story;
