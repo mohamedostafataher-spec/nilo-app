@@ -383,7 +383,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
     if (!Passport.useInk()) { toast(context, 'Out of ink. New ink at 12:00, or solve the daily puzzle for +3.'); return; }
     setState(() => busy = true);
     try {
-      try { await Sb.post('profiles', {'id': Sb.uid, 'nick': nick.isEmpty ? Passport.nickname.trim() : nick, 'lang': lang, 'age_ok': true}, upsert: true); } catch (_) {}
+      try { await Sb.post('profiles', {'id': Sb.uid, 'nick': Passport.nickname.trim().length >= 2 ? Passport.nickname.trim() : 'Traveler', 'lang': writeLang, 'age_ok': true}, upsert: true); } catch (_) {}
       final fc = friend.text.trim().toLowerCase();
       if (fc.isNotEmpty) {
         final ok = await Sb.rpc('send_direct', {'p_code': fc, 'p_kind': kind, 'p_place': kind == 'place' ? place : null, 'p_body': t, 'p_lang': writeLang});
