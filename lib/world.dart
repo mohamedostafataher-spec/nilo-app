@@ -7,7 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'dart:ui' show PlatformDispatcher;
 import 'main.dart';
-import 'screens.dart' show toast;
+import 'screens.dart' show toast, ToolsPage;
 
 /// code, English name, Arabic name, flag, lat, lon, symbol emoji, symbol name, hello, thanks
 const List<List<Object>> kWorld = [
