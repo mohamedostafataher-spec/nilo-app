@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
 import 'world.dart';
 import 'screens.dart';
+import 'home.dart';
 
 const kNavy = Color(0xFF0E2A47);
 const kTeal = Color(0xFF18A3A0);

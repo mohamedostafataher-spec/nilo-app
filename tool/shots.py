@@ -64,16 +64,10 @@ tap_text('phone region'); time.sleep(4); shot('first_run_3')
 if not tap_text('Get my passport') :
     pass
 tap_class('EditText'); adb('shell','input','text','Traveler'); adb('shell','input','keyevent','4'); time.sleep(1); tap_text('18 or older'); time.sleep(1); shot('first_run_4'); tap_text('Get my passport'); time.sleep(4); shot('home_with_world')
-for t in ['Daily puzzle','Story 1','Passport']:
-    if tap_text(t):
-        time.sleep(3); shot(t.replace(' ','_'))
-        if t=='Story 1':
-            tap_text('Prologue'); time.sleep(2); shot('chapter')
-            back()
-        back(); time.sleep(1)
-open(OUT+'/labels.txt','w').write('\n'.join(t for t,_,_ in nodes()))
-adb('shell', 'input', 'swipe', '540', '1600', '540', '600'); time.sleep(1); shot('home_scrolled')
-adb('shell', 'input', 'swipe', '540', '600', '540', '1600'); time.sleep(1)
+time.sleep(5); shot('home_scene2')
+for t in ['Story','Passport']:
+    if tap_text(t): time.sleep(3); shot('tab_'+t)
+tap_text('Tools'); time.sleep(2); shot('tab_Tools')
 for tile in ['Translate', 'Phrasebook', 'Stay Safe', 'Places', 'Emergency', 'Official services', 'Floating button', 'Face to face', 'Saved']:
     if tap_text(tile):
         time.sleep(4); shot(tile.replace(' ', '_')); back(); time.sleep(1)

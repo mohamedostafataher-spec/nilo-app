@@ -118,8 +118,8 @@ class ResultCard extends StatelessWidget {
 }
 
 // ---------------- Home ----------------
-class TouristHome extends StatelessWidget {
-  const TouristHome({super.key});
+class ToolsPage extends StatelessWidget {
+  const ToolsPage({super.key});
   @override
   Widget build(BuildContext context) {
     final items = <List<Object>>[
@@ -140,7 +140,7 @@ class TouristHome extends StatelessWidget {
     ];
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(title: const Text('Nilo • نيلو', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5)), backgroundColor: Colors.transparent, elevation: 0),
+      appBar: AppBar(title: const Text('Tools • أدوات', style: TextStyle(fontWeight: FontWeight.w800, letterSpacing: 0.5)), backgroundColor: Colors.transparent, elevation: 0),
       extendBodyBehindAppBar: false,
       body: Stack(children: [
         const Positioned.fill(child: NileBackground()),
