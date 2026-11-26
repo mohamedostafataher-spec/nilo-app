@@ -269,21 +269,59 @@ class StoryPage extends StatefulWidget {
 }
 
 class _StoryPageState extends State<StoryPage> {
+  static const gold = Color(0xFFE0B04A);
   @override
   Widget build(BuildContext context) {
     final un = Passport.unlocked;
+    final done = Passport.chapter.clamp(0, kChapters.length);
+    final cur = done < un ? done : -1;
+    String en(int i) { final t = kChapters[i][0] as String; final k = t.indexOf(': '); return k < 0 ? t : t.substring(k + 2); }
+    String ar(int i) { final t = kChapters[i][1] as String; final k = t.indexOf(': '); return k < 0 ? t : t.substring(k + 2); }
+    Future<void> open(int i) async { await Navigator.push(context, MaterialPageRoute(builder: (_) => ChapterPage(i: i))); if (mounted) setState(() {}); }
     return Scaffold(
-      appBar: AppBar(title: const Text('The Lost Papyrus Routes'), backgroundColor: kBg),
-      body: ListView(padding: const EdgeInsets.all(14), children: [
-        const Text('One story for the whole world. A new chapter opens each day, or sooner when you send a papyrus. Written by Nilo\'s makers. Machine translation can be wrong.', style: TextStyle(color: Colors.white70, fontSize: 12)),
-        const SizedBox(height: 10),
+      appBar: AppBar(title: const Text('حكاية • الطرق الضائعة'), backgroundColor: kBg),
+      body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), children: [
+        const Text('حكاية واحدة للعالم كله. فصل جديد كل يوم، أو أسرع لما تبعت بردية.', style: TextStyle(color: Colors.white70, height: 1.5)),
+        const SizedBox(height: 12),
+        ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(value: done / kChapters.length, minHeight: 6, color: gold, backgroundColor: Colors.white12)),
+        const SizedBox(height: 4),
+        Text('$done / ${kChapters.length}', style: const TextStyle(fontSize: 11, color: Colors.white54)),
+        const SizedBox(height: 14),
+        if (cur >= 0)
+          GestureDetector(
+            onTap: () => open(cur),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFF6EACB), Color(0xFFE2CB93)]),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 14, offset: Offset(0, 6))],
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('📜  الفصل الجاي • Next', style: TextStyle(color: Color(0xFF8A6B2F), fontSize: 12, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 8),
+                Text(ar(cur), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF3B2A18), height: 1.3)),
+                Text(en(cur), style: const TextStyle(fontSize: 14, color: Color(0xFF5B4630))),
+                const SizedBox(height: 12),
+                const Align(alignment: Alignment.centerLeft, child: Chip(label: Text('اقرأ • Read'), backgroundColor: Color(0xFFE0B04A))),
+              ]),
+            ),
+          ),
+        const SizedBox(height: 14),
         for (var i = 0; i < kChapters.length; i++)
-          Card(color: const Color(0xFF12304D), child: ListTile(
-            leading: Icon(i < Passport.chapter ? Icons.check_circle : (i < un ? Icons.menu_book : Icons.lock), color: kGreen),
-            title: Text(kChapters[i][0] as String),
-            subtitle: Text(i < un ? 'Tap to read' : 'Locked. Opens tomorrow, or send a papyrus.'),
-            onTap: i < un ? () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => ChapterPage(i: i))); if (mounted) setState(() {}); } : null,
-          )),
+          if (i != cur)
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(color: const Color(0xFF10294A), borderRadius: BorderRadius.circular(14)),
+              child: ListTile(
+                leading: CircleAvatar(backgroundColor: i < done ? gold : Colors.white10, child: i < done ? const Icon(Icons.check, color: Colors.black87) : (i < un ? Text('${i}', style: const TextStyle(color: gold)) : const Icon(Icons.lock, size: 18, color: Colors.white38))),
+                title: Text(ar(i), style: TextStyle(fontWeight: FontWeight.w700, color: i < un ? Colors.white : Colors.white38)),
+                subtitle: Text(i < un ? en(i) : 'يفتح بكرة، أو ابعت بردية', style: TextStyle(fontSize: 12, color: i < un ? Colors.white60 : Colors.white30)),
+                onTap: i < un ? () => open(i) : null,
+              ),
+            ),
+        const SizedBox(height: 6),
+        const Text('الترجمة الآلية ممكن تغلط.', style: TextStyle(fontSize: 11, color: Colors.white38)),
       ]),
     );
   }
@@ -345,22 +383,9 @@ class PassportPage extends StatelessWidget {
         IconButton(tooltip: 'Settings', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())), icon: const Icon(Icons.settings)),
       ]),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF14365A), Color(0xFF0A1F36)]),
-            border: Border.all(color: gold, width: 2), borderRadius: BorderRadius.circular(16),
-          ),
-          child: Column(children: [
-            const Text('𓂀', style: TextStyle(fontSize: 38, color: gold)),
-            const Text('NILO PASSPORT', style: TextStyle(fontSize: 20, letterSpacing: 4, color: gold, fontWeight: FontWeight.w800)),
-            const Text('جواز سفر نيلو', style: TextStyle(fontSize: 15, color: gold)),
-            const Divider(color: gold, height: 22),
-            Text(Passport.nickname.isEmpty ? 'Traveller' : Passport.nickname, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
-            Text(Passport.country.isEmpty ? '' : countryOf(Passport.country)[1], style: const TextStyle(color: Colors.white70)),
-            Text('⭐ ${Passport.xp} XP', style: const TextStyle(color: gold)),
-          ]),
-        ),
+        _cover(),
+        const SizedBox(height: 12),
+        _dataPage(countries.length),
         const SizedBox(height: 10),
         Row(children: [tile('🔥', '${Passport.streak}', 'Streak'), tile('🛡️', '$trust', 'Trust score'), tile('📜', '${Passport.papyri}', 'Papyri sent'), tile('🌍', '${countries.length}', 'Countries reached')]),
         const Padding(padding: EdgeInsets.fromLTRB(4, 2, 4, 0), child: Text('Trust score is a local number from your own streak and papyri. It is not verified by anyone.', style: TextStyle(fontSize: 11, color: Colors.white38))),
@@ -384,17 +409,7 @@ class PassportPage extends StatelessWidget {
           padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFFF1E3C3), borderRadius: BorderRadius.circular(12)),
           child: Column(children: [
             if (s.isEmpty) const Text('No stamps yet. Pick a country, solve the daily puzzle, learn a word, or send a papyrus.', style: TextStyle(color: Color(0xFF5B4630))),
-            Wrap(spacing: 12, runSpacing: 12, children: [
-              for (var i = 0; i < s.length; i++)
-                Transform.rotate(
-                  angle: ((i * 7) % 11 - 5) * 0.04,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(border: Border.all(color: [const Color(0xFF9B2C2C), const Color(0xFF1E4E8C), const Color(0xFF2C6B3F)][i % 3], width: 2), borderRadius: BorderRadius.circular(i.isEven ? 30 : 6)),
-                    child: Text(_label(s[i]), style: TextStyle(color: [const Color(0xFF9B2C2C), const Color(0xFF1E4E8C), const Color(0xFF2C6B3F)][i % 3], fontWeight: FontWeight.w700)),
-                  ),
-                ),
-            ]),
+            Wrap(spacing: 10, runSpacing: 10, children: [for (var i = 0; i < s.length; i++) _stamp(s[i], i)]),
           ]),
         ),
         const SizedBox(height: 14),
@@ -402,6 +417,86 @@ class PassportPage extends StatelessWidget {
       ]),
     );
   }
+  Widget _cover() => Container(
+    height: 170,
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [Color(0xFF16406B), Color(0xFF0B2542)]),
+      border: Border.all(color: gold, width: 2.5), borderRadius: BorderRadius.circular(16),
+      boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 10, offset: Offset(0, 4))],
+    ),
+    child: Container(
+      margin: const EdgeInsets.all(8),
+      decoration: BoxDecoration(border: Border.all(color: gold.withOpacity(.5)), borderRadius: BorderRadius.circular(10)),
+      child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Text('𓂀', style: TextStyle(fontSize: 44, color: gold)),
+        SizedBox(height: 4),
+        Text('NILO', style: TextStyle(fontSize: 26, letterSpacing: 10, color: gold, fontWeight: FontWeight.w800)),
+        Text('TRAVEL PASSPORT', style: TextStyle(fontSize: 13, letterSpacing: 4, color: gold)),
+        Text('جواز سفر نيلو', style: TextStyle(fontSize: 15, color: gold)),
+      ]),
+    ),
+  );
+
+  Widget _dataPage(int nCountries) {
+    const ink = Color(0xFF3B2F1E);
+    final nick = Passport.nickname.isEmpty ? 'TRAVELLER' : Passport.nickname.toUpperCase();
+    final c = Passport.country.isEmpty ? null : countryOf(Passport.country);
+    final start = DateTime(2026, 1, 1).add(Duration(days: Passport.startDay));
+    const mo = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    final issued = '${start.day.toString().padLeft(2, '0')} ${mo[start.month - 1]} ${start.year}';
+    final no = 'NL${(Passport.nickname.hashCode.abs() % 9000000 + 1000000)}';
+    String mrz(String t) => t.toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '<').padRight(30, '<').substring(0, 30);
+    Widget f(String l, String v) => Padding(padding: const EdgeInsets.only(bottom: 6), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(l, style: const TextStyle(fontSize: 9, color: Color(0xFF8A7650), letterSpacing: 1)), Text(v, style: const TextStyle(fontSize: 14, color: ink, fontWeight: FontWeight.w700))]));
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFF6EACB), Color(0xFFE9D7AA)]), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFB89A55), width: 1.5)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('PASSPORT • جواز', style: TextStyle(fontSize: 11, letterSpacing: 2, color: Color(0xFF8A7650))), Text('NILO', style: TextStyle(fontSize: 11, letterSpacing: 3, color: Color(0xFF8A7650), fontWeight: FontWeight.w800))]),
+        const SizedBox(height: 8),
+        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Container(
+            width: 90, height: 112,
+            decoration: BoxDecoration(color: const Color(0xFFD8C690), border: Border.all(color: const Color(0xFFB89A55)), borderRadius: BorderRadius.circular(6)),
+            child: Center(child: Text(c == null ? '𓂀' : '${c[3]}', style: const TextStyle(fontSize: 46))),
+          ),
+          const SizedBox(width: 14),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            f('NAME / الاسم', nick),
+            f('COUNTRY / البلد', c == null ? 'NOT SET' : '${c[1]}'.toUpperCase()),
+            f('DATE OF ISSUE', issued),
+            f('PASSPORT NO.', no),
+          ])),
+        ]),
+        const SizedBox(height: 6),
+        Text('${mrz('P<NIL<<$nick')}\n${mrz('$no<${Passport.xp}XP<${Passport.streak}D<$nCountries')}', style: const TextStyle(fontFamily: 'monospace', fontSize: 11.5, color: ink, letterSpacing: 1)),
+        const SizedBox(height: 4),
+        const Text('Fun travel passport inside the Nilo app. Not a government document.', style: TextStyle(fontSize: 9, color: Color(0xFF8A7650))),
+      ]),
+    );
+  }
+
+  Widget _stamp(String x, int i) {
+    final col = [const Color(0xFF9B2C2C), const Color(0xFF1E4E8C), const Color(0xFF2C6B3F)][i % 3];
+    final parts = _label(x).split(' ');
+    final icon = parts.first;
+    final name = parts.skip(1).join(' ');
+    return Transform.rotate(
+      angle: ((i * 7) % 11 - 5) * 0.06,
+      child: Container(
+        width: 92, height: 92, padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(shape: i % 4 == 3 ? BoxShape.rectangle : BoxShape.circle, borderRadius: i % 4 == 3 ? BorderRadius.circular(8) : null, border: Border.all(color: col.withOpacity(.85), width: 3)),
+        child: Container(
+          decoration: BoxDecoration(shape: i % 4 == 3 ? BoxShape.rectangle : BoxShape.circle, borderRadius: i % 4 == 3 ? BorderRadius.circular(6) : null, border: Border.all(color: col.withOpacity(.7), width: 1)),
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Text(icon, style: const TextStyle(fontSize: 22)),
+            Text(name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, color: col, fontWeight: FontWeight.w800)),
+            Text('NILO', style: TextStyle(fontSize: 8, letterSpacing: 2, color: col.withOpacity(.8))),
+          ]),
+        ),
+      ),
+    );
+  }
+
   static String _label(String x) {
     if (x.startsWith('home-')) return '🏠 ${countryOf(x.substring(5))[1]}';
     if (x.startsWith('word-')) return '💬 ${countryOf(x.substring(5))[1]}';
