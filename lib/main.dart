@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'data.dart';
+import 'extras.dart';
 import 'screens.dart';
 
 void main() => runApp(const NiloApp());
@@ -26,7 +27,7 @@ class NiloApp extends StatelessWidget {
             scaffoldBackgroundColor: kBg,
             colorScheme: const ColorScheme.dark(primary: kGreen)),
         builder: (c, w) => Directionality(textDirection: TextDirection.rtl, child: w!),
-        home: const TouristHome(),
+        home: const SplashGate(),
       );
 }
 

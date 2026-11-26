@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'data.dart';
 import 'main.dart';
+import 'extras.dart';
 import 'net.dart';
 
 void toast(BuildContext c, String m) => ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(m)));
@@ -75,6 +76,7 @@ class TouristHome extends StatelessWidget {
       ['Stay Safe', 'سعر عادل وأمان', Icons.shield, () => const SafePage()],
       ['Places & weather', 'أماكن وطقس', Icons.place, () => const PlacesPage()],
       ['Emergency & medical', 'طوارئ وكارت طبي', Icons.local_hospital, () => const EmergencyPage()],
+      ['Official services', 'خدمات رسمية', Icons.account_balance, () => const OfficialPage()],
       ['Chat & sales', 'دردشة نيلو', Icons.forum, () => const ModeGate()],
     ];
     return Scaffold(
@@ -86,18 +88,25 @@ class TouristHome extends StatelessWidget {
           crossAxisCount: 2, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 10, crossAxisSpacing: 10, childAspectRatio: 1.25,
           children: [
-            for (final i in items)
-              InkWell(
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => (i[3] as Widget Function())())),
-                child: Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(border: Border.all(color: kGreen.withOpacity(0.5)), borderRadius: BorderRadius.circular(8)),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(i[2] as IconData, color: kGreen),
-                    const SizedBox(height: 6),
-                    Text(i[0] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(i[1] as String, style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                  ]),
+            for (var n = 0; n < items.length; n++)
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: 1),
+                duration: Duration(milliseconds: 350 + n * 70),
+                curve: Curves.easeOutCubic,
+                builder: (_, v, child) => Opacity(opacity: v, child: Transform.translate(offset: Offset(0, 24 * (1 - v)), child: child)),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: () => Navigator.of(context).push(niloRoute((items[n][3] as Widget Function())())),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: const Color(0xFF1F2429), border: Border.all(color: kGreen.withOpacity(0.5)), borderRadius: BorderRadius.circular(14)),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(items[n][2] as IconData, color: kGreen),
+                      const SizedBox(height: 6),
+                      Text(items[n][0] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(items[n][1] as String, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                    ]),
+                  ),
                 ),
               ),
           ],
