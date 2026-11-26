@@ -72,6 +72,8 @@ class Passport {
   static set country(String v) => _p.setString('w_country', v);
   static int get xp => _p.getInt('w_xp') ?? 0;
   static int get streak => _p.getInt('w_streak') ?? 0;
+  static String get nickname => _p.getString('w_nick') ?? '';
+  static set nickname(String v) => _p.setString('w_nick', v);
   static List<String> get stamps => _p.getStringList('w_stamps') ?? [];
   static int get chapter => _p.getInt('w_chapter') ?? 0;
   static String _today() { final d = DateTime.now(); return '${d.year}-${d.month}-${d.day}'; }
@@ -184,8 +186,8 @@ class _WorldCardState extends State<WorldCard> {
   Widget build(BuildContext context) {
     final code = Passport.country;
     if (code.isEmpty) {
-      return _box(InkWell(onTap: _detect, child: const Padding(padding: EdgeInsets.all(16),
-        child: Row(children: [Text('🌍', style: TextStyle(fontSize: 34)), SizedBox(width: 12), Expanded(child: Text('Tap to detect your country and start your story\nاضغط نحدد بلدك ونبدأ حكايتك', style: TextStyle(fontSize: 16, height: 1.4))), Icon(Icons.chevron_right)]))));
+      return _box(InkWell(onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => FirstRunPage(next: const _Back()))); if (mounted) setState(() {}); }, child: const Padding(padding: EdgeInsets.all(16),
+        child: Row(children: [Text('🌍', style: TextStyle(fontSize: 34)), SizedBox(width: 12), Expanded(child: Text('Nai is waiting. Begin your story\nناي مستنيك. ابدأ حكايتك', style: TextStyle(fontSize: 16, height: 1.4))), Icon(Icons.chevron_right)]))));
     }
     final c = countryOf(code);
     return _box(Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -478,7 +480,7 @@ class _BgPainter extends CustomPainter {
       }
       canvas.drawCircle(Offset(s.width * 0.82, s.height * 0.1), 18, Paint()..color = const Color(0xFFF3E9C6));
     } else {
-      canvas.drawCircle(Offset(s.width * 0.8, s.height * (dusk ? 0.18 : 0.1)), dusk ? 30 : 24, Paint()..color = (dusk ? const Color(0xFFFFB066) : const Color(0xFFFFE9A8)).withOpacity(0.9));
+      canvas.drawCircle(Offset(s.width * 0.8, s.height * 0.045), dusk ? 30 : 24, Paint()..color = (dusk ? const Color(0xFFFFB066) : const Color(0xFFFFE9A8)).withOpacity(0.9));
     }
     final tau = 2 * math.pi;
     for (var i = 0; i < 3; i++) {
@@ -545,4 +547,131 @@ class _NiloTileState extends State<NiloTile> {
           ),
         ),
       );
+}
+
+/// Nai, the small guide: gold circle with a quill, speech bubble.
+class NaiSays extends StatelessWidget {
+  final String en, ar;
+  const NaiSays({super.key, required this.en, required this.ar});
+  @override
+  Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          width: 52, height: 52, alignment: Alignment.center,
+          decoration: BoxDecoration(shape: BoxShape.circle, gradient: const LinearGradient(colors: [Color(0xFFE9C46A), Color(0xFFB8860B)]), boxShadow: [BoxShadow(color: kGreen.withOpacity(0.4), blurRadius: 14)]),
+          child: const Text('🪶', style: TextStyle(fontSize: 26)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: const Color(0xFF12304D), border: Border.all(color: kGreen.withOpacity(0.5)), borderRadius: const BorderRadius.only(topRight: Radius.circular(16), bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16))),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Text('Nai • ناي', style: TextStyle(color: kGreen, fontWeight: FontWeight.w800, fontSize: 12)),
+            const SizedBox(height: 4),
+            Text(en, style: const TextStyle(fontSize: 15, height: 1.4)),
+            const SizedBox(height: 4),
+            Text(ar, style: const TextStyle(fontSize: 14, height: 1.5, color: Colors.white70)),
+          ]),
+        )),
+      ]);
+}
+
+/// First-run story: a papyrus drifts down the Nile, Nai asks where it found you, then nickname, 18+ and a first stamp.
+class FirstRunPage extends StatefulWidget {
+  final Widget next;
+  const FirstRunPage({super.key, required this.next});
+  @override
+  State<FirstRunPage> createState() => _FirstRunPageState();
+}
+
+class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderStateMixin {
+  late final AnimationController _a = AnimationController(vsync: this, duration: const Duration(seconds: 6))..repeat(reverse: true);
+  int step = 0;
+  bool busy = false, adult = false;
+  String code = '';
+  final nick = TextEditingController();
+  @override
+  void dispose() { _a.dispose(); nick.dispose(); super.dispose(); }
+
+  Future<void> _find(bool gps) async {
+    setState(() => busy = true);
+    final cc = await detectCountry(allowGps: gps);
+    if (!mounted) return;
+    setState(() => busy = false);
+    if (kWorld.any((c) => c[0] == cc)) {
+      setState(() { code = cc; step = 2; });
+    } else {
+      await _choose();
+    }
+  }
+
+  Future<void> _choose() async {
+    final r = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const CountryPickerPage()));
+    if (!mounted) return;
+    if (r == true && Passport.country.isNotEmpty) setState(() { code = Passport.country; step = 2; });
+  }
+
+  void _finish() {
+    if (!adult) { toast(context, 'Please confirm you are 18 or older'); return; }
+    Passport.country = code;
+    Passport.addStamp('home-$code');
+    Passport.nickname = nick.text.trim();
+    HapticFeedback.mediumImpact();
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => widget.next));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget body;
+    if (step == 0) {
+      body = Column(children: [
+        const Spacer(),
+        AnimatedBuilder(animation: _a, builder: (_, __) => Transform.translate(offset: Offset(math.sin(_a.value * math.pi) * 40 - 20, math.cos(_a.value * math.pi) * 8), child: Transform.rotate(angle: (_a.value - 0.5) * 0.3, child: const Text('📜', style: TextStyle(fontSize: 84))))),
+        const Spacer(),
+        const NaiSays(en: 'Peace, traveller. A papyrus floated down the Nile and stopped at your door. I am Nai. Let me look at where it found you.', ar: 'سلام يا مسافر. بردية نزلت في النيل ووقفت عند بابك. أنا ناي. خليني أشوف لقتك فين.'),
+        const SizedBox(height: 16),
+        FilledButton(onPressed: () => setState(() => step = 1), child: const Text('Continue • كمّل')),
+      ]);
+    } else if (step == 1) {
+      body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        const Spacer(),
+        const Center(child: Text('🌍', style: TextStyle(fontSize: 84))),
+        const Spacer(),
+        const NaiSays(en: 'May I look at your rough position once, only to learn your country? I keep the country, never the coordinates. Position can be faked, and I pass it to Android\'s geocoder for a moment.', ar: 'ينفع أبص على موقعك التقريبي مرة واحدة عشان أعرف بلدك؟ باحتفظ بالبلد بس، مش بالإحداثيات.'),
+        const SizedBox(height: 16),
+        if (busy) const Center(child: CircularProgressIndicator()) else ...[
+          FilledButton(onPressed: () => _find(true), child: const Text('Let Nai look • خليه يبص')),
+          const SizedBox(height: 8),
+          OutlinedButton(onPressed: () => _find(false), child: const Text('Use my phone region • اعتمد على إعدادات الموبايل')),
+          TextButton(onPressed: _choose, child: const Text('I will choose • هختار بنفسي')),
+        ],
+      ]);
+    } else {
+      final c = countryOf(code);
+      body = ListView(children: [
+        const SizedBox(height: 20),
+        Center(child: Text(c[3] as String, style: const TextStyle(fontSize: 72))),
+        Center(child: Text('${c[1]} • ${c[2]}', style: const TextStyle(fontSize: 18))),
+        const SizedBox(height: 16),
+        NaiSays(en: 'Welcome from ${c[1]}! Choose a nickname (not your real name). Be kind: text only, no links or phone numbers, never send money, report anything wrong. Nai cannot check your age, so be honest.', ar: 'أهلا بيك من ${c[2]}! اختار اسم مستعار. كن لطيف: نص بس، من غير لينكات أو أرقام، ومتبعتش فلوس، وبلّغ عن أي حاجة غلط.'),
+        const SizedBox(height: 14),
+        TextField(controller: nick, maxLength: 20, decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Nickname • الاسم المستعار')),
+        CheckboxListTile(value: adult, onChanged: (v) => setState(() => adult = v ?? false), title: const Text('I am 18 or older and I accept the rules')),
+        const SizedBox(height: 8),
+        FilledButton(onPressed: _finish, child: const Text('Get my passport • استلم جوازك')),
+      ]);
+    }
+    return Scaffold(
+      body: Stack(children: [
+        const Positioned.fill(child: NileBackground()),
+        SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: body)),
+      ]),
+    );
+  }
+}
+
+/// Pops back to the home screen after the first-run story when opened from the card.
+class _Back extends StatelessWidget {
+  const _Back();
+  @override
+  Widget build(BuildContext context) { WidgetsBinding.instance.addPostFrameCallback((_) { if (context.mounted) Navigator.of(context).pop(); }); return const Scaffold(); }
 }

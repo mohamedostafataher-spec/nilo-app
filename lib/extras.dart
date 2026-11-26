@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
+import 'world.dart';
 import 'screens.dart';
 
 const kNavy = Color(0xFF0E2A47);
@@ -107,7 +108,7 @@ class _SplashGateState extends State<SplashGate> with SingleTickerProviderStateM
     final seen = p.getBool('onboarded') ?? false;
     await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(niloRoute(seen ? const TouristHome() : const OnboardingPage()));
+    Navigator.of(context).pushReplacement(niloRoute(seen ? (Passport.country.isEmpty ? const FirstRunPage(next: TouristHome()) : const TouristHome()) : const OnboardingPage()));
   }
 
   @override
@@ -167,7 +168,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     final p = await SharedPreferences.getInstance();
     await p.setBool('onboarded', true);
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(niloRoute(const TouristHome()));
+    Navigator.of(context).pushReplacement(niloRoute(Passport.country.isEmpty ? const FirstRunPage(next: TouristHome()) : const TouristHome()));
   }
 
   @override
