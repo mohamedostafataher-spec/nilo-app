@@ -16,6 +16,13 @@ jobs:
         with:
           flutter-version: '3.27.4'
           channel: stable
+      - name: Restore signing key
+        env:
+          JKS: ${{ secrets.NILO_JKS_B64 }}
+          PW: ${{ secrets.NILO_STORE_PW }}
+        run: |
+          echo "$JKS" | base64 -d > android/app/nilo-release.jks
+          printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=nilo\nstoreFile=nilo-release.jks\n' "$PW" "$PW" > android/app/key.properties
       - run: flutter pub get
       - run: flutter build apk --release --no-tree-shake-icons --target-platform android-arm64
       - uses: actions/upload-artifact@v4
