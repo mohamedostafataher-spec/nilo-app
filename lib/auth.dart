@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
+import 'extras.dart' show niloRoute;
 import 'bottles.dart' show Sb;
 import 'settings.dart' show TextDocPage, kPrivacy, kTerms;
 
