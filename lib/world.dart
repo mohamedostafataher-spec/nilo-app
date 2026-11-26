@@ -7,6 +7,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'dart:ui' show PlatformDispatcher;
 import 'main.dart';
+import 'settings.dart';
 import 'screens.dart' show toast, ToolsPage;
 
 /// code, English name, Arabic name, flag, lat, lon, symbol emoji, symbol name, hello, thanks
@@ -74,6 +75,8 @@ class Passport {
   static int get streak => _p.getInt('w_streak') ?? 0;
   static String get nickname => _p.getString('w_nick') ?? '';
   static set nickname(String v) => _p.setString('w_nick', v);
+  static bool flag(String k, [bool d = true]) => _p.getBool('f_$k') ?? d;
+  static void setFlag(String k, bool v) => _p.setBool('f_$k', v);
   static List<String> get stamps => _p.getStringList('w_stamps') ?? [];
   static int get chapter => _p.getInt('w_chapter') ?? 0;
   static String _today() { final d = DateTime.now(); return '${d.year}-${d.month}-${d.day}'; }
@@ -316,31 +319,69 @@ class ChapterPage extends StatelessWidget {
 
 class PassportPage extends StatelessWidget {
   const PassportPage({super.key});
+  static const gold = Color(0xFFE0B04A);
   @override
   Widget build(BuildContext context) {
     final s = Passport.stamps;
+    final countries = <String>{for (final x in s) if (x.startsWith('trip-') || x.startsWith('home-')) x.substring(x.indexOf('-') + 1)};
+    final trust = math.min(100, 20 + Passport.streak * 3 + Passport.papyri * 2);
+    Widget tile(String icon, String v, String l) => Expanded(
+      child: Container(
+        margin: const EdgeInsets.all(4), padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(color: const Color(0xFF12304F), border: Border.all(color: gold.withOpacity(.5)), borderRadius: BorderRadius.circular(12)),
+        child: Column(children: [Text(icon, style: const TextStyle(fontSize: 20)), Text(v, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: gold)), Text(l, textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Colors.white70))]),
+      ),
+    );
+    final ach = <List<Object>>[
+      ['🔥', 'Streak 3 days', Passport.streak >= 3],
+      ['📜', 'First papyrus', Passport.papyri >= 1],
+      ['🌍', '3 countries', countries.length >= 3],
+      ['✍️', '10 papyri', Passport.papyri >= 10],
+      ['🏅', '7-day streak', Passport.streak >= 7],
+    ];
     return Scaffold(
-      appBar: AppBar(title: const Text('Nilo Passport • الباسبور'), backgroundColor: kBg, actions: [TextButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolsPage())), icon: const Icon(Icons.apps, size: 18), label: const Text('Tools'))]),
+      appBar: AppBar(title: const Text('Passport • الباسبور'), backgroundColor: kBg, actions: [
+        IconButton(tooltip: 'Tools', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolsPage())), icon: const Icon(Icons.apps)),
+        IconButton(tooltip: 'Settings', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())), icon: const Icon(Icons.settings)),
+      ]),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         Container(
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF14365A), Color(0xFF0A1F36)]),
-            border: Border.all(color: kGreen, width: 2),
-            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: gold, width: 2), borderRadius: BorderRadius.circular(16),
           ),
           child: Column(children: [
-            const Text('☥', style: TextStyle(fontSize: 40, color: kGreen)),
-            const Text('NILO PASSPORT', style: TextStyle(fontSize: 20, letterSpacing: 4, color: kGreen, fontWeight: FontWeight.w800)),
-            const Text('جواز سفر نيلو', style: TextStyle(fontSize: 15, color: kGreen)),
-            const SizedBox(height: 10),
-            Text('⭐ ${Passport.xp} XP   🔥 ${Passport.streak} days   📜 ${Passport.papyri} sent', style: const TextStyle(fontSize: 15)),
+            const Text('𓂀', style: TextStyle(fontSize: 38, color: gold)),
+            const Text('NILO PASSPORT', style: TextStyle(fontSize: 20, letterSpacing: 4, color: gold, fontWeight: FontWeight.w800)),
+            const Text('جواز سفر نيلو', style: TextStyle(fontSize: 15, color: gold)),
+            const Divider(color: gold, height: 22),
+            Text(Passport.nickname.isEmpty ? 'Traveller' : Passport.nickname, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+            Text(Passport.country.isEmpty ? '' : countryOf(Passport.country)[1], style: const TextStyle(color: Colors.white70)),
+            Text('⭐ ${Passport.xp} XP', style: const TextStyle(color: gold)),
           ]),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
+        Row(children: [tile('🔥', '${Passport.streak}', 'Streak'), tile('🛡️', '$trust', 'Trust score'), tile('📜', '${Passport.papyri}', 'Papyri sent'), tile('🌍', '${countries.length}', 'Countries reached')]),
+        const Padding(padding: EdgeInsets.fromLTRB(4, 2, 4, 0), child: Text('Trust score is a local number from your own streak and papyri. It is not verified by anyone.', style: TextStyle(fontSize: 11, color: Colors.white38))),
+        const SizedBox(height: 14),
+        const Text('Daily scroll • لفافة اليوم', style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
+        const SizedBox(height: 6),
         Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(color: const Color(0xFFF1E3C3), borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFF1E3C3), borderRadius: BorderRadius.circular(12)),
+          child: Text('Ink left today: ${Passport.ink}/10. Catch papyri, send one, keep your streak. Ink refills at 12:00.', style: const TextStyle(color: Color(0xFF5B4630))),
+        ),
+        const SizedBox(height: 14),
+        const Text('Achievements • إنجازات', style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
+        const SizedBox(height: 6),
+        Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final a in ach) Opacity(opacity: a[2] == true ? 1 : .35, child: Chip(avatar: Text(a[0] as String), label: Text(a[1] as String))),
+        ]),
+        const SizedBox(height: 14),
+        const Text('Stamps • أختام', style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFFF1E3C3), borderRadius: BorderRadius.circular(12)),
           child: Column(children: [
             if (s.isEmpty) const Text('No stamps yet. Pick a country, solve the daily puzzle, learn a word, or send a papyrus.', style: TextStyle(color: Color(0xFF5B4630))),
             Wrap(spacing: 12, runSpacing: 12, children: [
