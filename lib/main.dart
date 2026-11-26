@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' show PlatformDispatcher;
 import 'dart:convert';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -34,7 +35,7 @@ class NiloApp extends StatelessWidget {
             textTheme: GoogleFonts.cairoTextTheme(ThemeData.dark(useMaterial3: true).textTheme),
             scaffoldBackgroundColor: kBg,
             colorScheme: const ColorScheme.dark(primary: kGreen)),
-        builder: (c, w) => Directionality(textDirection: TextDirection.rtl, child: w!),
+        builder: (c, w) => Directionality(textDirection: PlatformDispatcher.instance.locale.languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr, child: w!),
         home: const SplashGate(),
       );
 }
