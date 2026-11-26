@@ -8,6 +8,7 @@ import 'package:geocoding/geocoding.dart';
 import 'dart:ui' show PlatformDispatcher;
 import 'main.dart';
 import 'settings.dart';
+import 'journey.dart';
 import 'screens.dart' show toast, ToolsPage;
 
 /// code, English name, Arabic name, flag, lat, lon, symbol emoji, symbol name, hello, thanks
@@ -360,8 +361,8 @@ class PassportPage extends StatelessWidget {
   static const gold = Color(0xFFE0B04A);
   @override
   Widget build(BuildContext context) {
-    final s = Passport.stamps;
-    final countries = <String>{for (final x in s) if (x.startsWith('trip-') || x.startsWith('home-')) x.substring(x.indexOf('-') + 1)};
+    final s = Passport.stamps.where((x) => !x.startsWith('trip-')).toList();
+    final countries = <String>{for (final x in s) if (x.startsWith('word-') || x.startsWith('home-')) x.substring(x.indexOf('-') + 1)};
     final trust = math.min(100, 20 + Passport.streak * 3 + Passport.papyri * 2);
     Widget tile(String icon, String v, String l) => Expanded(
       child: Container(
@@ -373,7 +374,7 @@ class PassportPage extends StatelessWidget {
     final ach = <List<Object>>[
       ['🔥', 'Streak 3 days', Passport.streak >= 3],
       ['📜', 'First papyrus', Passport.papyri >= 1],
-      ['🌍', '3 countries', countries.length >= 3],
+      ['🌍', '3 countries explored', countries.length >= 3],
       ['✍️', '10 papyri', Passport.papyri >= 10],
       ['🏅', '7-day streak', Passport.streak >= 7],
     ];
@@ -387,7 +388,7 @@ class PassportPage extends StatelessWidget {
         const SizedBox(height: 12),
         _dataPage(countries.length),
         const SizedBox(height: 10),
-        Row(children: [tile('🔥', '${Passport.streak}', 'Streak'), tile('🛡️', '$trust', 'Trust score'), tile('📜', '${Passport.papyri}', 'Papyri sent'), tile('🌍', '${countries.length}', 'Countries reached')]),
+        Row(children: [tile('🔥', '${Passport.streak}', 'Streak'), tile('🛡️', '$trust', 'Trust score'), tile('📜', '${Passport.papyri}', 'Papyri sent'), tile('🌍', '${countries.length}', 'Countries explored')]),
         const Padding(padding: EdgeInsets.fromLTRB(4, 2, 4, 0), child: Text('Trust score is a local number from your own streak and papyri. It is not verified by anyone.', style: TextStyle(fontSize: 11, color: Colors.white38))),
         const SizedBox(height: 14),
         const Text('Daily scroll • لفافة اليوم', style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
@@ -513,67 +514,30 @@ class PapyrusTripPage extends StatefulWidget {
   State<PapyrusTripPage> createState() => _PapyrusTripPageState();
 }
 
-class _PapyrusTripPageState extends State<PapyrusTripPage> with SingleTickerProviderStateMixin {
-  late final AnimationController _a = AnimationController(vsync: this, duration: const Duration(seconds: 5))..forward();
-  late final List<Object> from = countryOf(Passport.country.isEmpty ? 'EG' : Passport.country);
-  late final List<Object> to = () {
-    final l = kWorld.where((c) => c[0] != from[0]).toList();
-    return l[math.Random().nextInt(l.length)];
-  }();
+class _PapyrusTripPageState extends State<PapyrusTripPage> with TickerProviderStateMixin {
+  late final AnimationController _a = AnimationController(vsync: this, duration: const Duration(seconds: 12))..forward();
+  late final AnimationController _spin = AnimationController(vsync: this, duration: const Duration(seconds: 20))..repeat();
   @override
   void initState() {
     super.initState();
     Passport.papyrusSent();
-    Passport.addStamp('trip-${to[0]}');
     _a.addListener(() { if (_a.value > 0.97 && mounted) setState(() {}); });
   }
   @override
-  void dispose() { _a.dispose(); super.dispose(); }
+  void dispose() { _a.dispose(); _spin.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Your papyrus is travelling'), backgroundColor: kBg),
+        appBar: AppBar(title: const Text('رحلة بردييتك • Your papyrus'), backgroundColor: kBg),
         body: Column(children: [
-          Expanded(child: AnimatedBuilder(animation: _a, builder: (_, __) => CustomPaint(size: Size.infinite, painter: _TripPainter(_a.value, from, to)))),
+          Expanded(child: RepaintBoundary(child: AnimatedBuilder(animation: Listenable.merge([_a, _spin]), builder: (_, __) => CustomPaint(size: Size.infinite, painter: GlobePainter(_a.value, _spin.value))))),
           Padding(padding: const EdgeInsets.all(16), child: Text(
-            _a.value < 0.97 ? '📜 ${from[3]} ${from[1]}  →  ${to[1]} ${to[3]}' : '${to[6]} Arrived! In ${to[1]} it becomes: ${to[7]}.',
-            textAlign: TextAlign.center, style: const TextStyle(fontSize: 17))),
-          const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 8), child: Text('The trip is an animation. The person who actually reads your papyrus is whoever catches it, and it may take time.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),
+            _a.value < 0.45 ? '📜 بتبحر في النيل • Sailing down the Nile' : (_a.value < 0.97 ? '🌍 بتطلع للبحر • Drifting out to sea' : 'بردييتك في البحر. هتوصل لحد حقيقي يلاقيها.\nAdrift. It lands with a real person who catches it.'),
+            textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, height: 1.5))),
+          const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 8), child: Text('Real map outlines (Natural Earth, public domain). The route is an animation: we do not know who will catch it or where they live. When someone replies, you will see it in your inbox.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),
           FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Done')),
           const SizedBox(height: 16),
         ]),
       );
-}
-
-class _TripPainter extends CustomPainter {
-  final double t;
-  final List<Object> a, b;
-  _TripPainter(this.t, this.a, this.b);
-  Offset _pt(List<Object> c, Size s) => Offset(((c[5] as double) + 180) / 360 * s.width, (90 - (c[4] as double)) / 180 * s.height);
-  @override
-  void paint(Canvas canvas, Size s) {
-    final dot = Paint()..color = Colors.white12;
-    for (final c in kWorld) { canvas.drawCircle(_pt(c, s), 3, dot); }
-    final grid = Paint()..color = Colors.white10..strokeWidth = 1;
-    for (var i = 1; i < 6; i++) { canvas.drawLine(Offset(0, s.height * i / 6), Offset(s.width, s.height * i / 6), grid); canvas.drawLine(Offset(s.width * i / 6, 0), Offset(s.width * i / 6, s.height), grid); }
-    final p0 = _pt(a, s), p1 = _pt(b, s);
-    final mid = Offset((p0.dx + p1.dx) / 2, math.min(p0.dy, p1.dy) - s.height * 0.22);
-    Offset at(double u) => Offset(
-          (1 - u) * (1 - u) * p0.dx + 2 * (1 - u) * u * mid.dx + u * u * p1.dx,
-          (1 - u) * (1 - u) * p0.dy + 2 * (1 - u) * u * mid.dy + u * u * p1.dy);
-    final path = Paint()..color = kGreen.withOpacity(0.7)..strokeWidth = 2..style = PaintingStyle.stroke;
-    final e = Curves.easeInOut.transform(t.clamp(0.0, 1.0));
-    Offset? prev;
-    for (var i = 0; i <= 40; i++) { final u = e * i / 40; final q = at(u); if (prev != null) canvas.drawLine(prev, q, path); prev = q; }
-    void label(String txt, Offset o, double size) {
-      final tp = TextPainter(text: TextSpan(text: txt, style: TextStyle(fontSize: size)), textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, o - Offset(tp.width / 2, tp.height / 2));
-    }
-    label(a[3] as String, p0, 26);
-    label(t < 0.97 ? b[3] as String : b[6] as String, p1, t < 0.97 ? 26 : 40);
-    if (t < 0.97) label('📜', at(e), 30);
-  }
-  @override
-  bool shouldRepaint(_TripPainter o) => o.t != t;
 }
 
 /// Animated background: deep gradient, moving Nile waves and drifting gold dust. Pure Flutter, no assets.

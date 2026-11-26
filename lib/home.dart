@@ -75,8 +75,23 @@ class NileScene extends StatefulWidget {
 
 class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat();
+  int _real = 0;
+  bool _checked = false;
+  @override
+  void initState() { super.initState(); _count(); }
   @override
   void dispose() { _c.dispose(); super.dispose(); }
+
+  /// Real number of papyri floating from other people (server count). Nothing is made up.
+  Future<void> _count() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      if (!((p.getBool('b_age') ?? false) && (p.getString('b_nick') ?? '').isNotEmpty)) { if (mounted) setState(() => _checked = true); return; }
+      if (!await Sb.signIn()) return;
+      final r = await Sb.rpc('floating_count');
+      if (mounted) setState(() { _real = (r as num?)?.toInt() ?? 0; _checked = true; });
+    } catch (_) {}
+  }
 
   Future<void> _open(bool send) async {
     HapticFeedback.mediumImpact();
@@ -98,8 +113,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     final h = DateTime.now().hour;
     final night = h >= 19 || h < 5;
-    final others = kWorld.where((w) => w[0] != Passport.country).toList();
-    final flagFor = Passport.country.isEmpty ? '🌍' : (kWorld.where((w) => w[0] == Passport.country).map((w) => w[3] as String).firstOrNull ?? '🌍');
+        final flagFor = Passport.country.isEmpty ? '🌍' : (kWorld.where((w) => w[0] == Passport.country).map((w) => w[3] as String).firstOrNull ?? '🌍');
     return Stack(children: [
       Positioned.fill(
         child: RepaintBoundary(
@@ -113,10 +127,8 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
           animation: _c,
           builder: (_, __) {
             final kids = <Widget>[];
-            for (var i = 0; i < 3; i++) {
+            for (var i = 0; i < math.min(_real, 3); i++) {
               final ph = (_c.value + i / 3) % 1.0;
-              final idx = ((DateTime.now().minute ~/ 3) + i * 5) % others.length;
-              final c = others[idx];
               final x = w * (0.08 + 0.55 * ((i * 0.37) % 1.0)) + math.sin((ph + i) * 2 * math.pi) * 10;
               final y = hh * (0.58 + 0.07 * i) + math.sin(ph * 2 * math.pi * 2) * 6;
               kids.add(Positioned(
@@ -127,11 +139,21 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: const Color(0xFFFFF6DC), borderRadius: BorderRadius.circular(14), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)]),
-                      child: Text('${c[3]} ${c[1]}', style: const TextStyle(color: Color(0xFF3B2A12), fontWeight: FontWeight.w700, fontSize: 14)),
+                      child: const Text('بردية • Papyrus', style: const TextStyle(color: Color(0xFF3B2A12), fontWeight: FontWeight.w700, fontSize: 14)),
                     ),
                     const SizedBox(height: 2),
                     const Text('📜', style: TextStyle(fontSize: 34)),
                   ]),
+                ),
+              ));
+            }
+            if (_checked && _real == 0) {
+              kids.add(Positioned(
+                left: 24, right: 24, top: hh * 0.62,
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(14)),
+                  child: const Text('مفيش برديات لسه. كن أول واحد يبعت بردية!\nNo papyri yet. Be the first to send one.', textAlign: TextAlign.center, style: TextStyle(height: 1.5)),
                 ),
               ));
             }
@@ -184,7 +206,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
       ),
       Positioned(
         left: 0, right: 0, bottom: 4,
-        child: const Text('Tap a papyrus to catch it', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white70)),
+        child: Text(_real > 0 ? 'Tap a papyrus to catch it' : '', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white70)),
       ),
     ]);
   }
