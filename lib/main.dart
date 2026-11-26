@@ -4,6 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -33,7 +34,9 @@ class Msg {
   final String? link;
   final List<List<String>> srcs;
   final String? img;
-  Msg(this.user, this.text, {this.link, this.srcs = const [], this.img});
+  String? q;
+  String? fbDone;
+  Msg(this.user, this.text, {this.link, this.srcs = const [], this.img, this.q});
   Map<String, dynamic> toJson() => {'u': user, 't': text, 'l': link, 's': srcs, 'i': img};
   static Msg fromJson(Map<String, dynamic> j) => Msg(j['u'] == true, j['t'] as String, link: j['l'] as String?, srcs: ((j['s'] as List?) ?? []).map((e) => List<String>.from(e)).toList(), img: j['i'] as String?);
 }
@@ -93,6 +96,7 @@ class _ChatPageState extends State<ChatPage> {
   final stt = SpeechToText();
   final tts = FlutterTts();
   final player = AudioPlayer();
+  String? pendImg;
   bool sttOk = false, hands = false, wake = true, busy = false, speak = true;
   String status = '';
 
@@ -257,6 +261,22 @@ class _ChatPageState extends State<ChatPage> {
     await tts.setPitch(1.0);
   }
 
+  Future<void> pickImage() async {
+    try {
+      final x = await ImagePicker().pickImage(source: ImageSource.gallery, maxWidth: 1024, imageQuality: 80);
+      if (x == null) return;
+      final b = await x.readAsBytes();
+      setState(() { pendImg = base64Encode(b); if (ctrl.text.isEmpty) ctrl.text = 'اشرحلي الصورة دي بالمصري وقولي أعمل ايه'; });
+    } catch (_) {}
+  }
+
+  Future<void> sendFb(Msg m, String r) async {
+    setState(() => m.fbDone = r);
+    try {
+      await http.post(Uri.parse('https://nilo-eg.vercel.app/api/feedback'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'rating': r, 'q': m.q ?? '', 'a': m.text})).timeout(const Duration(seconds: 15));
+    } catch (_) {}
+  }
+
   Future<bool> neuralSpeak(String t) async {
     try {
       final r = await http.post(Uri.parse('https://nilo-eg.vercel.app/api/tts'),
@@ -330,20 +350,23 @@ class _ChatPageState extends State<ChatPage> {
       final hist = msgs.where((m) => m.link == null).toList();
       final tail = hist.length > 12 ? hist.sublist(hist.length - 12) : hist;
       var srcs = <List<String>>[];
+      final sentImg = pendImg != null;
       try {
         final r = await http.post(Uri.parse('https://nilo-eg.vercel.app/api/chat'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({
               'messages': tail.map((m) => {'role': m.user ? 'user' : 'assistant', 'content': m.text}).toList(),
-              'mem': mem
+              'mem': mem,
+              if (pendImg != null) 'image': {'mime': 'image/jpeg', 'data': pendImg}
             })).timeout(const Duration(seconds: 60));
         final j = jsonDecode(utf8.decode(r.bodyBytes));
         reply = (j['text'] as String).trim();
+        pendImg = null;
         srcs = ((j['sources'] as List?) ?? []).map((e) => [e['title'] as String, e['url'] as String]).toList();
       } catch (e) {
         reply = 'حصلت مشكلة في الاتصال، جرب تاني كمان شوية.';
       }
-      setState(() => msgs.add(Msg(false, reply, srcs: srcs)));
+      setState(() => msgs.add(Msg(false, reply, srcs: srcs, q: t)));
     }
     persist();
     toBottom();
@@ -441,6 +464,12 @@ class _ChatPageState extends State<ChatPage> {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         if (m.img != null) GestureDetector(onTap: () => openLink(m.img!), child: Padding(padding: const EdgeInsets.only(bottom: 8), child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(m.img!, loadingBuilder: (c, w, p) => p == null ? w : const SizedBox(height: 120, child: Center(child: CircularProgressIndicator())), errorBuilder: (c, e, st) => const Text('الصورة ماطلعتش'))))),
                         SelectableText(m.text, style: const TextStyle(height: 1.6, fontSize: 16)),
+                        if (!m.user && m.q != null) Row(children: [
+                          if (m.fbDone != null) Text(m.fbDone == 'up' ? 'شكرا 🙏' : 'شكرا، هتحسن 🙏', style: const TextStyle(fontSize: 12, color: Color(0xFFA6CDBB))) else ...[
+                            IconButton(visualDensity: VisualDensity.compact, icon: const Text('👍'), onPressed: () => sendFb(m, 'up')),
+                            IconButton(visualDensity: VisualDensity.compact, icon: const Text('👎'), onPressed: () => sendFb(m, 'down')),
+                          ]
+                        ]),
                         if (m.link != null) TextButton(onPressed: () => openLink(m.link!), child: const Text('افتح ↗')),
                         if (m.srcs.isNotEmpty) const Padding(padding: EdgeInsets.only(top: 6), child: Text('المصادر:', style: TextStyle(fontSize: 12, color: Color(0xFFA6CDBB)))),
                         for (final sr in m.srcs) InkWell(onTap: () => openLink(sr[1]), child: Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Text('🔗 ${sr[0]}', style: const TextStyle(fontSize: 13, color: Color(0xFF8FE0B9), decoration: TextDecoration.underline)))),
@@ -462,6 +491,7 @@ class _ChatPageState extends State<ChatPage> {
           child: Padding(
             padding: const EdgeInsets.all(8),
             child: Row(children: [
+              IconButton(icon: Icon(Icons.photo_camera_outlined, color: pendImg != null ? kGreen : null), onPressed: pickImage),
               IconButton(icon: const Icon(Icons.mic), onPressed: !sttOk ? null : () { tts.stop(); listen(); }),
               Expanded(child: TextField(controller: ctrl, onSubmitted: send, decoration: InputDecoration(hintText: 'اكتب أو اتكلم…', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none)))),
               const SizedBox(width: 6),
