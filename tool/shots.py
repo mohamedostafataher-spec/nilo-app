@@ -25,7 +25,11 @@ def nodes():
             out.append((e.get('text', '') + ' ' + e.get('content-desc', ''), e.get('class', ''), ((b[0] + b[2]) // 2, (b[1] + b[3]) // 2)))
     return out
 def tap_text(t, cls=None):
-    for txt, c, (x, y) in nodes():
+    ns = nodes()
+    for txt, c, (x, y) in ns:
+        if 'Wait' == txt.strip():
+            adb('shell', 'input', 'tap', str(x), str(y)); print('dismissed ANR', flush=True); time.sleep(2); ns = nodes(); break
+    for txt, c, (x, y) in ns:
         if t.lower() in txt.lower() and (cls is None or cls in c):
             adb('shell', 'input', 'tap', str(x), str(y))
             print('tap', t, x, y, flush=True)
@@ -45,7 +49,11 @@ adb('shell', 'pm', 'grant', 'eg.nilo.nilo_app', 'android.permission.RECORD_AUDIO
 adb('shell', 'monkey', '-p', 'eg.nilo.nilo_app', '-c', 'android.intent.category.LAUNCHER', '1')
 time.sleep(4); shot('splash')
 time.sleep(5)
-tap_text('Skip'); time.sleep(4)
+time.sleep(8)
+for _ in range(3):
+    if tap_text('Skip'): break
+    time.sleep(5)
+time.sleep(6)
 for _ in range(3):
     if any('Translate' in t or 'Phrasebook' in t for t,_,_ in nodes()): break
     tap_text('Start') or tap_text('Skip'); time.sleep(3)
