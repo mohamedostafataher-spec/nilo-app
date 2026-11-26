@@ -5,6 +5,7 @@ import 'main.dart';
 import 'extras.dart' show niloRoute;
 import 'bottles.dart' show Sb;
 import 'settings.dart' show TextDocPage, kPrivacy, kTerms;
+import 'world.dart' show NileBackground;
 
 enum _Mode { signIn, signUp, forgot }
 
@@ -60,17 +61,48 @@ class _AuthPageState extends State<AuthPage> {
   @override
   Widget build(BuildContext context) {
     final title = mode == _Mode.signIn ? 'تسجيل الدخول • Sign in' : mode == _Mode.signUp ? 'إنشاء حساب • Create account' : 'نسيت كلمة السر • Forgot password';
+    final tabs = mode == _Mode.forgot ? <Widget>[] : <Widget>[
+      Container(
+        decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(14)),
+        padding: const EdgeInsets.all(4),
+        child: Row(children: [
+          for (final m in [_Mode.signIn, _Mode.signUp])
+            Expanded(child: GestureDetector(
+              onTap: () => setState(() { mode = m; error = null; info = null; }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: const EdgeInsets.symmetric(vertical: 11),
+                decoration: BoxDecoration(color: mode == m ? const Color(0xFFD9A441) : Colors.transparent, borderRadius: BorderRadius.circular(11)),
+                child: Center(child: Text(L(m == _Mode.signIn ? 'Sign in • دخول' : 'Create account • إنشاء'), style: TextStyle(fontWeight: FontWeight.w800, color: mode == m ? const Color(0xFF0B1F33) : Colors.white70))),
+              ),
+            )),
+        ]),
+      ),
+      const SizedBox(height: 16),
+    ];
     return Scaffold(
-      body: SafeArea(
-        child: ListView(padding: const EdgeInsets.all(24), children: [
-          const SizedBox(height: 20),
-          Center(child: Text(L('𓂀'), style: TextStyle(fontSize: 48, color: Color(0xFFE0B04A)))),
-          Center(child: Text(L('Nilo • نيلو'), style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900))),
-          const SizedBox(height: 24),
-          Text(L(title), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+      body: Stack(children: [
+        const Positioned.fill(child: NileBackground()),
+        SafeArea(
+        child: ListView(padding: const EdgeInsets.fromLTRB(22, 18, 22, 24), children: [
+          const SizedBox(height: 14),
+          Center(child: Container(
+            width: 84, height: 84,
+            decoration: BoxDecoration(shape: BoxShape.circle, gradient: const LinearGradient(colors: [Color(0xFFD9A441), Color(0xFF8E6A1E)], begin: Alignment.topLeft, end: Alignment.bottomRight), boxShadow: [BoxShadow(color: const Color(0xFFD9A441).withOpacity(0.35), blurRadius: 24)]),
+            child: const Center(child: Text('𓂀', style: TextStyle(fontSize: 42, color: Color(0xFF0B1F33)))),
+          )),
           const SizedBox(height: 12),
-          TextField(controller: email, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: InputDecoration(labelText: L('Email • الإيميل'), border: OutlineInputBorder())),
-          const SizedBox(height: 10),
+          Center(child: Text(L('Nilo • نيلو'), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: 1))),
+          Center(child: Padding(padding: const EdgeInsets.only(top: 4), child: Text(L('Translate, travel, connect • ترجم، سافر، تواصل'), style: const TextStyle(color: Colors.white60, fontSize: 13)))),
+          const SizedBox(height: 22),
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(color: const Color(0xFF0E2A45).withOpacity(0.88), borderRadius: BorderRadius.circular(22), border: Border.all(color: Colors.white12)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          ...tabs,
+          if (mode == _Mode.forgot) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(L(title), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
+          TextField(controller: email, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: InputDecoration(prefixIcon: const Icon(Icons.mail_outline), labelText: L('Email • الإيميل'), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
+          const SizedBox(height: 12),
           if (mode != _Mode.forgot || codeSent) ...[
             if (mode == _Mode.forgot) ...[
               TextField(controller: code, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: L('Code from email • الكود'), border: OutlineInputBorder())),
@@ -85,6 +117,7 @@ class _AuthPageState extends State<AuthPage> {
           if (info != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(info!, style: const TextStyle(color: Colors.white70))),
           const SizedBox(height: 14),
           FilledButton(
+            style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
             onPressed: busy ? null : _submit,
             child: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(mode == _Mode.signIn ? 'Sign in • دخول' : mode == _Mode.signUp ? 'Create account • إنشاء' : (codeSent ? 'Set new password' : 'Send code • ابعت الكود'))),
           ),
@@ -94,7 +127,9 @@ class _AuthPageState extends State<AuthPage> {
             TextButton(onPressed: () => setState(() { mode = _Mode.signUp; error = null; }), child: Text(L('New here? Create an account • حساب جديد'))),
           ] else
             TextButton(onPressed: () => setState(() { mode = _Mode.signIn; error = null; info = null; }), child: Text(L('Back to sign in • رجوع'))),
-          const Divider(height: 28),
+            ]),
+          ),
+          const SizedBox(height: 18),
           OutlinedButton(onPressed: busy ? null : _done, child: Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text(L('Continue as guest • كمل كضيف')))),
           const SizedBox(height: 6),
           Text(L('A guest account lives on this phone only. If you lose the phone you lose it. Create an account to keep your papyri.'), style: TextStyle(fontSize: 11, color: Colors.white54)),
@@ -105,6 +140,7 @@ class _AuthPageState extends State<AuthPage> {
           ]),
         ]),
       ),
+      ]),
     );
   }
 }

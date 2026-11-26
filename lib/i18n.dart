@@ -66,6 +66,18 @@ String L(String s) {
 }
 
 const kPairs = <List<String>>[
+  [r'''Translate, travel, connect • ترجم، سافر، تواصل''', r'''ترجم، سافر، تواصل'''],
+  [r'''Report this profile''', r'''بلّغ عن البروفايل ده'''],
+  [r'''Display name • الاسم''', r'''الاسم المعروض'''],
+  [r'''Upload a photo''', r'''ارفع صورة'''],
+  [r'''Remove photo''', r'''احذف الصورة'''],
+  [r'''Or pick a cartoon''', r'''أو اختار كارتون'''],
+  [r'''About you (optional)''', r'''عنك (اختياري)'''],
+  [r'''A line about you. No links or phone numbers.''', r'''سطر عنك. من غير لينكات أو أرقام.'''],
+  [r'''Could not use this photo. Try another.''', r'''معرفتش أستخدم الصورة دي. جرب غيرها.'''],
+  [r'''Saved on this phone. It will show to others once you have joined Papyrus and are online.''', r'''اتحفظ على التليفون. هيظهر للناس لما تنضم للبردي وتبقى أونلاين.'''],
+  [r'''Photos are shrunk and stripped of metadata (including location) before upload. Others can report a photo; reported photos are hidden. Faces of other people, minors and nudity are not allowed.''', r'''الصور بتتصغر وبتتشال منها البيانات (زي الموقع) قبل الرفع. أي حد يقدر يبلّغ عن صورة والمبلّغ عنها بتختفي. ممنوع وجوه ناس تانية والقاصرين والعري.'''],
+  [r'''Your bio and avatar are visible to other adults (18+) on your profile card. Never share contact details.''', r'''النبذة والصورة بتظهر لبالغين (١٨+) على كارت البروفايل. متشاركش بيانات تواصل.'''],
   [r'''UNESCO sites in any country (live, Wikidata)''', r'''مواقع اليونسكو في أي دولة (مباشر، Wikidata)'''],
   [r'''Notable places • أماكن مميزة''', r'''أماكن مميزة'''],
   [r'''UNESCO World Heritage sites, loaded live from Wikidata (CC0). Not a complete list of places worth visiting, and some entries are regions or groups of sites. Tap to read more on Wikipedia (English).''', r'''مواقع التراث العالمي لليونسكو، بتتحمل مباشرة من Wikidata (CC0). مش قائمة كاملة بالأماكن المميزة، وبعض العناصر مناطق أو مجموعات مواقع. دوس لقراءة المزيد على ويكيبيديا (إنجليزي).'''],

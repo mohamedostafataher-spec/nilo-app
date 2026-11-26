@@ -1,5 +1,6 @@
 import 'i18n.dart';
 import 'places.dart';
+import 'profile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'main.dart';
@@ -100,7 +101,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           );
         }),
-        ListTile(leading: Icon(Icons.person), title: Text(L('Profile • الملف')), subtitle: Text(Passport.nickname.isEmpty ? 'Set a nickname' : Passport.nickname), onTap: _editName),
+        ListTile(leading: Icon(Icons.person), title: Text(L('Profile • الملف')), subtitle: Text(Passport.nickname.isEmpty ? 'Set a nickname' : Passport.nickname), onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileEditPage())); setState(() {}); }),
         ListTile(
           leading: const Icon(Icons.language),
           title: Text(L('Interface language • لغة التطبيق')),

@@ -6,6 +6,7 @@ import 'package:video_compress/video_compress.dart';
 import 'package:video_player/video_player.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
+import 'profile.dart';
 import 'world.dart';
 import 'bottles.dart';
 import 'screens.dart' show toast;
@@ -138,8 +139,21 @@ class _StoriesTabState extends State<StoriesTab> {
     final a = s['author'];
     final mine = l.where((x) => (x as Map)['author'] == a).length;
     showModalBottomSheet(context: context, backgroundColor: const Color(0xFF0E2A45), builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Text(_flag((s['country'] ?? '').toString()), style: const TextStyle(fontSize: 46)),
+      FutureBuilder<dynamic>(
+        future: Sb.rpc('get_profile', {'p_uid': a}),
+        builder: (c, snap) {
+          final r = (snap.data is List && (snap.data as List).isNotEmpty) ? Map<String, dynamic>.from((snap.data as List).first as Map) : <String, dynamic>{};
+          final bio = (r['bio'] ?? '').toString();
+          return Column(mainAxisSize: MainAxisSize.min, children: [
+            AvatarView(avatar: (r['avatar'] ?? '').toString(), path: (r['avatar_path'] ?? '').toString(), size: 84),
+            if (bio.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(bio, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, height: 1.4))),
+            if ((r['avatar_path'] ?? '').toString().isNotEmpty || bio.isNotEmpty)
+              TextButton(onPressed: () async { try { await Sb.rpc('report_profile', {'p_uid': a}); if (mounted) toast(context, 'Reported. Thank you.'); } catch (_) { if (mounted) toast(context, 'Did not work. Try again.'); } }, child: Text(L('Report this profile'), style: const TextStyle(fontSize: 12))),
+          ]);
+        },
+      ),
       const SizedBox(height: 6),
+      Text(_flag((s['country'] ?? '').toString()), style: const TextStyle(fontSize: 30)),
       Text((s['nick'] ?? '').toString(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
       const SizedBox(height: 4),
       Text('$mine ${mine == 1 ? 'story' : 'stories'} in the last 24 hours • حكايات آخر ٢٤ ساعة', style: const TextStyle(color: Colors.white70, fontSize: 12)),
