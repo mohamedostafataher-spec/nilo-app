@@ -13,6 +13,8 @@ import 'screens.dart';
 import 'stories.dart';
 import 'navbar.dart';
 import 'today.dart';
+import 'circles.dart';
+import 'letters.dart';
 
 /// Main shell: one living Nile scene + simple bottom nav.
 class TouristHome extends StatefulWidget {
@@ -23,7 +25,7 @@ class TouristHome extends StatefulWidget {
 
 class _TouristHomeState extends State<TouristHome> {
   int tab = 0;
-  int hub = 0; // inside the stories hub: 0 = حكاية (story), 1 = قصص (stories)
+  int hub = 0; // stories hub: 0 story, 1 stories, 2 circles, 3 place letters
 
   Future<void> _send() async {
     final p = await SharedPreferences.getInstance();
@@ -43,7 +45,7 @@ class _TouristHomeState extends State<TouristHome> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Row(children: [
-              for (final e in const [[0, 'حكاية'], [1, 'قصص']].map((x) => x))
+              for (final e in const [[0, 'حكاية'], [1, 'قصص'], [2, 'دوائر'], [3, 'خطابات']].map((x) => x))
                 Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => hub = e[0] as int),
@@ -63,7 +65,7 @@ class _TouristHomeState extends State<TouristHome> {
             ]),
           ),
         ),
-        Expanded(child: hub == 0 ? const StoryPage() : const StoriesTab()),
+        Expanded(child: hub == 0 ? const StoryPage() : hub == 1 ? const StoriesTab() : hub == 2 ? const CirclesPage() : const LettersPage()),
       ]);
 
   @override

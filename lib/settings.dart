@@ -8,6 +8,7 @@ import 'auth.dart';
 import 'extras.dart' show niloRoute;
 import 'home.dart' show TouristHome;
 import 'store.dart';
+import 'invite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const kPrivacy = '''Privacy Policy • سياسة الخصوصية
@@ -112,12 +113,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(leading: const Icon(Icons.lock), title: const Text('Privacy policy • الخصوصية'), onTap: () => _go(const TextDocPage('Privacy Policy', kPrivacy))),
         ListTile(leading: const Icon(Icons.gavel), title: const Text('Terms of use • الشروط'), onTap: () => _go(const TextDocPage('Terms of Use', kTerms))),
         const Divider(),
-        ListTile(
-          leading: const Icon(Icons.share),
-          title: const Text('Invite a friend • ادعُ صديق'),
-          subtitle: const Text('Copies the download page link'),
-          onTap: () { Clipboard.setData(const ClipboardData(text: 'Nilo • https://nilo-dl.vercel.app')); toast(context, 'Link copied'); },
-        ),
+        ListTile(leading: const Icon(Icons.share), title: const Text('Invite friends • ادعُ صديق'), subtitle: const Text('Your code, link and Reeds perks'), onTap: () => _go(const InvitePage())),
         ListTile(leading: const Icon(Icons.bug_report), title: const Text('Report a problem • أبلغ عن مشكلة'), onTap: () => openUrl('mailto:mohamedostafataher@gmail.com?subject=Nilo%20problem')),
         ListTile(
           leading: const Icon(Icons.info),
