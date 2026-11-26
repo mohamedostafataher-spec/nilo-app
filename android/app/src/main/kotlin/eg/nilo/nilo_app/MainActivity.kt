@@ -20,6 +20,12 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "a11y") {
                 startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                 result.success(true)
+            } else if (call.method == "region") {
+                // Country from the mobile network or SIM. No permission needed, no location, only a 2-letter code.
+                val tm = getSystemService(android.content.Context.TELEPHONY_SERVICE) as? android.telephony.TelephonyManager
+                var cc = tm?.networkCountryIso ?: ""
+                if (cc.isEmpty()) cc = tm?.simCountryIso ?: ""
+                result.success(cc.uppercase())
             } else result.notImplemented()
         }
     }

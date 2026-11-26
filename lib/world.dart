@@ -130,6 +130,11 @@ Future<String> detectCountry({required bool allowGps}) async {
       }
     } catch (_) {}
   }
+  // Mobile network / SIM country first: it follows where the phone really is, unlike the language setting (en_US on many Egyptian phones).
+  try {
+    final r = await const MethodChannel('nilo/native').invokeMethod<String>('region');
+    if (r != null && r.length == 2) return r.toUpperCase();
+  } catch (_) {}
   return PlatformDispatcher.instance.locale.countryCode?.toUpperCase() ?? '';
 }
 
@@ -684,33 +689,50 @@ class FirstRunPage extends StatefulWidget {
 }
 
 class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderStateMixin {
-  late final AnimationController _a = AnimationController(vsync: this, duration: const Duration(seconds: 6))..repeat(reverse: true);
-  int step = 0;
-  bool busy = false, adult = false;
+  late final AnimationController _a = AnimationController(vsync: this, duration: const Duration(seconds: 5))..repeat(reverse: true);
+  bool busy = true, adult = false;
   String code = '';
   final nick = TextEditingController();
   @override
+  void initState() { super.initState(); _auto(); }
+  @override
   void dispose() { _a.dispose(); nick.dispose(); super.dispose(); }
 
-  Future<void> _find(bool gps) async {
-    setState(() => busy = true);
-    final cc = await detectCountry(allowGps: gps);
+  /// Quiet detection from the mobile network / SIM, no permission and no location.
+  Future<void> _auto() async {
+    final cc = await detectCountry(allowGps: false);
     if (!mounted) return;
-    setState(() => busy = false);
-    if (kWorld.any((c) => c[0] == cc)) {
-      setState(() { code = cc; step = 2; });
-    } else {
-      await _choose();
-    }
+    setState(() { busy = false; if (kWorld.any((c) => c[0] == cc)) code = cc; });
+  }
+
+  Future<void> _gps() async {
+    setState(() => busy = true);
+    final cc = await detectCountry(allowGps: true);
+    if (!mounted) return;
+    setState(() { busy = false; if (kWorld.any((c) => c[0] == cc)) code = cc; });
+    if (!kWorld.any((c) => c[0] == cc)) toast(context, 'Could not detect. Tap the flag to choose.');
   }
 
   Future<void> _choose() async {
     final r = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const CountryPickerPage()));
     if (!mounted) return;
-    if (r == true && Passport.country.isNotEmpty) setState(() { code = Passport.country; step = 2; });
+    if (r == true && Passport.country.isNotEmpty) setState(() => code = Passport.country);
   }
 
+  void _rules() => showModalBottomSheet(context: context, backgroundColor: const Color(0xFF12304D), builder: (_) => const Padding(
+        padding: EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Rules • القواعد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kGreen)),
+          SizedBox(height: 10),
+          Text('• 18+ only. Self-declared: Nilo cannot check your age.\n• Text only. No links, phone numbers or social handles.\n• Never send money or share bank or ID details.\n• Meet only in public places and tell a friend.\n• Report and block anyone who makes you uncomfortable.\n• Machine translation can be wrong.', style: TextStyle(height: 1.6)),
+          SizedBox(height: 10),
+          Text('٠ للكبار ١٨+ فقط  ٠ نص بس، من غير لينكات أو أرقام  ٠ متبعتش فلوس  ٠ قابل حد في مكان عام  ٠ بلّغ واحظر أي حد يضايقك', style: TextStyle(height: 1.6, color: Colors.white70)),
+        ]),
+      ));
+
   void _finish() {
+    if (code.isEmpty) { toast(context, 'Tap the flag to choose your country'); return; }
+    if (nick.text.trim().length < 2) { toast(context, 'Choose a nickname (2 to 20 letters)'); return; }
     if (!adult) { toast(context, 'Please confirm you are 18 or older'); return; }
     Passport.country = code;
     Passport.addStamp('home-$code');
@@ -721,49 +743,52 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
-    Widget body;
-    if (step == 0) {
-      body = Column(children: [
-        const Spacer(),
-        AnimatedBuilder(animation: _a, builder: (_, __) => Transform.translate(offset: Offset(math.sin(_a.value * math.pi) * 40 - 20, math.cos(_a.value * math.pi) * 8), child: Transform.rotate(angle: (_a.value - 0.5) * 0.3, child: const Text('📜', style: TextStyle(fontSize: 84))))),
-        const Spacer(),
-        const NaiSays(en: 'Peace, traveller. A papyrus floated down the Nile and stopped at your door. I am Nai. Let me look at where it found you.', ar: 'سلام يا مسافر. بردية نزلت في النيل ووقفت عند بابك. أنا ناي. خليني أشوف لقتك فين.'),
-        const SizedBox(height: 16),
-        FilledButton(onPressed: () => setState(() => step = 1), child: const Text('Continue • كمّل')),
-      ]);
-    } else if (step == 1) {
-      body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Spacer(),
-        const Center(child: Text('🌍', style: TextStyle(fontSize: 84))),
-        const Spacer(),
-        const NaiSays(en: 'May I look at your rough position once, only to learn your country? I keep the country, never the coordinates. Position can be faked, and I pass it to Android\'s geocoder for a moment.', ar: 'ينفع أبص على موقعك التقريبي مرة واحدة عشان أعرف بلدك؟ باحتفظ بالبلد بس، مش بالإحداثيات.'),
-        const SizedBox(height: 16),
-        if (busy) const Center(child: CircularProgressIndicator()) else ...[
-          FilledButton(onPressed: () => _find(true), child: const Text('Let Nai look • خليه يبص')),
-          const SizedBox(height: 8),
-          OutlinedButton(onPressed: () => _find(false), child: const Text('Use my phone region • اعتمد على إعدادات الموبايل')),
-          TextButton(onPressed: _choose, child: const Text('I will choose • هختار بنفسي')),
-        ],
-      ]);
-    } else {
-      final c = countryOf(code);
-      body = ListView(children: [
-        const SizedBox(height: 20),
-        Center(child: Text(c[3] as String, style: const TextStyle(fontSize: 72))),
-        Center(child: Text('${c[1]} • ${c[2]}', style: const TextStyle(fontSize: 18))),
-        const SizedBox(height: 16),
-        NaiSays(en: 'Welcome from ${c[1]}! Choose a nickname (not your real name). Be kind: text only, no links or phone numbers, never send money, report anything wrong. Nai cannot check your age, so be honest.', ar: 'أهلا بيك من ${c[2]}! اختار اسم مستعار. كن لطيف: نص بس، من غير لينكات أو أرقام، ومتبعتش فلوس، وبلّغ عن أي حاجة غلط.'),
-        const SizedBox(height: 14),
-        TextField(controller: nick, maxLength: 20, decoration: const InputDecoration(border: OutlineInputBorder(), labelText: 'Nickname • الاسم المستعار')),
-        CheckboxListTile(value: adult, onChanged: (v) => setState(() => adult = v ?? false), title: const Text('I am 18 or older and I accept the rules')),
-        const SizedBox(height: 8),
-        FilledButton(onPressed: _finish, child: const Text('Get my passport • استلم جوازك')),
-      ]);
-    }
+    final has = code.isNotEmpty;
+    final c = has ? countryOf(code) : null;
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Stack(children: [
         const Positioned.fill(child: NileBackground()),
-        SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: body)),
+        SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                AnimatedBuilder(animation: _a, builder: (_, __) => Transform.translate(offset: Offset(0, math.sin(_a.value * math.pi) * 6), child: const Text('📜', style: TextStyle(fontSize: 46)))),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: _choose,
+                  child: busy
+                      ? const SizedBox(height: 96, child: Center(child: CircularProgressIndicator(strokeWidth: 2)))
+                      : Column(children: [
+                          Text(has ? c![3] as String : '🌍', style: const TextStyle(fontSize: 64)),
+                          const SizedBox(height: 4),
+                          Text(has ? 'Welcome from ${c![1]}' : 'Choose your country', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                          Text(has ? 'أهلا بيك من ${c![2]}' : 'اختار بلدك', style: const TextStyle(fontSize: 15, color: Colors.white70)),
+                          const SizedBox(height: 2),
+                          const Text('Not right? Tap to change • مش صح؟ اضغط', style: TextStyle(fontSize: 12, color: kGreen)),
+                        ]),
+                ),
+                const SizedBox(height: 22),
+                TextField(
+                  controller: nick, maxLength: 20, textAlign: TextAlign.center,
+                  decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))), hintText: 'Nickname, not your real name • اسم مستعار', counterText: ''),
+                ),
+                const SizedBox(height: 12),
+                Row(children: [
+                  Checkbox(value: adult, onChanged: (v) => setState(() => adult = v ?? false), visualDensity: VisualDensity.compact),
+                  Expanded(child: Text.rich(TextSpan(style: const TextStyle(fontSize: 13), children: [
+                    const TextSpan(text: 'I am 18+ and accept the '),
+                    WidgetSpan(alignment: PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic, child: GestureDetector(onTap: _rules, child: const Text('rules', style: TextStyle(fontSize: 13, color: kGreen, decoration: TextDecoration.underline)))),
+                  ]))),
+                ]),
+                const SizedBox(height: 14),
+                SizedBox(width: double.infinity, height: 52, child: FilledButton(onPressed: _finish, style: FilledButton.styleFrom(shape: const StadiumBorder()), child: const Text('Get my passport • استلم جوازك', style: TextStyle(fontSize: 16)))),
+                TextButton(onPressed: busy ? null : _gps, child: const Text('Detect with my location once • بالموقع مرة', style: TextStyle(fontSize: 12, color: Colors.white54))),
+              ]),
+            ),
+          ),
+        ),
       ]),
     );
   }

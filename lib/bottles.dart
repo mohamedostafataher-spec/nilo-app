@@ -177,7 +177,17 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
     nick = p.getString('b_nick') ?? '';
     lang = p.getString('b_lang') ?? 'en';
     nickC.text = nick;
-    if (ageOk && nick.isNotEmpty) {
+    if (!(ageOk && nick.isNotEmpty) && Passport.nickname.trim().length >= 2) {
+      // First-run already confirmed 18+ and the nickname: join without asking again.
+      final n = Passport.nickname.trim();
+      if (await Sb.signIn()) {
+        try {
+          await Sb.post('profiles', {'id': Sb.uid, 'nick': n, 'lang': lang, 'age_ok': true}, upsert: true);
+          await p.setBool('b_age', true); await p.setString('b_nick', n);
+          ageOk = true; nick = n;
+        } catch (_) { failed = true; }
+      } else { failed = true; }
+    } else if (ageOk && nick.isNotEmpty) {
       final ok = await Sb.signIn();
       if (!ok) failed = true;
     }
@@ -225,9 +235,7 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
     bool conf = false;
     return StatefulBuilder(builder: (c, set) => ListView(padding: const EdgeInsets.all(16), children: [
       _river(),
-      const Text('Write a papyrus and watch it travel the world map. Someone anywhere finds it, and it turns into a symbol of their country.', style: TextStyle(fontSize: 17, height: 1.4)),
-      const SizedBox(height: 10),
-      const Text('Rules, for everyone:\n• 18 or older only. This is a self-declaration: Nilo cannot check your age.\n• Text only. No photos, links, phone numbers or social handles.\n• Never send money or share bank or ID details.\n• If you meet anyone, meet in a public place and tell a friend.\n• Report and block anyone who makes you uncomfortable.\n• Machine translation can be wrong.', style: TextStyle(height: 1.5, color: Colors.white70)),
+      const Text('Write a papyrus and watch it travel the world. Someone anywhere finds it.', style: TextStyle(fontSize: 17, height: 1.4)),
       const SizedBox(height: 12),
       TextField(controller: nickC, maxLength: 20, decoration: const InputDecoration(labelText: 'Nickname (not your real name)', border: OutlineInputBorder())),
       DropdownButton<String>(
@@ -236,7 +244,7 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
         items: [for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text('I read papyri in: ${kNames[i]}'))],
         onChanged: (v) => set(() => lang = v ?? 'en'),
       ),
-      CheckboxListTile(value: conf, onChanged: (v) => set(() => conf = v ?? false), title: const Text('I am 18 or older and I accept the rules')),
+      CheckboxListTile(value: conf, onChanged: (v) => set(() => conf = v ?? false), title: const Text('I am 18+ and accept the rules (text only, no links or numbers, report and block)', style: TextStyle(fontSize: 13))),
       if (failed) const Text('Could not connect. Check internet and try again.', style: TextStyle(color: Colors.orangeAccent)),
       FilledButton(onPressed: () => _join(conf), child: const Text('Enter')),
       const SizedBox(height: 10),
@@ -311,10 +319,37 @@ class ThrowPage extends StatefulWidget {
   State<ThrowPage> createState() => _ThrowPageState();
 }
 
-class _ThrowPageState extends State<ThrowPage> {
-  String kind = 'place', place = kDest[0][0] as String, writeLang = 'en';
+class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMixin {
+  String kind = 'free', place = kDest[0][0] as String, writeLang = 'en';
   final c = TextEditingController();
-  bool busy = false;
+  final focus = FocusNode();
+  bool busy = false, flying = false;
+  late final AnimationController _fly = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((p) async {
+      if (!(p.getBool('rules_seen') ?? false)) {
+        await p.setBool('rules_seen', true);
+        if (mounted) _rules();
+      } else if (mounted) { focus.requestFocus(); }
+    });
+  }
+
+  @override
+  void dispose() { c.dispose(); focus.dispose(); _fly.dispose(); super.dispose(); }
+
+  void _rules() => showModalBottomSheet(context: context, backgroundColor: const Color(0xFF12304D), builder: (_) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Before you write • قبل ما تكتب', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: kGreen)),
+          const SizedBox(height: 10),
+          const Text('• Text only. No links, phone numbers or social handles.\n• Be kind. Never ask for or send money.\n• Someone anywhere may answer. Report and block if needed.', style: TextStyle(height: 1.6)),
+          const SizedBox(height: 14),
+          SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Got it • تمام'))),
+        ]),
+      )).then((_) { if (mounted) focus.requestFocus(); });
 
   Future<void> _send() async {
     final t = c.text.trim();
@@ -325,44 +360,92 @@ class _ThrowPageState extends State<ThrowPage> {
     setState(() => busy = true);
     try {
       await Sb.post('bottles', {'author': Sb.uid, 'kind': kind, 'place': kind == 'place' ? place : null, 'body': t, 'lang': writeLang});
+      HapticFeedback.mediumImpact();
+      focus.unfocus();
+      setState(() => flying = true);
+      await _fly.forward();
       if (mounted) { Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PapyrusTripPage())); }
     } catch (e) {
-      if (mounted) { setState(() => busy = false); toast(context, 'Could not send: $e'); }
+      if (mounted) { setState(() { busy = false; flying = false; }); toast(context, 'Could not send: $e'); }
     }
+  }
+
+  Future<void> _pickLang() async {
+    final r = await showModalBottomSheet<String>(context: context, backgroundColor: const Color(0xFF12304D), builder: (_) => ListView(children: [
+      for (var i = 0; i < kCodes.length; i++) ListTile(title: Text(kNames[i]), trailing: writeLang == kCodes[i] ? const Icon(Icons.check, color: kGreen) : null, onTap: () => Navigator.pop(context, kCodes[i])),
+    ]));
+    if (r != null) setState(() => writeLang = r);
   }
 
   @override
   Widget build(BuildContext context) {
     final hints = {
-      'place': 'Ask something about this place, for example: what should a first-time visitor know?',
-      'phrase': 'Write an Arabic phrase you want to learn, or write one in your language you want to hear in Arabic.',
-      'free': 'Say hello and tell a little about your day. No contact details.',
+      'place': 'Ask about this place. What should a first-time visitor know?',
+      'phrase': 'Write a phrase you want to learn or hear in Arabic.',
+      'free': 'Say hello. Tell a little about your day.',
     };
+    final langName = kNames[kCodes.indexOf(writeLang).clamp(0, kNames.length - 1)];
     return Scaffold(
-      appBar: AppBar(title: const Text('Send a papyrus'), backgroundColor: kBg),
-      body: ListView(padding: const EdgeInsets.all(16), children: [
-        Wrap(spacing: 8, children: [
-          for (final k in [['place', 'Place question'], ['phrase', 'Phrase to learn'], ['free', 'Hello']])
-            ChoiceChip(label: Text(k[1]), selected: kind == k[0], onSelected: (_) => setState(() => kind = k[0])),
-        ]),
-        if (kind == 'place')
-          DropdownButton<String>(
-            value: place,
-            isExpanded: true,
-            items: [for (final d in kDest) DropdownMenuItem(value: d[0] as String, child: Text(d[0] as String))],
-            onChanged: (v) => setState(() => place = v ?? place),
+      backgroundColor: kBg,
+      body: SafeArea(
+        child: Stack(children: [
+          AnimatedBuilder(
+            animation: _fly,
+            builder: (_, child) => Opacity(opacity: 1 - _fly.value, child: Transform.translate(offset: Offset(0, -380 * _fly.value), child: Transform.scale(scale: 1 - 0.7 * _fly.value, child: child))),
+            child: Column(children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 4, 12, 0),
+                child: Row(children: [
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
+                  const Spacer(),
+                  ActionChip(avatar: const Icon(Icons.translate, size: 16), label: Text(langName), onPressed: _pickLang),
+                  const SizedBox(width: 8),
+                  IconButton(icon: const Icon(Icons.info_outline, size: 20, color: Colors.white54), onPressed: _rules),
+                ]),
+              ),
+              SizedBox(
+                height: 44,
+                child: ListView(scrollDirection: Axis.horizontal, padding: const EdgeInsets.symmetric(horizontal: 14), children: [
+                  for (final k in [['free', 'Hello • أهلا'], ['place', 'About a place • مكان'], ['phrase', 'Phrase • جملة']])
+                    Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(label: Text(k[1]), selected: kind == k[0], onSelected: (_) => setState(() => kind = k[0]))),
+                ]),
+              ),
+              if (kind == 'place')
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  child: DropdownButton<String>(
+                    value: place, isExpanded: true,
+                    items: [for (final d in kDest) DropdownMenuItem(value: d[0] as String, child: Text(d[0] as String))],
+                    onChanged: (v) => setState(() => place = v ?? place),
+                  ),
+                ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+                  child: TextField(
+                    controller: c, focusNode: focus, maxLines: null, expands: true, maxLength: 300,
+                    textAlignVertical: TextAlignVertical.top,
+                    style: const TextStyle(fontSize: 22, height: 1.5),
+                    decoration: InputDecoration(border: InputBorder.none, hintText: hints[kind], hintStyle: const TextStyle(color: Colors.white38, fontSize: 20), counterStyle: const TextStyle(color: Colors.white38)),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
+                child: SizedBox(
+                  width: double.infinity, height: 54,
+                  child: FilledButton.icon(
+                    onPressed: busy ? null : _send,
+                    style: FilledButton.styleFrom(shape: const StadiumBorder()),
+                    icon: busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send),
+                    label: const Text('Send into the Nile • ابعتها في النيل', style: TextStyle(fontSize: 16)),
+                  ),
+                ),
+              ),
+            ]),
           ),
-        DropdownButton<String>(
-          value: writeLang,
-          isExpanded: true,
-          items: [for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text('I write in: ${kNames[i]}'))],
-          onChanged: (v) => setState(() => writeLang = v ?? 'en'),
-        ),
-        TextField(controller: c, maxLines: 5, maxLength: 300, decoration: InputDecoration(hintText: hints[kind], border: const OutlineInputBorder())),
-        const Text('Text only. No links, handles or phone numbers. Be kind. 18+ only.', style: TextStyle(fontSize: 11, color: Colors.white54)),
-        const SizedBox(height: 8),
-        FilledButton.icon(onPressed: busy ? null : _send, icon: const Icon(Icons.send), label: const Text('Send into the world')),
-      ]),
+        ]),
+      ),
     );
   }
 }
