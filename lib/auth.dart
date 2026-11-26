@@ -27,7 +27,7 @@ class _AuthPageState extends State<AuthPage> {
     Navigator.of(context).pushReplacement(niloRoute(widget.next));
   }
 
-  bool get _emailOk => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+\$').hasMatch(email.text.trim());
+  bool get _emailOk => RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email.text.trim());
 
   Future<void> _submit() async {
     setState(() { error = null; info = null; });
