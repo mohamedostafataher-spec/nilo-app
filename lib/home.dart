@@ -220,30 +220,30 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
       }),
       SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: Row(children: [
-            Text(L('Nilo'), style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1, shadows: [Shadow(color: Colors.black38, blurRadius: 6)])),
-            const SizedBox(width: 6),
-            Text(L('نيلو'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: kGreen)),
-            const Spacer(),
-            GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const ToolsPage())), child: _chip('🧰 Tools')),
-            const SizedBox(width: 8),
-            GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const TodayPage())), child: _chip('🌍')),
-            const SizedBox(width: 8),
-            _chip('📜  ${Passport.ink}/10'),
-            const SizedBox(width: 8),
-            _chip(flagFor),
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Row(children: [
+              Flexible(child: FittedBox(fit: BoxFit.scaleDown, alignment: AlignmentDirectional.centerStart, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text('Nilo', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1, shadows: [Shadow(color: Colors.black38, blurRadius: 6)])),
+                const SizedBox(width: 8),
+                Text('نيلو', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: kGreen)),
+              ]))),
+            ]),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              _chip(flagFor),
+              _chip('📜 ${Passport.ink}/10'),
+              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const TodayPage())), child: _chip('🌍')),
+              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const ToolsPage())), child: _chip('🧰 ${L('Tools')}')),
+              if (_wx.isNotEmpty)
+                GestureDetector(
+                  onTap: () { setState(() => _city = (_city + 1) % _cities.length); _weather(); },
+                  child: _chip(_wx),
+                ),
+            ]),
           ]),
         ),
       ),
-      if (_wx.isNotEmpty)
-        Positioned(
-          left: 16, top: MediaQuery.of(context).padding.top + 58,
-          child: GestureDetector(
-            onTap: () { setState(() => _city = (_city + 1) % _cities.length); _weather(); },
-            child: _chip(_wx),
-          ),
-        ),
       Positioned(
         left: 0, right: 0, bottom: 26,
         child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
