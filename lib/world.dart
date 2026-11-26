@@ -1,3 +1,4 @@
+import 'i18n.dart';
 // Nilo World: passport (stamps, XP, streak), home country, daily word/puzzle, chapters, papyrus trip animation.
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -150,16 +151,16 @@ class CountryPickerPage extends StatelessWidget {
   const CountryPickerPage({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Choose your home country • اختار بلدك'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Choose your home country • اختار بلدك')), backgroundColor: kBg),
         body: ListView(children: [
           for (final c in kWorld)
             ListTile(
               leading: Text(c[3] as String, style: const TextStyle(fontSize: 28)),
               title: Text('${c[1]} • ${c[2]}'),
-              subtitle: Text('Symbol: ${c[6]} ${c[7]}'),
+              subtitle: Text(Ui.rtl ? 'الرمز: ${c[6]} ${c[7]}' : 'Symbol: ${c[6]} ${c[7]}'),
               onTap: () { Passport.country = c[0] as String; Passport.addStamp('home-${c[0]}'); Navigator.pop(context, true); },
             ),
-          const Padding(padding: EdgeInsets.all(16), child: Text('More countries are coming. Only your country code is saved, on this phone.', style: TextStyle(color: Colors.white54, fontSize: 12))),
+          Padding(padding: EdgeInsets.all(16), child: Text(L('More countries are coming. Only your country code is saved, on this phone.'), style: TextStyle(color: Colors.white54, fontSize: 12))),
         ]),
       );
 }
@@ -174,11 +175,11 @@ class WorldCard extends StatefulWidget {
 class _WorldCardState extends State<WorldCard> {
   Future<void> _detect() async {
     final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(
-      title: const Text('Find your country'),
-      content: const Text('Nilo can use your approximate location once to work out your country. Only the country code is saved, on this phone and in your profile. Your coordinates are not stored. The Android geocoder service turns the position into a country name, so the position is sent to it for that moment. Location can be faked, so this only reduces cheating. If you say no, Nilo uses your phone region setting instead.', style: TextStyle(height: 1.5)),
+      title: Text(L('Find your country')),
+      content: Text(L('Nilo can use your approximate location once to work out your country. Only the country code is saved, on this phone and in your profile. Your coordinates are not stored. The Android geocoder service turns the position into a country name, so the position is sent to it for that moment. Location can be faked, so this only reduces cheating. If you say no, Nilo uses your phone region setting instead.'), style: TextStyle(height: 1.5)),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('No, use phone region')),
-        FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Allow once')),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text(L('No, use phone region'))),
+        FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(L('Allow once'))),
       ],
     ));
     if (ok == null) return;
@@ -204,7 +205,7 @@ class _WorldCardState extends State<WorldCard> {
     final code = Passport.country;
     if (code.isEmpty) {
       return _box(InkWell(onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => FirstRunPage(next: const _Back()))); if (mounted) setState(() {}); }, child: const Padding(padding: EdgeInsets.all(16),
-        child: Row(children: [Text('🌍', style: TextStyle(fontSize: 34)), SizedBox(width: 12), Expanded(child: Text('Nai is waiting. Begin your story\nناي مستنيك. ابدأ حكايتك', style: TextStyle(fontSize: 16, height: 1.4))), Icon(Icons.chevron_right)]))));
+        child: Row(children: [Text(L('🌍'), style: TextStyle(fontSize: 34)), SizedBox(width: 12), Expanded(child: Text(L('Nai is waiting. Begin your story\nناي مستنيك. ابدأ حكايتك'), style: TextStyle(fontSize: 16, height: 1.4))), Icon(Icons.chevron_right)]))));
     }
     final c = countryOf(code);
     return _box(Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -212,15 +213,15 @@ class _WorldCardState extends State<WorldCard> {
         Text(c[3] as String, style: const TextStyle(fontSize: 30)),
         const SizedBox(width: 10),
         Expanded(child: Text('${c[1]} world • ${c[6]}', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold))),
-        TextButton(onPressed: _pick, child: const Text('Change')),
+        TextButton(onPressed: _pick, child: Text(L('Change'))),
       ]),
-      Text('🔥 ${Passport.streak} day streak   ⭐ ${Passport.xp} XP   🛂 ${Passport.stamps.length} stamps   🖋 ${Passport.ink} ink', style: const TextStyle(color: Colors.white70)),
+      Text(Ui.rtl ? '🔥 سلسلة ${Passport.streak} يوم   ⭐ ${Passport.xp} نقطة   🛂 ${Passport.stamps.length} ختم   🖋 حبر ${Passport.ink}' : '🔥 ${Passport.streak} day streak   ⭐ ${Passport.xp} XP   🛂 ${Passport.stamps.length} stamps   🖋 ${Passport.ink} ink', style: TextStyle(color: Colors.white70)),
       const SizedBox(height: 10),
       Wrap(spacing: 8, runSpacing: 8, children: [
-        ActionChip(avatar: const Icon(Icons.today, size: 18), label: const Text('Daily word'), onPressed: () => _word(c)),
+        ActionChip(avatar: Icon(Icons.today, size: 18), label: Text(L('Daily word')), onPressed: () => _word(c)),
         ActionChip(avatar: Icon(Passport.puzzleDone ? Icons.check_circle : Icons.extension, size: 18), label: Text(Passport.puzzleDone ? 'Puzzle done' : 'Daily puzzle'), onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const PuzzlePage())); if (mounted) setState(() {}); }),
-        ActionChip(avatar: const Icon(Icons.auto_stories, size: 18), label: Text('Story ${math.min(Passport.chapter + 1, kChapters.length)}/${kChapters.length}'), onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const StoryPage())); if (mounted) setState(() {}); }),
-        ActionChip(avatar: const Icon(Icons.badge, size: 18), label: const Text('Passport'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PassportPage()))),
+        ActionChip(avatar: Icon(Icons.auto_stories, size: 18), label: Text('${Ui.rtl ? 'حكاية' : 'Story'} ${math.min(Passport.chapter + 1, kChapters.length)}/${kChapters.length}'), onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => StoryPage())); if (mounted) setState(() {}); }),
+        ActionChip(avatar: Icon(Icons.badge, size: 18), label: Text(L('Passport')), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PassportPage()))),
       ]),
     ])));
   }
@@ -228,9 +229,9 @@ class _WorldCardState extends State<WorldCard> {
   void _word(List<Object> home) {
     final other = kWorld[(Passport._dayNum() + 3) % kWorld.length];
     showDialog(context: context, builder: (_) => AlertDialog(
-      title: const Text('Word of the day'),
-      content: Text('${other[3]} ${other[1]}\n\nHello: ${other[8]}\nThank you: ${other[9]}\n\nTip: say it to someone from there. Spelling is shown in the local script.', style: const TextStyle(height: 1.5)),
-      actions: [TextButton(onPressed: () { Passport.addStamp('word-${other[0]}'); Navigator.pop(context); setState(() {}); }, child: const Text('Got it, +stamp'))],
+      title: Text(L('Word of the day')),
+      content: Text(Ui.rtl ? '${other[3]} ${other[1]}\n\nمرحبا: ${other[8]}\nشكراً: ${other[9]}\n\nنصيحة: قولها لحد من هناك. الكتابة بالخط المحلي.' : '${other[3]} ${other[1]}\n\nHello: ${other[8]}\nThank you: ${other[9]}\n\nTip: say it to someone from there. Spelling is shown in the local script.', style: TextStyle(height: 1.5)),
+      actions: [TextButton(onPressed: () { Passport.addStamp('word-${other[0]}'); Navigator.pop(context); setState(() {}); }, child: Text(L('Got it, +stamp')))],
     ));
   }
 
@@ -259,19 +260,19 @@ class _PuzzlePageState extends State<PuzzlePage> {
   }
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Daily puzzle • لغز اليوم'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Daily puzzle • لغز اليوم')), backgroundColor: kBg),
         body: ListView(padding: const EdgeInsets.all(18), children: [
           Text(r[0] as String, style: const TextStyle(fontSize: 20, height: 1.4)),
           const SizedBox(height: 8),
           Text(r[1] as String, style: const TextStyle(fontSize: 18, color: kGreen, height: 1.4)),
           const SizedBox(height: 16),
-          if (Passport.puzzleDone) const Text('You solved today\'s puzzle. Come back tomorrow.', style: TextStyle(color: Colors.white70)) else ...[
-            TextField(controller: c, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Your answer (English or Arabic)')),
+          if (Passport.puzzleDone) Text(L('You solved today\'s puzzle. Come back tomorrow.'), style: TextStyle(color: Colors.white70)) else ...[
+            TextField(controller: c, decoration: InputDecoration(border: OutlineInputBorder(), hintText: L('Your answer (English or Arabic)'))),
             const SizedBox(height: 10),
-            FilledButton(onPressed: _check, child: const Text('Check')),
+            FilledButton(onPressed: _check, child: Text(L('Check'))),
           ],
           const SizedBox(height: 10),
-          Text(msg),
+          Text(L(msg)),
         ]),
       );
 }
@@ -293,9 +294,9 @@ class _StoryPageState extends State<StoryPage> {
     String ar(int i) { final t = kChapters[i][1] as String; final k = t.indexOf(': '); return k < 0 ? t : t.substring(k + 2); }
     Future<void> open(int i) async { await Navigator.push(context, MaterialPageRoute(builder: (_) => ChapterPage(i: i))); if (mounted) setState(() {}); }
     return Scaffold(
-      appBar: AppBar(title: const Text('حكاية • الطرق الضائعة'), backgroundColor: kBg),
+      appBar: AppBar(title: Text(L('حكاية • الطرق الضائعة')), backgroundColor: kBg),
       body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 24), children: [
-        const Text('حكاية واحدة للعالم كله. فصل جديد كل يوم، أو أسرع لما تبعت بردية.', style: TextStyle(color: Colors.white70, height: 1.5)),
+        Text(L('حكاية واحدة للعالم كله. فصل جديد كل يوم، أو أسرع لما تبعت بردية.'), style: TextStyle(color: Colors.white70, height: 1.5)),
         const SizedBox(height: 12),
         ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(value: done / kChapters.length, minHeight: 6, color: gold, backgroundColor: Colors.white12)),
         const SizedBox(height: 4),
@@ -312,12 +313,12 @@ class _StoryPageState extends State<StoryPage> {
                 boxShadow: const [BoxShadow(color: Colors.black45, blurRadius: 14, offset: Offset(0, 6))],
               ),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('📜  الفصل الجاي • Next', style: TextStyle(color: Color(0xFF8A6B2F), fontSize: 12, fontWeight: FontWeight.w700)),
+                Text(L('📜  الفصل الجاي • Next'), style: TextStyle(color: Color(0xFF8A6B2F), fontSize: 12, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 Text(ar(cur), style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Color(0xFF3B2A18), height: 1.3)),
                 Text(en(cur), style: const TextStyle(fontSize: 14, color: Color(0xFF5B4630))),
                 const SizedBox(height: 12),
-                const Align(alignment: Alignment.centerLeft, child: Chip(label: Text('اقرأ • Read'), backgroundColor: Color(0xFFE0B04A))),
+                Align(alignment: Alignment.centerLeft, child: Chip(label: Text(L('اقرأ • Read')), backgroundColor: Color(0xFFE0B04A))),
               ]),
             ),
           ),
@@ -335,7 +336,7 @@ class _StoryPageState extends State<StoryPage> {
               ),
             ),
         const SizedBox(height: 6),
-        const Text('الترجمة الآلية ممكن تغلط.', style: TextStyle(fontSize: 11, color: Colors.white38)),
+        Text(L('الترجمة الآلية ممكن تغلط.'), style: TextStyle(fontSize: 11, color: Colors.white38)),
       ]),
     );
   }
@@ -392,9 +393,9 @@ class PassportPage extends StatelessWidget {
       ['🏅', '7-day streak', Passport.streak >= 7],
     ];
     return Scaffold(
-      appBar: AppBar(title: const Text('Passport • الباسبور'), backgroundColor: kBg, actions: [
-        IconButton(tooltip: 'Tools', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ToolsPage())), icon: const Icon(Icons.apps)),
-        IconButton(tooltip: 'Settings', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsPage())), icon: const Icon(Icons.settings)),
+      appBar: AppBar(title: Text(L('Passport • الباسبور')), backgroundColor: kBg, actions: [
+        IconButton(tooltip: L('Tools'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ToolsPage())), icon: Icon(Icons.apps)),
+        IconButton(tooltip: L('Settings'), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage())), icon: Icon(Icons.settings)),
       ]),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         _cover(),
@@ -402,32 +403,32 @@ class PassportPage extends StatelessWidget {
         _dataPage(countries.length),
         const SizedBox(height: 10),
         Row(children: [tile('🔥', '${Passport.streak}', 'Streak'), tile('🛡️', '$trust', 'Trust score'), tile('📜', '${Passport.papyri}', 'Papyri sent'), tile('🌍', '${countries.length}', 'Countries explored')]),
-        const Padding(padding: EdgeInsets.fromLTRB(4, 2, 4, 0), child: Text('Trust score is a local number from your own streak and papyri. It is not verified by anyone.', style: TextStyle(fontSize: 11, color: Colors.white38))),
+        Padding(padding: EdgeInsets.fromLTRB(4, 2, 4, 0), child: Text(L('Trust score is a local number from your own streak and papyri. It is not verified by anyone.'), style: TextStyle(fontSize: 11, color: Colors.white38))),
         const SizedBox(height: 14),
-        const Text('Daily scroll • لفافة اليوم', style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
+        Text(L('Daily scroll • لفافة اليوم'), style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFF1E3C3), borderRadius: BorderRadius.circular(12)),
-          child: Text('Ink left today: ${Passport.ink}/10. Catch papyri, send one, keep your streak. Ink refills at 12:00.', style: const TextStyle(color: Color(0xFF5B4630))),
+          child: Text(Ui.rtl ? 'الحبر المتبقي النهارده: ${Passport.ink}/10. امسك برديات، ابعت واحدة، حافظ على السلسلة. الحبر بيتجدد الساعة ١٢:٠٠.' : 'Ink left today: ${Passport.ink}/10. Catch papyri, send one, keep your streak. Ink refills at 12:00.', style: TextStyle(color: Color(0xFF5B4630))),
         ),
         const SizedBox(height: 14),
-        const Text('Achievements • إنجازات', style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
+        Text(L('Achievements • إنجازات'), style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
         const SizedBox(height: 6),
         Wrap(spacing: 8, runSpacing: 8, children: [
           for (final a in ach) Opacity(opacity: a[2] == true ? 1 : .35, child: Chip(avatar: Text(a[0] as String), label: Text(a[1] as String))),
         ]),
         const SizedBox(height: 14),
-        const Text('Stamps • أختام', style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
+        Text(L('Stamps • أختام'), style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.all(14), decoration: BoxDecoration(color: const Color(0xFFF1E3C3), borderRadius: BorderRadius.circular(12)),
           child: Column(children: [
-            if (s.isEmpty) const Text('No stamps yet. Pick a country, solve the daily puzzle, learn a word, or send a papyrus.', style: TextStyle(color: Color(0xFF5B4630))),
+            if (s.isEmpty) Text(L('No stamps yet. Pick a country, solve the daily puzzle, learn a word, or send a papyrus.'), style: TextStyle(color: Color(0xFF5B4630))),
             Wrap(spacing: 10, runSpacing: 10, children: [for (var i = 0; i < s.length; i++) _stamp(s[i], i)]),
           ]),
         ),
         const SizedBox(height: 14),
-        const Text('Stored on this phone only. Stamps are for fun.', style: TextStyle(fontSize: 12, color: Colors.white54)),
+        Text(L('Stored on this phone only. Stamps are for fun.'), style: TextStyle(fontSize: 12, color: Colors.white54)),
       ]),
     );
   }
@@ -442,11 +443,11 @@ class PassportPage extends StatelessWidget {
       margin: const EdgeInsets.all(8),
       decoration: BoxDecoration(border: Border.all(color: gold.withOpacity(.5)), borderRadius: BorderRadius.circular(10)),
       child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text('𓂀', style: TextStyle(fontSize: 44, color: gold)),
+        Text(L('𓂀'), style: TextStyle(fontSize: 44, color: gold)),
         SizedBox(height: 4),
-        Text('NILO', style: TextStyle(fontSize: 26, letterSpacing: 10, color: gold, fontWeight: FontWeight.w800)),
-        Text('TRAVEL PASSPORT', style: TextStyle(fontSize: 13, letterSpacing: 4, color: gold)),
-        Text('جواز سفر نيلو', style: TextStyle(fontSize: 15, color: gold)),
+        Text(L('NILO'), style: TextStyle(fontSize: 26, letterSpacing: 10, color: gold, fontWeight: FontWeight.w800)),
+        Text(L('TRAVEL PASSPORT'), style: TextStyle(fontSize: 13, letterSpacing: 4, color: gold)),
+        Text(L('جواز سفر نيلو'), style: TextStyle(fontSize: 15, color: gold)),
       ]),
     ),
   );
@@ -465,7 +466,7 @@ class PassportPage extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFF6EACB), Color(0xFFE9D7AA)]), borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFB89A55), width: 1.5)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('PASSPORT • جواز', style: TextStyle(fontSize: 11, letterSpacing: 2, color: Color(0xFF8A7650))), Text('NILO', style: TextStyle(fontSize: 11, letterSpacing: 3, color: Color(0xFF8A7650), fontWeight: FontWeight.w800))]),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(L('PASSPORT • جواز'), style: TextStyle(fontSize: 11, letterSpacing: 2, color: Color(0xFF8A7650))), Text(L('NILO'), style: TextStyle(fontSize: 11, letterSpacing: 3, color: Color(0xFF8A7650), fontWeight: FontWeight.w800))]),
         const SizedBox(height: 8),
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Container(
@@ -484,7 +485,7 @@ class PassportPage extends StatelessWidget {
         const SizedBox(height: 6),
         Text('${mrz('P<NIL<<$nick')}\n${mrz('$no<${Passport.xp}XP<${Passport.streak}D<$nCountries')}', style: const TextStyle(fontFamily: 'monospace', fontSize: 11.5, color: ink, letterSpacing: 1)),
         const SizedBox(height: 4),
-        const Text('Fun travel passport inside the Nilo app. Not a government document.', style: TextStyle(fontSize: 9, color: Color(0xFF8A7650))),
+        Text(L('Fun travel passport inside the Nilo app. Not a government document.'), style: TextStyle(fontSize: 9, color: Color(0xFF8A7650))),
       ]),
     );
   }
@@ -504,7 +505,7 @@ class PassportPage extends StatelessWidget {
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             Text(icon, style: const TextStyle(fontSize: 22)),
             Text(name, textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 10, color: col, fontWeight: FontWeight.w800)),
-            Text('NILO', style: TextStyle(fontSize: 8, letterSpacing: 2, color: col.withOpacity(.8))),
+            Text(L('NILO'), style: TextStyle(fontSize: 8, letterSpacing: 2, color: col.withOpacity(.8))),
           ]),
         ),
       ),
@@ -540,14 +541,14 @@ class _PapyrusTripPageState extends State<PapyrusTripPage> with TickerProviderSt
   void dispose() { _a.dispose(); _spin.dispose(); super.dispose(); }
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('رحلة بردييتك • Your papyrus'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('رحلة بردييتك • Your papyrus')), backgroundColor: kBg),
         body: Column(children: [
           Expanded(child: RepaintBoundary(child: AnimatedBuilder(animation: Listenable.merge([_a, _spin]), builder: (_, __) => CustomPaint(size: Size.infinite, painter: GlobePainter(_a.value, _spin.value))))),
           Padding(padding: const EdgeInsets.all(16), child: Text(
             _a.value < 0.45 ? '📜 بتبحر في النيل • Sailing down the Nile' : (_a.value < 0.97 ? '🌍 بتطلع للبحر • Drifting out to sea' : 'بردييتك في البحر. هتوصل لحد حقيقي يلاقيها.\nAdrift. It lands with a real person who catches it.'),
             textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, height: 1.5))),
-          const Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 8), child: Text('Real map outlines (Natural Earth, public domain). The route is an animation: we do not know who will catch it or where they live. When someone replies, you will see it in your inbox.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),
-          FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Done')),
+          Padding(padding: EdgeInsets.fromLTRB(16, 0, 16, 8), child: Text(L('Real map outlines (Natural Earth, public domain). The route is an animation: we do not know who will catch it or where they live. When someone replies, you will see it in your inbox.'), textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),
+          FilledButton(onPressed: () => Navigator.pop(context), child: Text(L('Done'))),
           const SizedBox(height: 16),
         ]),
       );
@@ -653,9 +654,9 @@ class _NiloTileState extends State<NiloTile> {
                 child: Icon(widget.icon, color: kGreen, size: 22),
               ),
               const SizedBox(height: 8),
-              Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+              Text(L(widget.title), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
               const SizedBox(height: 2),
-              Text(widget.sub, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11.5, color: Colors.white70, height: 1.25)),
+              Text(L(widget.sub), maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 11.5, color: Colors.white70, height: 1.25)),
             ]),
           ),
         ),
@@ -671,14 +672,14 @@ class NaiSays extends StatelessWidget {
         Container(
           width: 52, height: 52, alignment: Alignment.center,
           decoration: BoxDecoration(shape: BoxShape.circle, gradient: const LinearGradient(colors: [Color(0xFFE9C46A), Color(0xFFB8860B)]), boxShadow: [BoxShadow(color: kGreen.withOpacity(0.4), blurRadius: 14)]),
-          child: const Text('🪶', style: TextStyle(fontSize: 26)),
+          child: Text(L('🪶'), style: TextStyle(fontSize: 26)),
         ),
         const SizedBox(width: 10),
         Expanded(child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: const Color(0xFF12304D), border: Border.all(color: kGreen.withOpacity(0.5)), borderRadius: const BorderRadius.only(topRight: Radius.circular(16), bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16))),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('Nai • ناي', style: TextStyle(color: kGreen, fontWeight: FontWeight.w800, fontSize: 12)),
+            Text(L('Nai • ناي'), style: TextStyle(color: kGreen, fontWeight: FontWeight.w800, fontSize: 12)),
             const SizedBox(height: 4),
             Text(en, style: const TextStyle(fontSize: 15, height: 1.4)),
             const SizedBox(height: 4),
@@ -730,11 +731,11 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
   void _rules() => showModalBottomSheet(context: context, backgroundColor: const Color(0xFF12304D), builder: (_) => const Padding(
         padding: EdgeInsets.all(20),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Rules • القواعد', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kGreen)),
+          Text(L('Rules • القواعد'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: kGreen)),
           SizedBox(height: 10),
-          Text('• 18+ only. Self-declared: Nilo cannot check your age.\n• Text only. No links, phone numbers or social handles.\n• Never send money or share bank or ID details.\n• Meet only in public places and tell a friend.\n• Report and block anyone who makes you uncomfortable.\n• Machine translation can be wrong.', style: TextStyle(height: 1.6)),
+          Text(L('• 18+ only. Self-declared: Nilo cannot check your age.\n• Text only. No links, phone numbers or social handles.\n• Never send money or share bank or ID details.\n• Meet only in public places and tell a friend.\n• Report and block anyone who makes you uncomfortable.\n• Machine translation can be wrong.'), style: TextStyle(height: 1.6)),
           SizedBox(height: 10),
-          Text('٠ للكبار ١٨+ فقط  ٠ نص بس، من غير لينكات أو أرقام  ٠ متبعتش فلوس  ٠ قابل حد في مكان عام  ٠ بلّغ واحظر أي حد يضايقك', style: TextStyle(height: 1.6, color: Colors.white70)),
+          Text(L('٠ للكبار ١٨+ فقط  ٠ نص بس، من غير لينكات أو أرقام  ٠ متبعتش فلوس  ٠ قابل حد في مكان عام  ٠ بلّغ واحظر أي حد يضايقك'), style: TextStyle(height: 1.6, color: Colors.white70)),
         ]),
       ));
 
@@ -762,7 +763,7 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                AnimatedBuilder(animation: _a, builder: (_, __) => Transform.translate(offset: Offset(0, math.sin(_a.value * math.pi) * 6), child: const Text('📜', style: TextStyle(fontSize: 46)))),
+                AnimatedBuilder(animation: _a, builder: (_, __) => Transform.translate(offset: Offset(0, math.sin(_a.value * math.pi) * 6), child: Text(L('📜'), style: TextStyle(fontSize: 46)))),
                 const SizedBox(height: 10),
                 GestureDetector(
                   onTap: _choose,
@@ -774,25 +775,25 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
                           Text(has ? 'Welcome from ${c![1]}' : 'Choose your country', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
                           Text(has ? 'أهلا بيك من ${c![2]}' : 'اختار بلدك', style: const TextStyle(fontSize: 15, color: Colors.white70)),
                           const SizedBox(height: 2),
-                          const Text('Not right? Tap to change • مش صح؟ اضغط', style: TextStyle(fontSize: 12, color: kGreen)),
+                          Text(L('Not right? Tap to change • مش صح؟ اضغط'), style: TextStyle(fontSize: 12, color: kGreen)),
                         ]),
                 ),
                 const SizedBox(height: 22),
                 TextField(
                   controller: nick, maxLength: 20, textAlign: TextAlign.center,
-                  decoration: const InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))), hintText: 'Nickname, not your real name • اسم مستعار', counterText: ''),
+                  decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))), hintText: L('Nickname, not your real name • اسم مستعار'), counterText: ''),
                 ),
                 const SizedBox(height: 12),
                 Row(children: [
                   Checkbox(value: adult, onChanged: (v) => setState(() => adult = v ?? false), visualDensity: VisualDensity.compact),
                   Expanded(child: Text.rich(TextSpan(style: const TextStyle(fontSize: 13), children: [
                     const TextSpan(text: 'I am 18+ and accept the '),
-                    WidgetSpan(alignment: PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic, child: GestureDetector(onTap: _rules, child: const Text('rules', style: TextStyle(fontSize: 13, color: kGreen, decoration: TextDecoration.underline)))),
+                    WidgetSpan(alignment: PlaceholderAlignment.baseline, baseline: TextBaseline.alphabetic, child: GestureDetector(onTap: _rules, child: Text(L('rules'), style: TextStyle(fontSize: 13, color: kGreen, decoration: TextDecoration.underline)))),
                   ]))),
                 ]),
                 const SizedBox(height: 14),
-                SizedBox(width: double.infinity, height: 52, child: FilledButton(onPressed: _finish, style: FilledButton.styleFrom(shape: const StadiumBorder()), child: const Text('Get my passport • استلم جوازك', style: TextStyle(fontSize: 16)))),
-                TextButton(onPressed: busy ? null : _gps, child: const Text('Detect with my location once • بالموقع مرة', style: TextStyle(fontSize: 12, color: Colors.white54))),
+                SizedBox(width: double.infinity, height: 52, child: FilledButton(onPressed: _finish, style: FilledButton.styleFrom(shape: StadiumBorder()), child: Text(L('Get my passport • استلم جوازك'), style: TextStyle(fontSize: 16)))),
+                TextButton(onPressed: busy ? null : _gps, child: Text(L('Detect with my location once • بالموقع مرة'), style: TextStyle(fontSize: 12, color: Colors.white54))),
               ]),
             ),
           ),

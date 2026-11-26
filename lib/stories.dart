@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -83,10 +84,10 @@ class _StoriesTabState extends State<StoriesTab> {
   Future<void> _menu(Map s) async {
     final mine = s['author'] == Sb.uid;
     final v = await showModalBottomSheet<String>(context: context, backgroundColor: const Color(0xFF0E2A45), builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      if (mine) ListTile(leading: const Icon(Icons.delete_outline), title: const Text('Delete my story'), onTap: () => Navigator.pop(context, 'del'))
+      if (mine) ListTile(leading: Icon(Icons.delete_outline), title: Text(L('Delete my story')), onTap: () => Navigator.pop(context, 'del'))
       else ...[
-        ListTile(leading: const Icon(Icons.flag_outlined), title: const Text('Report this story'), onTap: () => Navigator.pop(context, 'rep')),
-        ListTile(leading: const Icon(Icons.block), title: const Text('Block this person'), onTap: () => Navigator.pop(context, 'blk')),
+        ListTile(leading: Icon(Icons.flag_outlined), title: Text(L('Report this story')), onTap: () => Navigator.pop(context, 'rep')),
+        ListTile(leading: Icon(Icons.block), title: Text(L('Block this person')), onTap: () => Navigator.pop(context, 'blk')),
       ],
     ])));
     if (v == null) return;
@@ -103,7 +104,7 @@ class _StoriesTabState extends State<StoriesTab> {
     if (s['media_type'] == 'video') return ClipView(url: url);
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
-      child: Image.network(url, fit: BoxFit.cover, height: 300, width: double.infinity, errorBuilder: (_, __, ___) => const SizedBox(height: 80, child: Center(child: Text('Photo expired', style: TextStyle(color: Colors.white70))))),
+      child: Image.network(url, fit: BoxFit.cover, height: 300, width: double.infinity, errorBuilder: (_, __, ___) => SizedBox(height: 80, child: Center(child: Text(L('Photo expired'), style: TextStyle(color: Colors.white70))))),
     );
   }
 
@@ -144,7 +145,7 @@ class _StoriesTabState extends State<StoriesTab> {
       Text('$mine ${mine == 1 ? 'story' : 'stories'} in the last 24 hours • حكايات آخر ٢٤ ساعة', style: const TextStyle(color: Colors.white70, fontSize: 12)),
       const SizedBox(height: 12),
       Wrap(spacing: 8, children: [
-        FilledButton.tonal(onPressed: () { Navigator.pop(context); setState(() => who = a as String?); }, child: const Text('Show only their stories')),
+        FilledButton.tonal(onPressed: () { Navigator.pop(context); setState(() => who = a as String?); }, child: Text(L('Show only their stories'))),
       ]),
     ]))));
   }
@@ -220,13 +221,13 @@ class _StoriesTabState extends State<StoriesTab> {
         ])),
         const SizedBox(height: 8),
         if (items.isEmpty)
-          const Padding(padding: EdgeInsets.all(30), child: Text('Nothing here yet.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)))
+          Padding(padding: EdgeInsets.all(30), child: Text(L('Nothing here yet.'), textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)))
         else
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Column(children: left))),
             Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Column(children: right))),
           ]),
-        const Padding(padding: EdgeInsets.all(12), child: Text('Text and photos. Stories vanish after 24 hours. Tap ⋮ to report or block. Long-press a circle for a profile card.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),
+        Padding(padding: EdgeInsets.all(12), child: Text(L('Text and photos. Stories vanish after 24 hours. Tap ⋮ to report or block. Long-press a circle for a profile card.'), textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),
       ]),
     );
   }
@@ -235,22 +236,22 @@ class _StoriesTabState extends State<StoriesTab> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(title: const Text('قصص اليوم • Daily stories'), backgroundColor: kBg, actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))]),
-      floatingActionButton: joined ? FloatingActionButton.extended(onPressed: _write, backgroundColor: kGreen, foregroundColor: const Color(0xFF3B2A12), icon: const Icon(Icons.edit), label: const Text('Share a story')) : null,
+      appBar: AppBar(title: Text(L('قصص اليوم • Daily stories')), backgroundColor: kBg, actions: [IconButton(onPressed: _load, icon: Icon(Icons.refresh))]),
+      floatingActionButton: joined ? FloatingActionButton.extended(onPressed: _write, backgroundColor: kGreen, foregroundColor: Color(0xFF3B2A12), icon: Icon(Icons.edit), label: Text(L('Share a story'))) : null,
       body: busy
           ? const Center(child: CircularProgressIndicator())
           : !joined
               ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  const Text('📖', style: TextStyle(fontSize: 54)),
+                  Text(L('📖'), style: TextStyle(fontSize: 54)),
                   const SizedBox(height: 10),
-                  const Text('Stories are for travelers 18 and older.\nJoin once to read and share.', textAlign: TextAlign.center),
+                  Text(L('Stories are for travelers 18 and older.\nJoin once to read and share.'), textAlign: TextAlign.center),
                   const SizedBox(height: 14),
-                  FilledButton(onPressed: () async { await Navigator.of(context).push(niloRoute(const BottlesPage())); _load(); }, child: const Text('Join • انضم')),
+                  FilledButton(onPressed: () async { await Navigator.of(context).push(niloRoute(BottlesPage())); _load(); }, child: Text(L('Join • انضم'))),
                 ])))
               : err.isNotEmpty
-                  ? Center(child: Text(err))
+                  ? Center(child: Text(L(err)))
                   : l.isEmpty
-                      ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('No stories yet today.\nBe the first. Stories disappear after 24 hours.', textAlign: TextAlign.center)))
+                      ? Center(child: Padding(padding: EdgeInsets.all(24), child: Text(L('No stories yet today.\nBe the first. Stories disappear after 24 hours.'), textAlign: TextAlign.center)))
                       : _feed(),
     );
   }
@@ -307,7 +308,7 @@ class _StoryComposerState extends State<StoryComposer> {
   void _sheet(bool clip) {
     showModalBottomSheet(context: context, backgroundColor: const Color(0xFF0E2A45), builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
       ListTile(leading: const Icon(Icons.photo_camera), title: Text(clip ? 'Record a clip (max 15s)' : 'Take a photo'), onTap: () { Navigator.pop(context); clip ? _pickClip(ImageSource.camera) : _pickPhoto(ImageSource.camera); }),
-      ListTile(leading: const Icon(Icons.photo_library), title: const Text('Choose from gallery'), onTap: () { Navigator.pop(context); clip ? _pickClip(ImageSource.gallery) : _pickPhoto(ImageSource.gallery); }),
+      ListTile(leading: Icon(Icons.photo_library), title: Text(L('Choose from gallery')), onTap: () { Navigator.pop(context); clip ? _pickClip(ImageSource.gallery) : _pickPhoto(ImageSource.gallery); }),
     ])));
   }
 
@@ -338,13 +339,13 @@ class _StoryComposerState extends State<StoryComposer> {
     final col = _bgs[mood];
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(title: const Text('New story'), backgroundColor: kBg),
+      appBar: AppBar(title: Text(L('New story')), backgroundColor: kBg),
       body: SingleChildScrollView(padding: const EdgeInsets.all(14), child: Column(children: [
         Container(
           padding: const EdgeInsets.all(16), height: 200,
           decoration: BoxDecoration(gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: col), borderRadius: BorderRadius.circular(20)),
           child: TextField(controller: c, maxLength: 200, maxLines: null, expands: true, style: const TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.w600),
-              decoration: const InputDecoration(border: InputBorder.none, hintText: 'What happened today?', hintStyle: TextStyle(color: Colors.white60))),
+              decoration: InputDecoration(border: InputBorder.none, hintText: L('What happened today?'), hintStyle: TextStyle(color: Colors.white60))),
         ),
         const SizedBox(height: 10),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
@@ -354,15 +355,15 @@ class _StoryComposerState extends State<StoryComposer> {
         const SizedBox(height: 6),
         if (mediaOk)
           Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            OutlinedButton.icon(onPressed: busy ? null : () => _sheet(false), icon: const Icon(Icons.image), label: const Text('Photo')),
+            OutlinedButton.icon(onPressed: busy ? null : () => _sheet(false), icon: Icon(Icons.image), label: Text(L('Photo'))),
             const SizedBox(width: 10),
-            OutlinedButton.icon(onPressed: busy ? null : () => _sheet(true), icon: const Icon(Icons.videocam), label: const Text('Clip (15s)')),
+            OutlinedButton.icon(onPressed: busy ? null : () => _sheet(true), icon: Icon(Icons.videocam), label: Text(L('Clip (15s)'))),
           ])
         else
-          const Text('Photos and clips are paused today (storage is full). Text stories still work.', textAlign: TextAlign.center, style: TextStyle(color: Colors.amber)),
+          Text(L('Photos and clips are paused today (storage is full). Text stories still work.'), textAlign: TextAlign.center, style: TextStyle(color: Colors.amber)),
         if (info != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text('✓ $info', style: const TextStyle(color: kGreen, fontWeight: FontWeight.w700))),
         const SizedBox(height: 10),
-        const Text('Visible for 24 hours. Photos and clips are shown to other adults, so no nudity, no minors, no private or ID documents. Anyone can report; a reported photo or clip is hidden at once. Your country flag is shown, never your location. Limit: 3 photo/clip stories and 6 stories per day.', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.white60)),
+        Text(L('Visible for 24 hours. Photos and clips are shown to other adults, so no nudity, no minors, no private or ID documents. Anyone can report; a reported photo or clip is hidden at once. Your country flag is shown, never your location. Limit: 3 photo/clip stories and 6 stories per day.'), textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.white60)),
         const SizedBox(height: 16),
         SizedBox(width: double.infinity, child: FilledButton(onPressed: busy ? null : _post, child: Text(busy ? (status.isEmpty ? '...' : status) : 'Post story'))),
       ])),
@@ -404,7 +405,7 @@ class _ClipViewState extends State<ClipView> {
           height: 300, width: double.infinity, color: Colors.black38,
           child: ready
               ? FittedBox(fit: BoxFit.cover, clipBehavior: Clip.hardEdge, child: SizedBox(width: v!.value.size.width, height: v!.value.size.height, child: VideoPlayer(v!)))
-              : Center(child: loading ? const CircularProgressIndicator() : const Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.play_circle_fill, size: 64, color: Colors.white), Text('Tap to play clip', style: TextStyle(color: Colors.white70))])),
+              : Center(child: loading ? CircularProgressIndicator() : Column(mainAxisSize: MainAxisSize.min, children: [Icon(Icons.play_circle_fill, size: 64, color: Colors.white), Text(L('Tap to play clip'), style: TextStyle(color: Colors.white70))])),
         ),
       ),
     );
@@ -451,13 +452,13 @@ class _CommentsPageState extends State<CommentsPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: kBg,
-        appBar: AppBar(title: const Text('Comments'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Comments')), backgroundColor: kBg),
         body: Column(children: [
           Expanded(
             child: busy
                 ? const Center(child: CircularProgressIndicator())
                 : l.isEmpty
-                    ? const Center(child: Text('No comments yet.'))
+                    ? Center(child: Text(L('No comments yet.')))
                     : ListView(padding: const EdgeInsets.all(12), children: [
                         for (final m in l)
                           Container(
@@ -473,7 +474,7 @@ class _CommentsPageState extends State<CommentsPage> {
                       ]),
           ),
           SafeArea(child: Padding(padding: const EdgeInsets.all(8), child: Row(children: [
-            Expanded(child: TextField(controller: c, maxLength: 200, decoration: const InputDecoration(counterText: '', hintText: 'Write a comment (no links or numbers)'))),
+            Expanded(child: TextField(controller: c, maxLength: 200, decoration: InputDecoration(counterText: '', hintText: L('Write a comment (no links or numbers)')))),
             IconButton(onPressed: _send, icon: const Icon(Icons.send, color: kGreen)),
           ]))),
         ]),

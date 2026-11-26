@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'dart:async';
 import 'dart:ui' show PlatformDispatcher;
 import 'dart:convert';
@@ -19,7 +20,10 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   Passport.init().then((_) => Passport.touch());
   FlutterError.onError = (d) => FlutterError.presentError(d);
-  runZonedGuarded(() => runApp(const NiloApp()), (e, s) => debugPrint('nilo error: $e'));
+  runZonedGuarded(() async {
+    await Ui.load();
+    runApp(const NiloApp());
+  }, (e, s) => debugPrint('nilo error: $e'));
 }
 
 const kGreen = Color(0xFFD9A441);
@@ -35,7 +39,7 @@ class NiloApp extends StatelessWidget {
             textTheme: GoogleFonts.cairoTextTheme(ThemeData.dark(useMaterial3: true).textTheme),
             scaffoldBackgroundColor: kBg,
             colorScheme: const ColorScheme.dark(primary: kGreen)),
-        builder: (c, w) => Directionality(textDirection: PlatformDispatcher.instance.locale.languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr, child: w!),
+        builder: (c, w) => Directionality(textDirection: Ui.rtl ? TextDirection.rtl : TextDirection.ltr, child: w!),
         home: const SplashGate(),
       );
 }
@@ -80,30 +84,30 @@ class _ModeGateState extends State<ModeGate> {
     if (!ready) return const Scaffold(body: Center(child: CircularProgressIndicator()));
     if (mode == 'chat') return const ChatPage();
     return Scaffold(
-      appBar: AppBar(title: const Text('نيلو Nilo')),
+      appBar: AppBar(title: Text(L('نيلو Nilo'))),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('محتاج إيه دلوقتي؟', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
+          Text(L('محتاج إيه دلوقتي؟'), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
-          const Text('هنفتحلك الشاشة دي بس، ومش هنفكرك بالباقي. تقدر تبدّل في أي وقت.', style: TextStyle(fontSize: 13, color: Colors.white60)),
+          Text(L('هنفتحلك الشاشة دي بس، ومش هنفكرك بالباقي. تقدر تبدّل في أي وقت.'), style: TextStyle(fontSize: 13, color: Colors.white60)),
           const SizedBox(height: 16),
           for (final m in kModes)
             Card(
               color: mode == m[0] ? const Color(0xFF2A2F36) : const Color(0xFF1F2328),
               child: ListTile(
                 leading: Icon(m[1] == 'chat' ? Icons.chat_bubble_outline : m[1] == 'sales' ? Icons.show_chart : Icons.translate, size: 28, color: kGreen),
-                title: Text(m[2]),
-                subtitle: Text(m[3]),
-                trailing: mode == m[0] ? const Text('آخر اختيار', style: TextStyle(fontSize: 12, color: Colors.white54)) : null,
+                title: Text(L(m[2])),
+                subtitle: Text(L(m[3])),
+                trailing: mode == m[0] ? Text(L('آخر اختيار'), style: TextStyle(fontSize: 12, color: Colors.white54)) : null,
                 onTap: () => pick(m[0]),
               ),
             ),
           const Spacer(),
-          const Center(child: Text('تطبيق مصري خالص', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
-          const Center(child: Text('صُنع بواسطة Mohamed Mostafa', style: TextStyle(fontSize: 13, color: Colors.white60))),
+          Center(child: Text(L('تطبيق مصري خالص'), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
+          Center(child: Text(L('صُنع بواسطة Mohamed Mostafa'), style: TextStyle(fontSize: 13, color: Colors.white60))),
           const SizedBox(height: 2),
-          const Center(child: Text('بيشتغل بنموذج Gemini المجاني. الترجمة الآلية ممكن تغلط.', style: TextStyle(fontSize: 11, color: Colors.white38))),
+          Center(child: Text(L('بيشتغل بنموذج Gemini المجاني. الترجمة الآلية ممكن تغلط.'), style: TextStyle(fontSize: 11, color: Colors.white38))),
         ]),
       ),
     );
@@ -480,7 +484,7 @@ class _ChatPageState extends State<ChatPage> {
           if (hands && wake) {
             if (!wakeRe.hasMatch(t)) { setState(() => status = 'مستني "يا نيلو"…'); return; }
             t = t.replaceFirst(wakeRe, '').trim();
-            if (t.isEmpty) { await speakText('أيوه، سامعك'); return; }
+            if (t.isEmpty) { await speakText(L('أيوه، سامعك')); return; }
           }
           send(t);
         });
@@ -502,7 +506,7 @@ class _ChatPageState extends State<ChatPage> {
                 child: FilledButton.icon(
                     onPressed: () { newConv(); Navigator.pop(context); },
                     icon: const Icon(Icons.add),
-                    label: const Text('محادثة جديدة'))),
+                    label: Text(L('محادثة جديدة')))),
             Expanded(
                 child: ListView(children: [
               for (final c in convs.where((c) => c.msgs.any((m) => m.user) || c == cur))
@@ -518,20 +522,20 @@ class _ChatPageState extends State<ChatPage> {
       ),
       appBar: AppBar(
         backgroundColor: const Color(0xFF13261F),
-        title: const Text('نيلو  Nilo', style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: .5)),
+        title: Text(L('نيلو  Nilo'), style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: .5)),
         actions: [
-          IconButton(tooltip: 'غرفة المبيعات', icon: const Icon(Icons.trending_up), onPressed: () => openLink('https://nilo-eg.vercel.app/?sales=1')),
-          IconButton(tooltip: 'شركة تسويق ومبيعات', icon: const Icon(Icons.storefront_outlined), onPressed: () => openLink('https://nilo-eg.vercel.app/?co=1')),
-          IconButton(tooltip: 'تبديل الوضع', icon: const Icon(Icons.apps), onPressed: () async { final p = await SharedPreferences.getInstance(); await p.remove('mode'); if (!mounted) return; Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const ModeGate())); }),
-          IconButton(tooltip: 'مترجم', icon: const Icon(Icons.translate), onPressed: () => openLink('https://nilo-eg.vercel.app/translate.html')),
-          IconButton(tooltip: 'مساعد الشغل', icon: const Icon(Icons.work_outline), onPressed: () => openLink('https://nilo-eg.vercel.app/?jobs=1')),
+          IconButton(tooltip: L('غرفة المبيعات'), icon: Icon(Icons.trending_up), onPressed: () => openLink('https://nilo-eg.vercel.app/?sales=1')),
+          IconButton(tooltip: L('شركة تسويق ومبيعات'), icon: Icon(Icons.storefront_outlined), onPressed: () => openLink('https://nilo-eg.vercel.app/?co=1')),
+          IconButton(tooltip: L('تبديل الوضع'), icon: Icon(Icons.apps), onPressed: () async { final p = await SharedPreferences.getInstance(); await p.remove('mode'); if (!mounted) return; Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => ModeGate())); }),
+          IconButton(tooltip: L('مترجم'), icon: Icon(Icons.translate), onPressed: () => openLink('https://nilo-eg.vercel.app/translate.html')),
+          IconButton(tooltip: L('مساعد الشغل'), icon: Icon(Icons.work_outline), onPressed: () => openLink('https://nilo-eg.vercel.app/?jobs=1')),
           TextButton.icon(
               onPressed: !sttOk ? null : () {
                 setState(() { hands = !hands; wake = true; });
                 if (hands) { listen(); } else { stt.stop(); tts.stop(); player.stop(); setState(() => status = ''); }
               },
               icon: Icon(hands ? Icons.mic : Icons.mic_none, color: hands ? kGreen : null),
-              label: Text('مكالمة', style: TextStyle(color: hands ? kGreen : null))),
+              label: Text(L('مكالمة'), style: TextStyle(color: hands ? kGreen : null))),
         ],
       ),
       body: Column(children: [
@@ -550,22 +554,22 @@ class _ChatPageState extends State<ChatPage> {
                       constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * .85),
                       decoration: BoxDecoration(color: m.user ? kGreen : const Color(0xFF1A2F27), borderRadius: BorderRadius.circular(16)),
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        if (m.img != null) GestureDetector(onTap: () => openLink(m.img!), child: Padding(padding: const EdgeInsets.only(bottom: 8), child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(m.img!, loadingBuilder: (c, w, p) => p == null ? w : const SizedBox(height: 120, child: Center(child: CircularProgressIndicator())), errorBuilder: (c, e, st) => const Text('الصورة ماطلعتش'))))),
+                        if (m.img != null) GestureDetector(onTap: () => openLink(m.img!), child: Padding(padding: EdgeInsets.only(bottom: 8), child: ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(m.img!, loadingBuilder: (c, w, p) => p == null ? w : SizedBox(height: 120, child: Center(child: CircularProgressIndicator())), errorBuilder: (c, e, st) => Text(L('الصورة ماطلعتش')))))),
                         SelectableText(m.text, style: const TextStyle(height: 1.6, fontSize: 16)),
                         if (!m.user && m.q != null) Row(children: [
                           if (m.fbDone != null) Text(m.fbDone == 'up' ? 'شكرا 🙏' : 'شكرا، هتحسن 🙏', style: const TextStyle(fontSize: 12, color: Color(0xFFA6CDBB))) else ...[
-                            IconButton(visualDensity: VisualDensity.compact, icon: const Text('👍'), onPressed: () => sendFb(m, 'up')),
-                            IconButton(visualDensity: VisualDensity.compact, icon: const Text('👎'), onPressed: () => sendFb(m, 'down')),
+                            IconButton(visualDensity: VisualDensity.compact, icon: Text(L('👍')), onPressed: () => sendFb(m, 'up')),
+                            IconButton(visualDensity: VisualDensity.compact, icon: Text(L('👎')), onPressed: () => sendFb(m, 'down')),
                           ]
                         ]),
-                        if (m.link != null) TextButton(onPressed: () => openLink(m.link!), child: const Text('افتح ↗')),
-                        if (m.srcs.isNotEmpty) const Padding(padding: EdgeInsets.only(top: 6), child: Text('المصادر:', style: TextStyle(fontSize: 12, color: Color(0xFFA6CDBB)))),
+                        if (m.link != null) TextButton(onPressed: () => openLink(m.link!), child: Text(L('افتح ↗'))),
+                        if (m.srcs.isNotEmpty) Padding(padding: EdgeInsets.only(top: 6), child: Text(L('المصادر:'), style: TextStyle(fontSize: 12, color: Color(0xFFA6CDBB)))),
                         for (final sr in m.srcs) InkWell(onTap: () => openLink(sr[1]), child: Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Text('🔗 ${sr[0]}', style: const TextStyle(fontSize: 13, color: Color(0xFF8FE0B9), decoration: TextDecoration.underline)))),
                       ]),
                     ),
                   );
                 })),
-        if (status.isNotEmpty) Padding(padding: const EdgeInsets.all(4), child: Text(status, style: const TextStyle(color: Color(0xFFA6CDBB)))),
+        if (status.isNotEmpty) Padding(padding: EdgeInsets.all(4), child: Text(L(status), style: TextStyle(color: Color(0xFFA6CDBB)))),
         if (hands)
           GestureDetector(
             onTap: () { setState(() => wake = !wake); stt.stop(); Future.delayed(const Duration(milliseconds: 300), listen); },
@@ -581,9 +585,9 @@ class _ChatPageState extends State<ChatPage> {
             child: Row(children: [
               IconButton(icon: Icon(Icons.photo_camera_outlined, color: pendImg != null ? kGreen : null), onPressed: pickImage),
               IconButton(icon: const Icon(Icons.mic), onPressed: !sttOk ? null : () { tts.stop(); listen(); }),
-              Expanded(child: TextField(controller: ctrl, onSubmitted: send, decoration: InputDecoration(hintText: 'اكتب أو اتكلم…', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none)))),
+              Expanded(child: TextField(controller: ctrl, onSubmitted: send, decoration: InputDecoration(hintText: L('اكتب أو اتكلم…'), filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none)))),
               const SizedBox(width: 6),
-              FilledButton(onPressed: () => send(ctrl.text), child: const Text('ابعت')),
+              FilledButton(onPressed: () => send(ctrl.text), child: Text(L('ابعت'))),
             ]),
           ),
         ),

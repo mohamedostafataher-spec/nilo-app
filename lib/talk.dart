@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -154,20 +155,20 @@ class _TalkPageState extends State<TalkPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('مكالمة مترجمة • Live talk'), backgroundColor: kBg),
+      appBar: AppBar(title: Text(L('مكالمة مترجمة • Live talk')), backgroundColor: kBg),
       body: inRoom ? _room() : _lobby(),
     );
   }
 
   Widget _lobby() => ListView(padding: const EdgeInsets.all(18), children: [
-        const Text('كل واحد على موبايله. واحد يعمل غرفة ويبعت الكود للتاني، والتاني يدخل بيه. بتتكلم، والتاني يسمع ترجمتك بلغته بعد ثواني.', style: TextStyle(height: 1.5)),
+        Text(L('كل واحد على موبايله. واحد يعمل غرفة ويبعت الكود للتاني، والتاني يدخل بيه. بتتكلم، والتاني يسمع ترجمتك بلغته بعد ثواني.'), style: TextStyle(height: 1.5)),
         const SizedBox(height: 8),
         const Directionality(
           textDirection: TextDirection.ltr,
-          child: Text('Turn-based, not instant: each sentence takes a few seconds. Needs internet on both phones. Text (not your voice) goes through the free public ntfy.sh relay, so anyone who guesses the room code could read it. Do not share private details.', style: TextStyle(fontSize: 12, color: Colors.white60, height: 1.4)),
+          child: Text(L('Turn-based, not instant: each sentence takes a few seconds. Needs internet on both phones. Text (not your voice) goes through the free public ntfy.sh relay, so anyone who guesses the room code could read it. Do not share private details.'), style: TextStyle(fontSize: 12, color: Colors.white60, height: 1.4)),
         ),
         const SizedBox(height: 16),
-        const Text('لغتك'),
+        Text(L('لغتك')),
         DropdownButton<String>(
           isExpanded: true,
           value: my,
@@ -180,13 +181,13 @@ class _TalkPageState extends State<TalkPage> {
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: kGreen, foregroundColor: Colors.black),
             onPressed: () => _enter(_newCode()),
-            child: const Text('اعمل غرفة جديدة'),
+            child: Text(L('اعمل غرفة جديدة')),
           ),
         ),
         const SizedBox(height: 22),
-        TextField(controller: codeCtl, textCapitalization: TextCapitalization.characters, decoration: const InputDecoration(labelText: 'أو اكتب كود الغرفة', border: OutlineInputBorder())),
+        TextField(controller: codeCtl, textCapitalization: TextCapitalization.characters, decoration: InputDecoration(labelText: L('أو اكتب كود الغرفة'), border: OutlineInputBorder())),
         const SizedBox(height: 10),
-        SizedBox(height: 48, child: OutlinedButton(onPressed: () => _enter(codeCtl.text), child: const Text('ادخل الغرفة'))),
+        SizedBox(height: 48, child: OutlinedButton(onPressed: () => _enter(codeCtl.text), child: Text(L('ادخل الغرفة')))),
       ]);
 
   Widget _room() => Column(children: [
@@ -195,8 +196,8 @@ class _TalkPageState extends State<TalkPage> {
           padding: const EdgeInsets.all(12),
           color: const Color(0xFF12304D),
           child: Column(children: [
-            Directionality(textDirection: TextDirection.ltr, child: SelectableText('كود الغرفة: $code', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: kGreen, letterSpacing: 2))),
-            Text(status, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+            Directionality(textDirection: TextDirection.ltr, child: SelectableText(Ui.rtl ? 'كود الغرفة: $code' : 'Room code: $code', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: kGreen, letterSpacing: 2))),
+            Text(L(status), style: TextStyle(fontSize: 12, color: Colors.white70)),
           ]),
         ),
         Expanded(

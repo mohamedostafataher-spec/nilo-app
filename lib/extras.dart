@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'auth.dart';
@@ -134,7 +135,7 @@ class _SplashGateState extends State<SplashGate> with SingleTickerProviderStateM
                 opacity: Curves.easeIn.transform(((_c.value - 0.4) / 0.6).clamp(0.0, 1.0)),
                 child: const Directionality(
                   textDirection: TextDirection.ltr,
-                  child: Text('نيلو  |  NILO', style: TextStyle(color: kNavy, fontSize: 30, fontWeight: FontWeight.bold)),
+                  child: Text(L('نيلو  |  NILO'), style: TextStyle(color: kNavy, fontSize: 30, fontWeight: FontWeight.bold)),
                 ),
               ),
             ]),
@@ -190,7 +191,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
         child: Column(children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: TextButton(onPressed: _done, child: const Text('Skip • تخطي', style: TextStyle(color: Colors.white70))),
+            child: TextButton(onPressed: _done, child: Text(L('Skip • تخطي'), style: TextStyle(color: Colors.white70))),
           ),
           Expanded(
             child: PageView.builder(
@@ -217,12 +218,9 @@ class _OnboardingPageState extends State<OnboardingPage> {
                               child: Icon(pg[0] as IconData, size: 56, color: kGreen),
                             ),
                             const SizedBox(height: 28),
-                            Text(pg[1] as String, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
-                            Text(pg[2] as String, textAlign: TextAlign.center, style: const TextStyle(fontSize: 22, color: kGreen)),
+                            Text((Ui.rtl ? pg[2] : pg[1]) as String, textAlign: TextAlign.center, style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white)),
                             const SizedBox(height: 18),
-                            Directionality(textDirection: TextDirection.ltr, child: Text(pg[3] as String, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: Colors.white70, height: 1.4))),
-                            const SizedBox(height: 10),
-                            Text(pg[4] as String, textAlign: TextAlign.center, style: const TextStyle(fontSize: 15, color: Colors.white70, height: 1.5)),
+                            Text((Ui.rtl ? pg[4] : pg[3]) as String, textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: Colors.white70, height: 1.5)),
                           ]),
                         ),
                       ),
@@ -248,7 +246,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: kGreen, foregroundColor: kNavy),
                 onPressed: () => last ? _done() : _pc.nextPage(duration: const Duration(milliseconds: 350), curve: Curves.easeOutCubic),
-                child: Text(last ? 'Start • ابدأ' : 'Next • التالي', style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                child: Text(L(last ? 'Start • ابدأ' : 'Next • التالي'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
               ),
             ),
           ),
@@ -269,9 +267,9 @@ class OfficialPage extends StatelessWidget {
   ];
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Official services • خدمات رسمية'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Official services • خدمات رسمية')), backgroundColor: kBg),
         body: ListView(padding: const EdgeInsets.all(14), children: [
-          const Text('Nilo is not affiliated with these services. Each button opens the official site in your browser. Links checked 26 Nov 2026. Check prices and rules on the site itself.\nنيلو مش تابع للجهات دي، الزر بيفتح موقعها الرسمي. الروابط اتراجعت 26 نوفمبر 2026.',
+          Text(L('Nilo is not affiliated with these services. Each button opens the official site in your browser. Links checked 26 Nov 2026. Check prices and rules on the site itself.\nنيلو مش تابع للجهات دي، الزر بيفتح موقعها الرسمي. الروابط اتراجعت 26 نوفمبر 2026.'),
               style: TextStyle(fontSize: 12, color: Colors.white60, height: 1.4)),
           const SizedBox(height: 12),
           for (final i in _items)
@@ -280,8 +278,8 @@ class OfficialPage extends StatelessWidget {
               margin: const EdgeInsets.only(bottom: 10),
               child: ListTile(
                 contentPadding: const EdgeInsets.all(14),
-                title: Text('${i[0]}\n${i[1]}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Padding(padding: const EdgeInsets.only(top: 6), child: Text('${i[2]}\n${i[4]}', style: const TextStyle(fontSize: 12, color: Colors.white70))),
+                title: Text(Ui.rtl ? i[1] : i[0], style: TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Padding(padding: EdgeInsets.only(top: 6), child: Text('${L(i[2])}\n${i[4]}', style: TextStyle(fontSize: 12, color: Colors.white70))),
                 trailing: const Icon(Icons.open_in_new, color: kGreen),
                 onTap: () => openUrl(i[3]),
               ),

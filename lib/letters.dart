@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -88,33 +89,33 @@ class _LettersPageState extends State<LettersPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(title: const Text('Place letters • خطابات الأماكن'), backgroundColor: kBg),
+      appBar: AppBar(title: Text(L('Place letters • خطابات الأماكن')), backgroundColor: kBg),
       body: !joined
           ? (busy ? const Center(child: CircularProgressIndicator()) : niloJoinGate(context, _init))
           : ListView(padding: const EdgeInsets.all(14), children: [
               _card([
-                const Text('Open a letter here • افتح خطاب هنا', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                Text(L('Open a letter here • افتح خطاب هنا'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                 const SizedBox(height: 6),
-                const Text('Letters can only be opened in the city they were left in. Your phone checks the city once, from approximate location. Coordinates are never saved or sent.', style: TextStyle(fontSize: 12, color: Colors.white70, height: 1.4)),
+                Text(L('Letters can only be opened in the city they were left in. Your phone checks the city once, from approximate location. Coordinates are never saved or sent.'), style: TextStyle(fontSize: 12, color: Colors.white70, height: 1.4)),
                 const SizedBox(height: 10),
-                if (hereCity != null) Text('You are in: $hereCity ($hereCc). Letters waiting: $waiting', style: const TextStyle(fontWeight: FontWeight.w700)),
+                if (hereCity != null) Text(Ui.rtl ? 'إنت في: $hereCity ($hereCc). خطابات مستنية: $waiting' : 'You are in: $hereCity ($hereCc). Letters waiting: $waiting', style: TextStyle(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 Row(children: [
                   FilledButton.tonal(onPressed: locating ? null : _locate, child: Text(locating ? 'Checking...' : 'Check my city • اعرف مدينتي')),
                   const SizedBox(width: 8),
-                  if (waiting > 0) FilledButton(onPressed: _open, child: const Text('Open one • افتح')),
+                  if (waiting > 0) FilledButton(onPressed: _open, child: Text(L('Open one • افتح'))),
                 ]),
                 if (opened != null) ...[
                   const Divider(height: 24),
-                  const Text('📜 A letter from another traveler', style: TextStyle(fontWeight: FontWeight.w800)),
+                  Text(L('📜 A letter from another traveler'), style: TextStyle(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 6),
                   Text((opened!['body'] ?? '').toString(), style: const TextStyle(fontSize: 17, height: 1.5)),
                   const SizedBox(height: 4),
-                  const Text('+5 Reeds', style: TextStyle(color: kGreen, fontSize: 12)),
+                  Text(L('+5 Reeds'), style: TextStyle(color: kGreen, fontSize: 12)),
                 ],
               ]),
               _card([
-                const Text('Leave a letter • سيب خطاب', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                Text(L('Leave a letter • سيب خطاب'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                 const SizedBox(height: 8),
                 Row(children: [
                   GestureDetector(
@@ -125,17 +126,17 @@ class _LettersPageState extends State<LettersPage> {
                     child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(12)), child: Text('${countryOf(cc)[3]} $cc ▾')),
                   ),
                   const SizedBox(width: 8),
-                  Expanded(child: TextField(controller: city, maxLength: 40, decoration: const InputDecoration(counterText: '', hintText: 'City name (as written on a map)'))),
+                  Expanded(child: TextField(controller: city, maxLength: 40, decoration: InputDecoration(counterText: '', hintText: L('City name (as written on a map)')))),
                 ]),
                 const SizedBox(height: 6),
-                TextField(controller: body, maxLength: 400, maxLines: 4, minLines: 3, decoration: const InputDecoration(hintText: 'Write something kind for whoever opens it...')),
+                TextField(controller: body, maxLength: 400, maxLines: 4, minLines: 3, decoration: InputDecoration(hintText: L('Write something kind for whoever opens it...'))),
                 const SizedBox(height: 6),
-                FilledButton(onPressed: _write, child: const Text('Leave it there • سيبه')),
-                const Text('The city name must match the name your phone gives there (for example Cairo, Paris, Tokyo). 18+, no links or phone numbers.', style: TextStyle(fontSize: 11, color: Colors.white54)),
+                FilledButton(onPressed: _write, child: Text(L('Leave it there • سيبه'))),
+                Text(L('The city name must match the name your phone gives there (for example Cairo, Paris, Tokyo). 18+, no links or phone numbers.'), style: TextStyle(fontSize: 11, color: Colors.white54)),
               ]),
               if (mine.isNotEmpty)
                 _card([
-                  const Text('Your letters • خطاباتك', style: TextStyle(fontWeight: FontWeight.w800)),
+                  Text(L('Your letters • خطاباتك'), style: TextStyle(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 6),
                   for (final m in mine) Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: Text('${(m as Map)['city']}: ${m['opened_by'] != null ? 'opened by a traveler ✓' : 'waiting'}')),
                 ]),

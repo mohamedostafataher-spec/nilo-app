@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -17,7 +18,7 @@ import 'net.dart';
 import 'phrasebook.dart';
 import 'talk.dart';
 
-void toast(BuildContext c, String m) => ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(m)));
+void toast(BuildContext c, String m) => ScaffoldMessenger.of(c).showSnackBar(SnackBar(content: Text(L(m))));
 Future<void> openUrl(String u) => launchUrl(Uri.parse(u), mode: LaunchMode.externalApplication);
 
 class LangDrop extends StatelessWidget {
@@ -30,7 +31,7 @@ class LangDrop extends StatelessWidget {
         value: value,
         isExpanded: true,
         items: [
-          if (auto) const DropdownMenuItem(value: 'auto', child: Text('تلقائي Auto')),
+          if (auto) DropdownMenuItem(value: 'auto', child: Text(L('تلقائي Auto'))),
           for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text(kNames[i])),
         ],
         onChanged: (v) { if (v != null) onChanged(v); },
@@ -68,9 +69,9 @@ class _SavedPageState extends State<SavedPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Saved • المحفوظات'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Saved • المحفوظات')), backgroundColor: kBg),
         body: l.isEmpty
-            ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('لسه مفيش حاجة محفوظة. دوس النجمة تحت أي ترجمة وهتلاقيها هنا، وتشتغل من غير نت (النص بس، الصوت من الجهاز).', textAlign: TextAlign.center)))
+            ? Center(child: Padding(padding: EdgeInsets.all(24), child: Text(L('لسه مفيش حاجة محفوظة. دوس النجمة تحت أي ترجمة وهتلاقيها هنا، وتشتغل من غير نت (النص بس، الصوت من الجهاز).'), textAlign: TextAlign.center)))
             : ListView(padding: const EdgeInsets.all(12), children: [
                 for (var i = 0; i < l.length; i++)
                   Card(
@@ -93,7 +94,7 @@ class ResultCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (r.translation.isEmpty) {
-      return Padding(padding: const EdgeInsets.all(8), child: Text('⚠ ${r.error.isEmpty ? 'مفيش نتيجة' : r.error}', style: const TextStyle(color: Colors.orangeAccent)));
+      return Padding(padding: EdgeInsets.all(8), child: Text('⚠ ${r.error.isEmpty ? L('مفيش نتيجة') : r.error}', style: TextStyle(color: Colors.orangeAccent)));
     }
     return Card(
       color: const Color(0xFF12304D),
@@ -110,7 +111,7 @@ class ResultCard extends StatelessWidget {
             IconButton(icon: const Icon(Icons.volume_up), onPressed: () async { if (!await speak(r.translation, to) && context.mounted) toast(context, 'الجهاز مفيهوش صوت للغة دي'); }),
             IconButton(icon: const Icon(Icons.star_border), onPressed: () async { await saveTr(r.original, r.translation, to); if (context.mounted) toast(context, 'اتحفظت في المحفوظات'); }),
           ]),
-          const Text('ترجمة آلية: ممكن تغلط', style: TextStyle(fontSize: 11, color: Colors.white38)),
+          Text(L('ترجمة آلية: ممكن تغلط'), style: TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
       ),
     );
@@ -148,7 +149,7 @@ class ToolsPage extends StatelessWidget {
     ];
     Widget sub(String title, List items) => Scaffold(
           backgroundColor: kBg,
-          appBar: AppBar(title: Text(title), backgroundColor: Colors.transparent, elevation: 0),
+          appBar: AppBar(title: Text(L(title)), backgroundColor: Colors.transparent, elevation: 0),
           body: Stack(children: [
             const Positioned.fill(child: NileBackground()),
             ListView(padding: const EdgeInsets.all(14), children: [
@@ -165,7 +166,7 @@ class ToolsPage extends StatelessWidget {
         );
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(title: const Text('Tools • أدوات', style: TextStyle(fontWeight: FontWeight.w800)), backgroundColor: Colors.transparent, elevation: 0),
+      appBar: AppBar(title: Text(L('Tools • أدوات'), style: TextStyle(fontWeight: FontWeight.w800)), backgroundColor: Colors.transparent, elevation: 0),
       body: Stack(children: [
         const Positioned.fill(child: NileBackground()),
         ListView(padding: const EdgeInsets.all(14), children: [
@@ -185,7 +186,7 @@ class ToolsPage extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 10),
-          const Text('الترجمة الآلية ممكن تغلط، راجع أي حاجة مهمة. مجاني، من غير حساب ولا إعلانات.\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa', style: TextStyle(fontSize: 12, color: Colors.white54)),
+          Text(L('الترجمة الآلية ممكن تغلط، راجع أي حاجة مهمة. مجاني، من غير حساب ولا إعلانات.\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa'), style: TextStyle(fontSize: 12, color: Colors.white54)),
         ]),
       ]),
     );
@@ -262,7 +263,7 @@ class _TranslatePageState extends State<TranslatePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Translate • ترجمة'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Translate • ترجمة')), backgroundColor: kBg),
         body: ListView(padding: const EdgeInsets.all(14), children: [
           Row(children: [
             Expanded(child: LangDrop(value: from, auto: true, onChanged: (v) { setState(() => from = v); save(); })),
@@ -271,23 +272,23 @@ class _TranslatePageState extends State<TranslatePage> {
           ]),
           DropdownButton<String>(
             value: tone, isExpanded: true,
-            items: [for (final t in kTones) DropdownMenuItem(value: t[0], child: Text('النبرة: ${t[1]}'))],
+            items: [for (final t in kTones) DropdownMenuItem(value: t[0], child: Text(Ui.rtl ? 'النبرة: ${t[1]}' : 'Tone: ${t[1]}'))],
             onChanged: (v) { if (v != null) setState(() => tone = v); },
           ),
-          TextField(controller: ctl, minLines: 3, maxLines: 6, decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'اكتب أو الصق هنا')),
+          TextField(controller: ctl, minLines: 3, maxLines: 6, decoration: InputDecoration(border: OutlineInputBorder(), hintText: L('اكتب أو الصق هنا'))),
           const SizedBox(height: 8),
           Wrap(spacing: 8, runSpacing: 8, children: [
-            FilledButton(onPressed: busy ? null : doText, child: const Text('ترجم')),
-            OutlinedButton.icon(onPressed: busy ? null : () async { final d = await Clipboard.getData('text/plain'); if (d?.text != null) { ctl.text = d!.text!; doText(); } }, icon: const Icon(Icons.paste), label: const Text('الصق وترجم')),
+            FilledButton(onPressed: busy ? null : doText, child: Text(L('ترجم'))),
+            OutlinedButton.icon(onPressed: busy ? null : () async { final d = await Clipboard.getData('text/plain'); if (d?.text != null) { ctl.text = d!.text!; doText(); } }, icon: Icon(Icons.paste), label: Text(L('الصق وترجم'))),
             OutlinedButton.icon(onPressed: busy ? null : doMic, icon: Icon(rec ? Icons.stop : Icons.mic, color: rec ? Colors.redAccent : null), label: Text(rec ? 'وقف وترجم' : 'سجّل صوت')),
-            OutlinedButton.icon(onPressed: busy ? null : doFile, icon: const Icon(Icons.upload_file), label: const Text('ارفع فويس')),
+            OutlinedButton.icon(onPressed: busy ? null : doFile, icon: Icon(Icons.upload_file), label: Text(L('ارفع فويس'))),
           ]),
           if (busy) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
           if (res != null) ResultCard(r: res!, to: to),
-          if (res != null && res!.ok) TextButton(onPressed: doBack, child: const Text('ترجمة عكسية للتأكد')),
+          if (res != null && res!.ok) TextButton(onPressed: doBack, child: Text(L('ترجمة عكسية للتأكد'))),
           if (back != null) ResultCard(r: back!, to: from == 'auto' ? (res?.lang ?? 'en') : from),
           const SizedBox(height: 10),
-          const Text('فويس من تليجرام/واتساب: اضغط مشاركة على الفويس واختار Nilo (ترجمة نيلو).', style: TextStyle(fontSize: 12, color: Colors.white54)),
+          Text(L('فويس من تليجرام/واتساب: اضغط مشاركة على الفويس واختار Nilo (ترجمة نيلو).'), style: TextStyle(fontSize: 12, color: Colors.white54)),
         ]),
       );
 }
@@ -336,9 +337,9 @@ class _PhrasesPageState extends State<PhrasesPage> {
   Widget build(BuildContext context) {
     final list = widget.data[sit]!;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), backgroundColor: kBg),
+      appBar: AppBar(title: Text(L(widget.title)), backgroundColor: kBg),
       body: ListView(padding: const EdgeInsets.all(14), children: [
-        const Text('الجمل بالعربي المصري (بتتنطق)، ومعناها بلغتك. دوس الجملة لمعناها. بتتحفظ للاستخدام من غير نت.', style: TextStyle(fontSize: 12, color: Colors.white60)),
+        Text(L('الجمل بالعربي المصري (بتتنطق)، ومعناها بلغتك. دوس الجملة لمعناها. بتتحفظ للاستخدام من غير نت.'), style: TextStyle(fontSize: 12, color: Colors.white60)),
         LangDrop(value: lang, onChanged: (v) { setState(() => lang = v); persist(); }),
         DropdownButton<String>(value: sit, isExpanded: true, items: [for (final s in widget.data.keys) DropdownMenuItem(value: s, child: Text(s))], onChanged: (v) { if (v != null) setState(() => sit = v); }),
         for (final ph in list)
@@ -351,7 +352,7 @@ class _PhrasesPageState extends State<PhrasesPage> {
               trailing: IconButton(icon: const Icon(Icons.volume_up), onPressed: () async { if (!await speak(ph, 'ar') && context.mounted) toast(context, 'الجهاز مفيهوش صوت عربي'); }),
             ),
           ),
-        const Text('الجمل كتبتها أنا ومترجعتش مع متحدث مصري. الترجمة آلية. راجع الطوارئ والحساسية.', style: TextStyle(fontSize: 11, color: Colors.white38)),
+        Text(L('الجمل كتبتها أنا ومترجعتش مع متحدث مصري. الترجمة آلية. راجع الطوارئ والحساسية.'), style: TextStyle(fontSize: 11, color: Colors.white38)),
       ]),
     );
   }
@@ -370,12 +371,12 @@ class _SafePageState extends State<SafePage> {
   String shown = '';
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Stay Safe • أمان'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Stay Safe • أمان')), backgroundColor: kBg),
         body: ListView(padding: const EdgeInsets.all(14), children: [
-          const Text('ورقة اتفاق السعر • Price card', style: TextStyle(fontWeight: FontWeight.bold)),
-          const Text('Fill it and show the screen to the driver before you ride.', style: TextStyle(fontSize: 12, color: Colors.white60)),
-          TextField(controller: svc, decoration: const InputDecoration(hintText: 'Service (camel, taxi, boat...)')),
-          TextField(controller: price, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: 'Price')),
+          Text(L('ورقة اتفاق السعر • Price card'), style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(L('Fill it and show the screen to the driver before you ride.'), style: TextStyle(fontSize: 12, color: Colors.white60)),
+          TextField(controller: svc, decoration: InputDecoration(hintText: L('Service (camel, taxi, boat...)'))),
+          TextField(controller: price, keyboardType: TextInputType.number, decoration: InputDecoration(hintText: L('Price'))),
           Row(children: [
             Expanded(child: DropdownButton<String>(value: cur, isExpanded: true, items: ['جنيه مصري', 'دولار', 'يورو', 'جنيه إسترليني'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (v) => setState(() => cur = v!))),
             const SizedBox(width: 8),
@@ -383,19 +384,19 @@ class _SafePageState extends State<SafePage> {
             const SizedBox(width: 8),
             Expanded(child: DropdownButton<String>(value: way, isExpanded: true, items: ['رايح وجاي', 'رايح بس'].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: (v) => setState(() => way = v!))),
           ]),
-          FilledButton(onPressed: () { if (price.text.trim().isEmpty) { toast(context, 'Enter a price'); return; } setState(() => shown = 'الخدمة: ${svc.text.trim().isEmpty ? '-' : svc.text.trim()}\nالسعر: ${price.text.trim()} $cur $who\n$way\nمفيش أي مبلغ زيادة بعد كده.\nاتفقنا؟'); }, child: const Text('Show to driver • اعرض')),
+          FilledButton(onPressed: () { if (price.text.trim().isEmpty) { toast(context, 'Enter a price'); return; } setState(() => shown = 'الخدمة: ${svc.text.trim().isEmpty ? '-' : svc.text.trim()}\nالسعر: ${price.text.trim()} $cur $who\n$way\nمفيش أي مبلغ زيادة بعد كده.\nاتفقنا؟'); }, child: Text(L('Show to driver • اعرض'))),
           if (shown.isNotEmpty) Container(margin: const EdgeInsets.only(top: 8), padding: const EdgeInsets.all(14), decoration: BoxDecoration(border: Border.all(color: kGreen), borderRadius: BorderRadius.circular(8)), child: Text(shown, textAlign: TextAlign.center, style: const TextStyle(fontSize: 26, height: 1.8))),
           const Divider(height: 28),
-          const Text('Taxi and Uber checklist', style: TextStyle(fontWeight: FontWeight.bold)),
-          const Text('• Many taxis lack working meters: agree the fare first or use a ride app (source: atlas-guide.com, read 26 Nov 2026).', textDirection: TextDirection.ltr),
-          TextButton(onPressed: () => openUrl('https://www.atlas-guide.com/resources/scams/egypt'), child: const Text('atlas-guide.com')),
-          const Text('• Check the plate and car in the app before you get in (my general advice, not an official rule).', textDirection: TextDirection.ltr),
-          const Text('• Pay the amount shown in the app. Complaints about drivers asking for more: TripAdvisor forum, Dec 2024.', textDirection: TextDirection.ltr),
-          TextButton(onPressed: () => openUrl('https://www.tripadvisor.com/ShowTopic-g294201-i9404-k14962719-Be_careful_with_Uber_in_Cairo_Egypt-Cairo_Cairo_Governorate.html'), child: const Text('TripAdvisor forum')),
-          const Text('• Report crime to the tourist police: 126 (UK FCDO).', textDirection: TextDirection.ltr),
-          TextButton(onPressed: () => openUrl('https://www.gov.uk/foreign-travel-advice/egypt/safety-and-security'), child: const Text('gov.uk safety advice')),
+          Text(L('Taxi and Uber checklist'), style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(L('• Many taxis lack working meters: agree the fare first or use a ride app (source: atlas-guide.com, read 26 Nov 2026).'), textDirection: TextDirection.ltr),
+          TextButton(onPressed: () => openUrl('https://www.atlas-guide.com/resources/scams/egypt'), child: Text(L('atlas-guide.com'))),
+          Text(L('• Check the plate and car in the app before you get in (my general advice, not an official rule).'), textDirection: TextDirection.ltr),
+          Text(L('• Pay the amount shown in the app. Complaints about drivers asking for more: TripAdvisor forum, Dec 2024.'), textDirection: TextDirection.ltr),
+          TextButton(onPressed: () => openUrl('https://www.tripadvisor.com/ShowTopic-g294201-i9404-k14962719-Be_careful_with_Uber_in_Cairo_Egypt-Cairo_Cairo_Governorate.html'), child: Text(L('TripAdvisor forum'))),
+          Text(L('• Report crime to the tourist police: 126 (UK FCDO).'), textDirection: TextDirection.ltr),
+          TextButton(onPressed: () => openUrl('https://www.gov.uk/foreign-travel-advice/egypt/safety-and-security'), child: Text(L('gov.uk safety advice'))),
           const Divider(height: 28),
-          OutlinedButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PhrasebookPage(title: 'Polite no and fair price • رفض مهذب وسعر عادل', data: kSafe))), child: const Text('جمل الأمان (رفض مهذب، تاكسي، سيدات، أكل)')),
+          OutlinedButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => PhrasebookPage(title: L('Polite no and fair price • رفض مهذب وسعر عادل'), data: kSafe))), child: Text(L('جمل الأمان (رفض مهذب، تاكسي، سيدات، أكل)'))),
         ]),
       );
 }
@@ -427,27 +428,27 @@ class _EmergencyPageState extends State<EmergencyPage> {
     if (mounted) setState(() { busy = false; show = r.ok ? r.translation : '$txt\n\n(Translation unavailable. Show this text.)'; });
   }
 
-  Widget num(String n, String label) => ListTile(title: Text(label), trailing: TextButton(onPressed: () => openUrl('tel:$n'), child: Text(n, style: const TextStyle(fontSize: 24))));
+  Widget num(String n, String label) => ListTile(title: Text(L(label)), trailing: TextButton(onPressed: () => openUrl('tel:$n'), child: Text(n, style: TextStyle(fontSize: 24))));
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Emergency • طوارئ'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Emergency • طوارئ')), backgroundColor: kBg),
         body: ListView(padding: const EdgeInsets.all(14), children: [
           num('123', 'Ambulance • إسعاف'), num('122', 'Police • شرطة'), num('126', 'Tourist police • شرطة السياحة'), num('180', 'Fire • مطافي'),
-          const Text('Checked 26 Nov 2026 against UK FCDO and the US Embassy in Cairo.', style: TextStyle(fontSize: 12, color: Colors.white60)),
-          Row(children: [TextButton(onPressed: () => openUrl('https://www.gov.uk/foreign-travel-advice/egypt/getting-help'), child: const Text('gov.uk')), TextButton(onPressed: () => openUrl('https://eg.usembassy.gov/services/emergency-contact-information-for-u-s-citizens/'), child: const Text('eg.usembassy.gov'))]),
+          Text(L('Checked 26 Nov 2026 against UK FCDO and the US Embassy in Cairo.'), style: TextStyle(fontSize: 12, color: Colors.white60)),
+          Row(children: [TextButton(onPressed: () => openUrl('https://www.gov.uk/foreign-travel-advice/egypt/getting-help'), child: Text(L('gov.uk'))), TextButton(onPressed: () => openUrl('https://eg.usembassy.gov/services/emergency-contact-information-for-u-s-citizens/'), child: Text(L('eg.usembassy.gov')))]),
           const Divider(height: 24),
-          const Text('Medical card • كارت طبي', style: TextStyle(fontWeight: FontWeight.bold)),
-          const Text('Saved on this phone only.', style: TextStyle(fontSize: 12, color: Colors.white60)),
-          TextField(controller: c['blood'], decoration: const InputDecoration(labelText: 'Blood type')),
-          TextField(controller: c['allergy'], decoration: const InputDecoration(labelText: 'Allergies (drugs, food)')),
-          TextField(controller: c['cond'], decoration: const InputDecoration(labelText: 'Conditions and medicines')),
-          TextField(controller: c['emerg'], decoration: const InputDecoration(labelText: 'Emergency contact')),
+          Text(L('Medical card • كارت طبي'), style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(L('Saved on this phone only.'), style: TextStyle(fontSize: 12, color: Colors.white60)),
+          TextField(controller: c['blood'], decoration: InputDecoration(labelText: L('Blood type'))),
+          TextField(controller: c['allergy'], decoration: InputDecoration(labelText: L('Allergies (drugs, food)'))),
+          TextField(controller: c['cond'], decoration: InputDecoration(labelText: L('Conditions and medicines'))),
+          TextField(controller: c['emerg'], decoration: InputDecoration(labelText: L('Emergency contact'))),
           const SizedBox(height: 8),
-          Row(children: [FilledButton(onPressed: () async { await save(); if (context.mounted) toast(context, 'Saved'); }, child: const Text('Save')), const SizedBox(width: 8), OutlinedButton(onPressed: busy ? null : doShow, child: const Text('Show to doctor (Arabic)'))]),
+          Row(children: [FilledButton(onPressed: () async { await save(); if (context.mounted) toast(context, 'Saved'); }, child: Text(L('Save'))), SizedBox(width: 8), OutlinedButton(onPressed: busy ? null : doShow, child: Text(L('Show to doctor (Arabic)')))]),
           if (busy) const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator())),
           if (show.isNotEmpty) Container(margin: const EdgeInsets.only(top: 8), padding: const EdgeInsets.all(14), decoration: BoxDecoration(border: Border.all(color: kGreen), borderRadius: BorderRadius.circular(8)), child: Text(show, style: const TextStyle(fontSize: 22, height: 1.8))),
-          const Text('Automatic translation can be wrong. Do not rely on it alone for medical decisions.', style: TextStyle(fontSize: 11, color: Colors.white38)),
+          Text(L('Automatic translation can be wrong. Do not rely on it alone for medical decisions.'), style: TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
       );
 }
@@ -474,14 +475,14 @@ class _CameraPageState extends State<CameraPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Camera • كاميرا'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Camera • كاميرا')), backgroundColor: kBg),
         body: ListView(padding: const EdgeInsets.all(14), children: [
-          const Text('Translate to:'),
+          Text(L('Translate to:')),
           LangDrop(value: to, onChanged: (v) => setState(() => to = v)),
-          Row(children: [FilledButton.icon(onPressed: busy ? null : () => go(ImageSource.camera), icon: const Icon(Icons.photo_camera), label: const Text('صوّر')), const SizedBox(width: 8), OutlinedButton.icon(onPressed: busy ? null : () => go(ImageSource.gallery), icon: const Icon(Icons.photo), label: const Text('من المعرض'))]),
+          Row(children: [FilledButton.icon(onPressed: busy ? null : () => go(ImageSource.camera), icon: Icon(Icons.photo_camera), label: Text(L('صوّر'))), SizedBox(width: 8), OutlinedButton.icon(onPressed: busy ? null : () => go(ImageSource.gallery), icon: Icon(Icons.photo), label: Text(L('من المعرض')))]),
           if (busy) const Padding(padding: EdgeInsets.all(16), child: Center(child: CircularProgressIndicator())),
           if (res != null) ResultCard(r: res!, to: to),
-          const Text('الصورة بتتصغر وبتتبعت للترجمة ومش بتتحفظ. الخط اليدوي والصور الغامقة ممكن تفشل.', style: TextStyle(fontSize: 11, color: Colors.white38)),
+          Text(L('الصورة بتتصغر وبتتبعت للترجمة ومش بتتحفظ. الخط اليدوي والصور الغامقة ممكن تفشل.'), style: TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
       );
 }
@@ -544,7 +545,7 @@ class _FacePageState extends State<FacePage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Face to face • وجهاً لوجه'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Face to face • وجهاً لوجه')), backgroundColor: kBg),
         body: Column(children: [
           Expanded(child: Transform.rotate(angle: math.pi, child: Column(children: [half(1, topText, them, (v) => setState(() => them = v))]))),
           const Divider(height: 1),
@@ -639,27 +640,27 @@ class _PlacesPageState extends State<PlacesPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Places • أماكن'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Places • أماكن')), backgroundColor: kBg),
         body: ListView(padding: const EdgeInsets.all(14), children: [
-          const Text('Loaded live from open sources each time: Wikivoyage, Wikipedia, OpenStreetMap, Open-Meteo. Nothing here is written or checked by Nilo.', style: TextStyle(fontSize: 12, color: Colors.white60)),
+          Text(L('Loaded live from open sources each time: Wikivoyage, Wikipedia, OpenStreetMap, Open-Meteo. Nothing here is written or checked by Nilo.'), style: TextStyle(fontSize: 12, color: Colors.white60)),
           DropdownButton<int>(value: di, isExpanded: true, items: [for (var i = 0; i < kDest.length; i++) DropdownMenuItem(value: i, child: Text(kDest[i][0] as String))], onChanged: (v) { if (v != null) { di = v; load(); } }),
-          Text('Loaded: $stamp', style: const TextStyle(fontSize: 11, color: Colors.white38)),
-          if (weather.isNotEmpty) Card(color: const Color(0xFF12304D), child: Padding(padding: const EdgeInsets.all(12), child: Text('Weather\n$weather\nSource: Open-Meteo'))),
-          if (guide.isNotEmpty) Card(color: const Color(0xFF12304D), child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('${kDest[di][0]} travel guide', style: const TextStyle(fontWeight: FontWeight.bold)), Text(guide, textDirection: TextDirection.ltr), Row(children: [Expanded(child: DropdownButton<String>(isExpanded: true, value: guideLang, items: [for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text(kNames[i], overflow: TextOverflow.ellipsis))], onChanged: (v) => setState(() { guideLang = v ?? 'en'; guideTr = ''; }))), IconButton(icon: guideBusy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.volume_up), onPressed: guideBusy ? null : readGuide)]), if (guideTr.isNotEmpty) Text(guideTr), TextButton(onPressed: () => openUrl(guideUrl), child: const Text('Wikivoyage (CC BY-SA), community-written, may be out of date'))]))),
-          const Text('Places nearby (Wikipedia)', style: TextStyle(fontWeight: FontWeight.bold)),
-          if (pagesErr.isNotEmpty) Text(pagesErr),
+          Text(Ui.rtl ? 'اتحمّل: $stamp' : 'Loaded: $stamp', style: TextStyle(fontSize: 11, color: Colors.white38)),
+          if (weather.isNotEmpty) Card(color: Color(0xFF12304D), child: Padding(padding: EdgeInsets.all(12), child: Text(Ui.rtl ? 'الطقس\n$weather\nالمصدر: Open-Meteo' : 'Weather\n$weather\nSource: Open-Meteo'))),
+          if (guide.isNotEmpty) Card(color: Color(0xFF12304D), child: Padding(padding: EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(Ui.rtl ? 'دليل سفر ${kDest[di][0]}' : '${kDest[di][0]} travel guide', style: TextStyle(fontWeight: FontWeight.bold)), Text(guide, textDirection: TextDirection.ltr), Row(children: [Expanded(child: DropdownButton<String>(isExpanded: true, value: guideLang, items: [for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text(kNames[i], overflow: TextOverflow.ellipsis))], onChanged: (v) => setState(() { guideLang = v ?? 'en'; guideTr = ''; }))), IconButton(icon: guideBusy ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : Icon(Icons.volume_up), onPressed: guideBusy ? null : readGuide)]), if (guideTr.isNotEmpty) Text(guideTr), TextButton(onPressed: () => openUrl(guideUrl), child: Text(L('Wikivoyage (CC BY-SA), community-written, may be out of date')))]))),
+          Text(L('Places nearby (Wikipedia)'), style: TextStyle(fontWeight: FontWeight.bold)),
+          if (pagesErr.isNotEmpty) Text(L(pagesErr)),
           for (final p in pages) ListTile(title: Text((p['title'] ?? '').toString(), textDirection: TextDirection.ltr), subtitle: Text((p['extract'] ?? '').toString(), textDirection: TextDirection.ltr), onTap: () => openUrl('https://en.wikipedia.org/?curid=${p['pageid']}')),
-          const Text('Wikipedia articles within 8 km, nearest first. Not a curated list: can include governorates and non-tourist pages. Hours and prices are not in this source.', style: TextStyle(fontSize: 11, color: Colors.white38)),
+          Text(L('Wikipedia articles within 8 km, nearest first. Not a curated list: can include governorates and non-tourist pages. Hours and prices are not in this source.'), style: TextStyle(fontSize: 11, color: Colors.white38)),
           const Divider(height: 24),
-          const Text('Services within 2 km (OpenStreetMap)', style: TextStyle(fontWeight: FontWeight.bold)),
+          Text(L('Services within 2 km (OpenStreetMap)'), style: TextStyle(fontWeight: FontWeight.bold)),
           Wrap(spacing: 6, children: [
             for (final t in [['Pharmacy', 'amenity', 'pharmacy'], ['Hospital', 'amenity', 'hospital'], ['ATM', 'amenity', 'atm'], ['Mosque', 'amenity', 'place_of_worship'], ['Restaurant', 'amenity', 'restaurant'], ['Toilets', 'amenity', 'toilets']])
               OutlinedButton(onPressed: osmBusy ? null : () => loadOsm(t[1], t[2]), child: Text(t[0])),
           ]),
           if (osmBusy) const Padding(padding: EdgeInsets.all(12), child: Center(child: CircularProgressIndicator())),
-          if (osm.isNotEmpty) Text(osm, textDirection: TextDirection.ltr),
-          if (osmErr.isNotEmpty) Text(osmErr),
-          const Text('© OpenStreetMap contributors. Volunteer data: may be missing or outdated.', style: TextStyle(fontSize: 11, color: Colors.white38)),
+          if (osm.isNotEmpty) Text(L(osm), textDirection: TextDirection.ltr),
+          if (osmErr.isNotEmpty) Text(L(osmErr)),
+          Text(L('© OpenStreetMap contributors. Volunteer data: may be missing or outdated.'), style: TextStyle(fontSize: 11, color: Colors.white38)),
         ]),
       );
 }
@@ -668,18 +669,18 @@ class CapturePage extends StatelessWidget {
   const CapturePage({super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('ترجمة صوت التطبيقات'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('ترجمة صوت التطبيقات')), backgroundColor: kBg),
         body: Padding(
           padding: const EdgeInsets.all(18),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('بتسجل الصوت اللي بيطلع من موبايلك (فيديو أو فويس) وتترجمه. أندرويد 10 أو أحدث. أندرويد بيطلب إذنك كل مرة.\nبعض التطبيقات بتمنع التسجيل والمكالمات مش بتتسجل. جرّب الأول، ولو طلع فاضي استخدم المايك أو مشاركة الملف.', style: TextStyle(height: 1.5)),
+            Text(L('بتسجل الصوت اللي بيطلع من موبايلك (فيديو أو فويس) وتترجمه. أندرويد 10 أو أحدث. أندرويد بيطلب إذنك كل مرة.\nبعض التطبيقات بتمنع التسجيل والمكالمات مش بتتسجل. جرّب الأول، ولو طلع فاضي استخدم المايك أو مشاركة الملف.'), style: TextStyle(height: 1.5)),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity, height: 50,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(backgroundColor: kGreen, foregroundColor: Colors.black),
                 icon: const Icon(Icons.fiber_manual_record),
-                label: const Text('ابدأ التسجيل'),
+                label: Text(L('ابدأ التسجيل')),
                 onPressed: () async {
                   try {
                     await const MethodChannel('nilo/native').invokeMethod('capture');
@@ -706,20 +707,20 @@ class FloatPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('الزر العايم • Floating button'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('الزر العايم • Floating button')), backgroundColor: kBg),
         body: ListView(padding: const EdgeInsets.all(18), children: [
-          const Text('الزر ده بيستخدم خدمة "إمكانية الوصول" عشان يقرا النص اللي على الشاشة ويترجمه. التفعيل بيحتاج خطوات من إعدادات أندرويد، ومتجرّبش لسه على أجهزة كتير.', style: TextStyle(height: 1.5)),
+          Text(L('الزر ده بيستخدم خدمة "إمكانية الوصول" عشان يقرا النص اللي على الشاشة ويترجمه. التفعيل بيحتاج خطوات من إعدادات أندرويد، ومتجرّبش لسه على أجهزة كتير.'), style: TextStyle(height: 1.5)),
           const SizedBox(height: 14),
-          const Text('1. اضغط "افتح معلومات التطبيق" تحت.\n2. اضغط النقط التلاتة فوق على اليمين، ثم "السماح بالإعدادات المقيّدة" (Allow restricted settings). لو الاختيار مش ظاهر، افتح إعدادات إمكانية الوصول وجرب تفعّل نيلو مرة الأول، وبعدين ارجع هنا.\n3. اضغط "افتح إعدادات إمكانية الوصول"، اختار نيلو وفعّله.', style: TextStyle(height: 1.7)),
+          Text(L('1. اضغط "افتح معلومات التطبيق" تحت.\n2. اضغط النقط التلاتة فوق على اليمين، ثم "السماح بالإعدادات المقيّدة" (Allow restricted settings). لو الاختيار مش ظاهر، افتح إعدادات إمكانية الوصول وجرب تفعّل نيلو مرة الأول، وبعدين ارجع هنا.\n3. اضغط "افتح إعدادات إمكانية الوصول"، اختار نيلو وفعّله.'), style: TextStyle(height: 1.7)),
           const SizedBox(height: 10),
           const Directionality(
             textDirection: TextDirection.ltr,
-            child: Text('Android blocks accessibility for apps installed outside Google Play ("Restricted setting"). Open App info, tap the three-dot menu, choose "Allow restricted settings", then enable Nilo in Accessibility. The exact wording varies by phone brand and Android version.', style: TextStyle(color: Colors.white70, height: 1.5)),
+            child: Text(L('Android blocks accessibility for apps installed outside Google Play ("Restricted setting"). Open App info, tap the three-dot menu, choose "Allow restricted settings", then enable Nilo in Accessibility. The exact wording varies by phone brand and Android version.'), style: TextStyle(color: Colors.white70, height: 1.5)),
           ),
           const SizedBox(height: 18),
-          SizedBox(height: 48, child: ElevatedButton(onPressed: () => _call(context, 'appinfo'), child: const Text('افتح معلومات التطبيق'))),
+          SizedBox(height: 48, child: ElevatedButton(onPressed: () => _call(context, 'appinfo'), child: Text(L('افتح معلومات التطبيق')))),
           const SizedBox(height: 10),
-          SizedBox(height: 48, child: ElevatedButton(onPressed: () => _call(context, 'a11y'), child: const Text('افتح إعدادات إمكانية الوصول'))),
+          SizedBox(height: 48, child: ElevatedButton(onPressed: () => _call(context, 'a11y'), child: Text(L('افتح إعدادات إمكانية الوصول')))),
         ]),
       );
 }
@@ -737,13 +738,13 @@ class LiveCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(color: const Color(0xFF12304D), border: Border.all(color: kGreen), borderRadius: BorderRadius.circular(16)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Row(children: [Icon(Icons.bubble_chart, color: kGreen), SizedBox(width: 8), Text('ترجمة فورية • Instant translation', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))]),
+          Row(children: [Icon(Icons.bubble_chart, color: kGreen), SizedBox(width: 8), Text(L('ترجمة فورية • Instant translation'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold))]),
           const SizedBox(height: 6),
-          const Text('A floating bubble that translates what is on your screen, over any app. Turn it on once in Accessibility. If Android says the setting is restricted, use the steps page first.', style: TextStyle(color: Colors.white70, height: 1.4)),
+          Text(L('A floating bubble that translates what is on your screen, over any app. Turn it on once in Accessibility. If Android says the setting is restricted, use the steps page first.'), style: TextStyle(color: Colors.white70, height: 1.4)),
           const SizedBox(height: 10),
           Wrap(spacing: 8, children: [
-            FilledButton(onPressed: () => _call(context, 'a11y'), child: const Text('فعّل الآن • Turn on')),
-            OutlinedButton(onPressed: () => Navigator.of(context).push(niloRoute(const FloatPage())), child: const Text('الخطوات • Steps')),
+            FilledButton(onPressed: () => _call(context, 'a11y'), child: Text(L('فعّل الآن • Turn on'))),
+            OutlinedButton(onPressed: () => Navigator.of(context).push(niloRoute(FloatPage())), child: Text(L('الخطوات • Steps'))),
           ]),
         ]),
       );

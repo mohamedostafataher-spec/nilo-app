@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -88,7 +89,7 @@ class _PhrasebookPageState extends State<PhrasebookPage> {
 
   Widget _drop(String label, String value, void Function(String) on) => Expanded(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.white60)),
+          Text(L(label), style: TextStyle(fontSize: 12, color: Colors.white60)),
           DropdownButton<String>(
             isExpanded: true,
             value: value,
@@ -123,7 +124,7 @@ class _PhrasebookPageState extends State<PhrasebookPage> {
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(backgroundColor: kNavyBtn, foregroundColor: Colors.white),
                   icon: const Icon(Icons.volume_up),
-                  label: const Text('Play • شغّل'),
+                  label: Text(L('Play • شغّل')),
                   onPressed: () => speak(big, they),
                 ),
               ),
@@ -138,7 +139,7 @@ class _PhrasebookPageState extends State<PhrasebookPage> {
   Widget build(BuildContext context) {
     final list = widget.data[cat]!;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title), backgroundColor: kBg),
+      appBar: AppBar(title: Text(L(widget.title)), backgroundColor: kBg),
       body: ListView(padding: const EdgeInsets.all(14), children: [
         Row(children: [
           _drop('I speak • لغتي', me, (v) => _set(m: v)),
@@ -173,20 +174,20 @@ class _PhrasebookPageState extends State<PhrasebookPage> {
                     style: FilledButton.styleFrom(backgroundColor: kGreen, foregroundColor: Colors.black),
                     onPressed: _text(ar, they).isEmpty ? null : () async { if (!await speak(_text(ar, they), they) && mounted) toast(context, 'الجهاز مفيهوش صوت للغة دي'); },
                     icon: const Icon(Icons.volume_up, size: 18),
-                    label: const Text('Play'),
+                    label: Text(L('Play')),
                   ),
                   const SizedBox(width: 8),
                   OutlinedButton.icon(
                     onPressed: _text(ar, they).isEmpty ? null : () => _show(ar),
                     icon: const Icon(Icons.fullscreen, size: 18),
-                    label: const Text('Show big'),
+                    label: Text(L('Show big')),
                   ),
                 ]),
               ]),
             ),
           ),
         const SizedBox(height: 14),
-        const Text('الجمل الأصلية بالمصري كتبتها أنا ومترجمتش مع متحدث. الترجمة آلية وبتتحفظ بعد أول مرة. راجع الطوارئ والحساسية.\nPhrases are machine-translated from Egyptian Arabic and cached after the first load. Double-check emergencies and allergies.', style: TextStyle(fontSize: 11, color: Colors.white54, height: 1.4)),
+        Text(L('الجمل الأصلية بالمصري كتبتها أنا ومترجمتش مع متحدث. الترجمة آلية وبتتحفظ بعد أول مرة. راجع الطوارئ والحساسية.\nPhrases are machine-translated from Egyptian Arabic and cached after the first load. Double-check emergencies and allergies.'), style: TextStyle(fontSize: 11, color: Colors.white54, height: 1.4)),
       ]),
     );
   }

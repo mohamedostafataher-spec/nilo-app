@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:http/http.dart' as http;
@@ -45,7 +46,7 @@ class _TouristHomeState extends State<TouristHome> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Row(children: [
-              for (final e in const [[0, 'حكاية'], [1, 'قصص'], [2, 'دوائر'], [3, 'خطابات']].map((x) => x))
+              for (final e in const [[0, 'Tale • حكاية'], [1, 'Stories • قصص'], [2, 'Circles • دوائر'], [3, 'Letters • خطابات']].map((x) => x))
                 Expanded(
                   child: GestureDetector(
                     onTap: () => setState(() => hub = e[0] as int),
@@ -58,7 +59,7 @@ class _TouristHomeState extends State<TouristHome> {
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: hub == e[0] ? kGreen : Colors.transparent),
                       ),
-                      child: Center(child: Text(e[1] as String, style: TextStyle(fontWeight: FontWeight.w700, color: hub == e[0] ? kGreen : Colors.white60))),
+                      child: Center(child: Text(L(e[1] as String), style: TextStyle(fontWeight: FontWeight.w700, color: hub == e[0] ? kGreen : Colors.white60))),
                     ),
                   ),
                 ),
@@ -195,10 +196,10 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: const Color(0xFFFFF6DC), borderRadius: BorderRadius.circular(14), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)]),
-                      child: const Text('بردية • Papyrus', style: const TextStyle(color: Color(0xFF3B2A12), fontWeight: FontWeight.w700, fontSize: 14)),
+                      child: Text(L('بردية • Papyrus'), style: TextStyle(color: Color(0xFF3B2A12), fontWeight: FontWeight.w700, fontSize: 14)),
                     ),
                     const SizedBox(height: 2),
-                    const Text('📜', style: TextStyle(fontSize: 34)),
+                    Text(L('📜'), style: TextStyle(fontSize: 34)),
                   ]),
                 ),
               ));
@@ -209,7 +210,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(14)),
-                  child: const Text('مفيش برديات لسه. كن أول واحد يبعت بردية!\nNo papyri yet. Be the first to send one.', textAlign: TextAlign.center, style: TextStyle(height: 1.5)),
+                  child: Text(L('مفيش برديات لسه. كن أول واحد يبعت بردية!\nNo papyri yet. Be the first to send one.'), textAlign: TextAlign.center, style: TextStyle(height: 1.5)),
                 ),
               ));
             }
@@ -221,9 +222,9 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
           child: Row(children: [
-            const Text('Nilo', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1, shadows: [Shadow(color: Colors.black38, blurRadius: 6)])),
+            Text(L('Nilo'), style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: 1, shadows: [Shadow(color: Colors.black38, blurRadius: 6)])),
             const SizedBox(width: 6),
-            const Text('نيلو', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: kGreen)),
+            Text(L('نيلو'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: kGreen)),
             const Spacer(),
             GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const ToolsPage())), child: _chip('🧰 Tools')),
             const SizedBox(width: 8),
@@ -252,7 +253,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
               width: 58, height: 58,
               decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.25), border: Border.all(color: Colors.white54)),
               alignment: Alignment.center,
-              child: const Text('🪶', style: TextStyle(fontSize: 26)),
+              child: Text(L('🪶'), style: TextStyle(fontSize: 26)),
             ),
           ),
           const SizedBox(width: 14),
@@ -265,7 +266,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
                 borderRadius: BorderRadius.circular(34),
                 boxShadow: const [BoxShadow(color: Color(0xFF8A5A12), offset: Offset(0, 5)), BoxShadow(color: Colors.black38, blurRadius: 14, offset: Offset(0, 8))],
               ),
-              child: const Text('Send papyrus • ارسل بردية', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF3B2A12))),
+              child: Text(L('Send papyrus • ارسل بردية'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF3B2A12))),
             ),
           ),
         ]),

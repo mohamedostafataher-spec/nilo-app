@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'main.dart';
@@ -66,10 +67,10 @@ class NiloNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      [NiloIcon.nile, 'النيل'],
-      [NiloIcon.messages, 'رسايل'],
-      [NiloIcon.stories, 'حكاياتي'],
-      [NiloIcon.passport, 'جواز'],
+      [NiloIcon.nile, 'Nile • النيل'],
+      [NiloIcon.messages, 'Messages • رسايل'],
+      [NiloIcon.stories, 'My stories • حكاياتي'],
+      [NiloIcon.passport, 'Passport • جواز'],
     ];
     Widget slot(int i) {
       final sel = index == i;
@@ -90,7 +91,7 @@ class NiloNavBar extends StatelessWidget {
                   child: SizedBox(width: 26 + 2 * v, height: 26 + 2 * v, child: CustomPaint(painter: NiloIconPainter(items[i][0] as NiloIcon, Color.lerp(Colors.white54, kGreen, v)!, v))),
                 ),
               ),
-              Text(items[i][1] as String, style: TextStyle(fontSize: 11, fontWeight: sel ? FontWeight.w700 : FontWeight.w400, color: Color.lerp(Colors.white54, kGreen, v))),
+              Text(L(items[i][1] as String), style: TextStyle(fontSize: 11, fontWeight: sel ? FontWeight.w700 : FontWeight.w400, color: Color.lerp(Colors.white54, kGreen, v))),
             ]),
           ),
         ),
@@ -130,7 +131,7 @@ class NiloNavBar extends StatelessWidget {
                     child: Padding(padding: const EdgeInsets.all(14), child: CustomPaint(painter: NiloIconPainter(NiloIcon.send, kBg, 1))),
                   ),
                   const SizedBox(height: 2),
-                  const Text('ابعت بردية', style: TextStyle(fontSize: 10, color: kGreen, fontWeight: FontWeight.w700)),
+                  Text(L('ابعت بردية'), style: TextStyle(fontSize: 10, color: kGreen, fontWeight: FontWeight.w700)),
                 ]),
               ),
             ),

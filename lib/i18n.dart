@@ -1,0 +1,471 @@
+import 'i18n.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// UI language: 'ar' or 'en'. Stored in prefs key ui_lang ('auto' follows the phone).
+class Ui {
+  static String lang = 'en';
+  static String pref = 'auto';
+  static bool get rtl => lang == 'ar';
+  static Future<void> load() async {
+    final p = await SharedPreferences.getInstance();
+    pref = p.getString('ui_lang') ?? 'auto';
+    _apply();
+  }
+  static void _apply() {
+    lang = pref == 'auto' ? (ui.PlatformDispatcher.instance.locale.languageCode == 'ar' ? 'ar' : 'en') : pref;
+  }
+  static Future<void> set(String v) async {
+    pref = v;
+    _apply();
+    (await SharedPreferences.getInstance()).setString('ui_lang', v);
+    rebuildAll();
+  }
+  /// Rebuilds every mounted widget so all texts switch live without losing state.
+  static void rebuildAll() {
+    void v(Element e) { e.markNeedsBuild(); e.visitChildren(v); }
+    WidgetsBinding.instance.rootElement?.visitChildren(v);
+  }
+}
+
+bool _hasAr(String s) => RegExp(r'[\u0600-\u06FF]').hasMatch(s);
+bool _hasLa(String s) => RegExp(r'[A-Za-z]').hasMatch(s);
+
+Map<String, String>? _toAr, _toEn;
+void _init() {
+  if (_toAr != null) return;
+  _toAr = {}; _toEn = {};
+  for (final p in kPairs) { _toAr![p[0]] = p[1]; _toEn![p[1]] = p[0]; }
+}
+
+/// Localize a UI string. Accepts 'English • عربي' pairs, English-only or Arabic-only
+/// literals (looked up in kPairs). Unknown strings are shown unchanged.
+String L(String s) {
+  _init();
+  final ar = Ui.lang == 'ar';
+  if (s.contains(' • ')) {
+    final i = s.indexOf(' • ');
+    final a = s.substring(0, i), b = s.substring(i + 3);
+    if (_hasAr(a) != _hasAr(b)) {
+      final en = _hasAr(a) ? b : a, arb = _hasAr(a) ? a : b;
+      return ar ? arb : en;
+    }
+  }
+  if (s.contains('\n')) {
+    final ls = s.split('\n');
+    bool isAr(String l) => RegExp(r'[\u0600-\u06FF]').allMatches(l).length > RegExp(r'[A-Za-z]').allMatches(l).length;
+    final a = ls.where((l) => l.trim().isNotEmpty && isAr(l)).toList();
+    final e = ls.where((l) => l.trim().isNotEmpty && !isAr(l)).toList();
+    if (a.isNotEmpty && e.isNotEmpty && !s.contains(' • ') && !ls.any((l) => _hasAr(l) && _hasLa(l) && l.contains('•'))) return (ar ? a : e).join('\n');
+  }
+  final k = s.trim();
+  if (ar) return _hasAr(k) ? s : (_toAr![k] ?? s);
+  if (_hasAr(k) && !_hasLa(k)) return _toEn![k] ?? s;
+  return s;
+}
+
+const kPairs = <List<String>>[
+  [r'''Enter the code and a new password (8+ characters)''', r'''اكتب الكود وكلمة سر جديدة (٨ حروف أو أكتر)'''],
+  [r'''Set new password''', r'''عيّن كلمة سر جديدة'''],
+  [r'''Privacy Policy''', r'''سياسة الخصوصية'''],
+  [r'''Terms of Use''', r'''شروط الاستخدام'''],
+  [r'''No links or @ handles in papyri.''', r'''ممنوع اللينكات أو الحسابات @ في البرديات.'''],
+  [r'''No phone numbers.''', r'''ممنوع أرقام التليفون.'''],
+  [r'''Confirm you are 18 or older''', r'''أكد إنك ١٨ سنة أو أكتر'''],
+  [r'''Send a papyrus''', r'''ابعت بردية'''],
+  [r'''Ask about a place, teach a phrase, or say hello''', r'''اسأل عن مكان، علّم جملة، أو قول أهلاً'''],
+  [r'''Pick one papyrus from someone else''', r'''اختار بردية من حد تاني'''],
+  [r'''My papyri''', r'''برديّاتي'''],
+  [r'''Replies and conversations''', r'''الردود والمحادثات'''],
+  [r'''Write at least a few words''', r'''اكتب كام كلمة على الأقل'''],
+  [r'''Out of ink. New ink at 12:00, or solve the daily puzzle for +3.''', r'''الحبر خلص. حبر جديد الساعة ١٢:٠٠، أو حل لغز اليوم لـ +٣.'''],
+  [r'''Ask about this place. What should a first-time visitor know?''', r'''اسأل عن المكان ده. إيه اللي لازم يعرفه زائر لأول مرة؟'''],
+  [r'''Write a phrase you want to learn or hear in Arabic.''', r'''اكتب جملة عايز تتعلمها أو تسمعها بالعربي.'''],
+  [r'''Say hello. Tell a little about your day.''', r'''قول أهلاً. احكي شوية عن يومك.'''],
+  [r'''You caught your 10 papyri for now. A new batch arrives at 12:00.''', r'''مسكت ١٠ برديات لحد دلوقتي. دفعة جديدة الساعة ١٢:٠٠.'''],
+  [r'''No papyri are travelling right now. Send one, and check back later.''', r'''مفيش برديات مسافرة دلوقتي. ابعت واحدة وارجع بعدين.'''],
+  [r'''A random papyrus from someone else will arrive. You can reply, report or block.''', r'''هتوصلك بردية عشوائية من حد تاني. تقدر ترد أو تبلّغ أو تحظر.'''],
+  [r'''Translation failed''', r'''الترجمة فشلت'''],
+  [r'''Asked for money''', r'''طلب فلوس'''],
+  [r'''Asked for contact details''', r'''طلب بيانات تواصل'''],
+  [r'''Sexual or inappropriate''', r'''جنسي أو غير لائق'''],
+  [r'''Says they are under 18''', r'''بيقول إنه أقل من ١٨'''],
+  [r'''Hate or threats''', r'''كراهية أو تهديد'''],
+  [r'''Other''', r'''أخرى'''],
+  [r'''Reported. You can also block this person.''', r'''تم الإبلاغ. تقدر كمان تحظر الشخص ده.'''],
+  [r'''Blocked. You will not meet them again.''', r'''تم الحظر. مش هتقابله تاني.'''],
+  [r'''Papyrus''', r'''بردية'''],
+  [r'''Write at least 3 letters.''', r'''اكتب ٣ حروف على الأقل.'''],
+  [r'''Traveler''', r'''مسافر'''],
+  [r'''Daily limit reached (10 posts).''', r'''وصلت للحد اليومي (١٠ منشورات).'''],
+  [r'''Not sent. No links, emails or phone numbers please.''', r'''متبعتش. من فضلك من غير لينكات أو إيميلات أو أرقام.'''],
+  [r'''Reported. Thank you.''', r'''تم الإبلاغ. شكراً.'''],
+  [r'''Did not work. Try again.''', r'''مشتغلش. حاول تاني.'''],
+  [r'''Speak any language''', r'''اتكلم بأي لغة'''],
+  [r'''Type, talk or import audio. Nilo translates between 52 languages and can read it out loud. Machine translation can be wrong, so check anything important.''', r'''اكتب أو اتكلم أو ضيف ملف صوت. نيلو يترجم بين ٥٢ لغة ويقرأها بصوت. الترجمة الآلية ممكن تغلط، راجع أي حاجة مهمة.'''],
+  [r'''Point the camera''', r'''صوّر المنيو واللافتة'''],
+  [r'''Take a photo of a menu or a sign and get it translated. Use Face to face when you talk with someone next to you.''', r'''صوّر منيو أو لافتة واتترجم. وفي وجهاً لوجه، الشاشة تتقسم عشان تتكلم مع اللي قدامك.'''],
+  [r'''Stay safe, pay fair''', r'''أمان وسعر عادل'''],
+  [r'''Price card, taxi checklist, ready phrases and emergency numbers with their sources and dates. Your medical card stays on this phone.''', r'''ورقة أسعار وقايمة تاكسي وجمل جاهزة وأرقام طوارئ بمصادرها وتواريخها. الكارت الطبي بيفضل على موبايلك.'''],
+  [r'''Official services''', r'''خدمات رسمية'''],
+  [r'''Links to the official e-visa, museum tickets and trains pages. Nilo is not affiliated with them, it only opens their own sites.''', r'''روابط لصفحات التأشيرة والمتاحف والقطارات الرسمية. نيلو مش تابع لهم، بيفتح مواقعهم بس.'''],
+  [r'''Official Egypt e-Visa portal. The portal says to apply at least 7 days before departure.''', r'''بوابة التأشيرة الإلكترونية الرسمية لمصر. البوابة بتقول قدّم قبل السفر بـ ٧ أيام على الأقل.'''],
+  [r'''Ministry of Tourism and Antiquities. Online booking for sites and museums (Egypt Independent, 9 Sep 2024).''', r'''وزارة السياحة والآثار. حجز أونلاين للمواقع والمتاحف (Egypt Independent، ٩ سبتمبر ٢٠٢٤).'''],
+  [r'''Official ENR site for train info and booking.''', r'''موقع السكك الحديدية الرسمي لمعلومات القطارات والحجز.'''],
+  [r'''Egypt tourism board site: entry visa rules, useful information.''', r'''موقع هيئة السياحة المصرية: قواعد التأشيرة ومعلومات مفيدة.'''],
+  [r'''No connection. Try again.''', r'''مفيش اتصال. حاول تاني.'''],
+  [r'''Tap a papyrus to catch it''', r'''دوس على بردية عشان تمسكها'''],
+  [r'''That code did not work, or you already used one.''', r'''الكود ده مشتغلش، أو إنت استخدمت كود قبل كده.'''],
+  [r'''Location is off. Allow approximate location to open letters here.''', r'''الموقع مقفول. اسمح بالموقع التقريبي عشان تفتح خطابات هنا.'''],
+  [r'''Could not tell the city from this location.''', r'''معرفتش المدينة من الموقع ده.'''],
+  [r'''Could not get a location. Try again outside.''', r'''معرفتش أحدد الموقع. جرب تاني برّه.'''],
+  [r'''No letters waiting here right now.''', r'''مفيش خطابات مستنية هنا دلوقتي.'''],
+  [r'''Write the letter and the city.''', r'''اكتب الخطاب والمدينة.'''],
+  [r'''Daily limit reached (5 letters).''', r'''وصلت للحد اليومي (٥ خطابات).'''],
+  [r'''Not saved. No links, emails or phone numbers please.''', r'''متحفظش. من فضلك من غير لينكات أو إيميلات أو أرقام.'''],
+  [r'''Translation hub''', r'''مركز الترجمة'''],
+  [r'''Translate 52 languages (text and voice)''', r'''ترجمة ٥٢ لغة (نص وفويس)'''],
+  [r'''Live talk''', r'''مكالمة مترجمة'''],
+  [r'''Face to face''', r'''وجهاً لوجه'''],
+  [r'''Camera''', r'''كاميرا'''],
+  [r'''Floating button''', r'''الزر العايم'''],
+  [r'''App audio capture''', r'''التقاط صوت التطبيقات'''],
+  [r'''Saved''', r'''المحفوظات'''],
+  [r'''Travel help hub''', r'''مركز مساعدة السفر'''],
+  [r'''Phrasebook''', r'''عبارات'''],
+  [r'''Stay Safe''', r'''أمان'''],
+  [r'''Emergency & medical''', r'''طوارئ وطبي'''],
+  [r'''Places & weather''', r'''أماكن وطقس'''],
+  [r'''Daily puzzle''', r'''لغز اليوم'''],
+  [r'''Chat & sales''', r'''دردشة ومبيعات'''],
+  [r'''Text, voice, call, camera, face to face''', r'''نص، فويس، مكالمة، كاميرا، وجهاً لوجه'''],
+  [r'''Phrases, safety, emergency, places, services''', r'''عبارات، أمان، طوارئ، أماكن، خدمات'''],
+  [r'''Translated call between two phones''', r'''مكالمة مترجمة بين موبايلين'''],
+  [r'''Menus and signs''', r'''منيو ولافتات'''],
+  [r'''Floating translate button (setup steps)''', r'''زر ترجمة عايم (خطوات التفعيل)'''],
+  [r'''Translate app audio (Android 10+)''', r'''ترجمة صوت التطبيقات (أندرويد 10+)'''],
+  [r'''My saved (offline)''', r'''محفوظاتي (أوفلاين)'''],
+  [r'''Situation phrases''', r'''عبارات المواقف'''],
+  [r'''Fair price and safety''', r'''سعر عادل وأمان'''],
+  [r'''Emergency and medical card''', r'''طوارئ وكارت طبي'''],
+  [r'''Places and weather''', r'''أماكن وطقس'''],
+  [r'''Daily puzzle and word of the day''', r'''لغز اليوم وكلمة اليوم'''],
+  [r'''Nilo chat''', r'''دردشة نيلو'''],
+  [r'''Mic permission needed''', r'''محتاج إذن الميكروفون'''],
+  [r'''Recording too short''', r'''التسجيل قصير'''],
+  [r'''Voice note too long (over about 3 MB). Trim it. Long voice is handled automatically in the web version.''', r'''الفويس طويل (أكتر من حوالي ٣ ميجا). قصّه. الفويس الطويل التلقائي في نسخة الويب.'''],
+  [r'''Copied''', r'''اتنسخت'''],
+  [r'''No voice for this language on this device''', r'''الجهاز مفيهوش صوت للغة دي'''],
+  [r'''Saved to your saved list''', r'''اتحفظت في المحفوظات'''],
+  [r'''Tap for meaning''', r'''دوس للمعنى'''],
+  [r'''No Arabic voice on this device''', r'''الجهاز مفيهوش صوت عربي'''],
+  [r'''Egyptian pound''', r'''جنيه مصري'''],
+  [r'''Per person''', r'''للشخص الواحد'''],
+  [r'''Round trip''', r'''رايح وجاي'''],
+  [r'''Dollar''', r'''دولار'''],
+  [r'''Euro''', r'''يورو'''],
+  [r'''Pound sterling''', r'''جنيه إسترليني'''],
+  [r'''For the whole group''', r'''للمجموعة كلها'''],
+  [r'''One way''', r'''رايح بس'''],
+  [r'''Stop and translate''', r'''وقف وترجم'''],
+  [r'''Record voice''', r'''سجّل صوت'''],
+  [r'''Weather not available''', r'''الطقس مش متاح'''],
+  [r'''None found within 2 km in OpenStreetMap (the map may be incomplete).''', r'''مفيش نتايج في نطاق ٢ كم على OpenStreetMap (الخريطة ممكن تكون ناقصة).'''],
+  [r'''Stop''', r'''وقف'''],
+  [r'''Tap and speak''', r'''دوس وتكلم'''],
+  [r'''Pharmacy''', r'''صيدلية'''],
+  [r'''Hospital''', r'''مستشفى'''],
+  [r'''Mosque''', r'''مسجد'''],
+  [r'''Restaurant''', r'''مطعم'''],
+  [r'''Toilets''', r'''دورات مياه'''],
+  [r'''Not available on this device''', r'''مش متاح على الجهاز ده'''],
+  [r'''Create an account to keep your papyri''', r'''اعمل حساب عشان تحافظ على برديّاتك'''],
+  [r'''Sign in''', r'''دخول'''],
+  [r'''Sign out''', r'''تسجيل خروج'''],
+  [r'''Sound effects in the app''', r'''مؤثرات صوتية في التطبيق'''],
+  [r'''Founder area is not built yet''', r'''منطقة المؤسس لسه متعملتش'''],
+  [r'''Gold wax seal''', r'''ختم ذهبي'''],
+  [r'''Teal wax seal''', r'''ختم فيروزي'''],
+  [r'''Violet wax seal''', r'''ختم بنفسجي'''],
+  [r'''Saffron sail''', r'''شراع زعفراني'''],
+  [r'''Turquoise sail''', r'''شراع تركواز'''],
+  [r'''Rose sail''', r'''شراع وردي'''],
+  [r'''Wax seal on your papyrus''', r'''ختم شمع على بردية'''],
+  [r'''Felucca sail''', r'''شراع فلوكة'''],
+  [r'''Could not load stories. Check your connection.''', r'''متحمّلتش الحكايات. اتأكد من الاتصال.'''],
+  [r'''Photo too large.''', r'''الصورة كبيرة قوي.'''],
+  [r'''Could not open the photo.''', r'''معرفتش أفتح الصورة.'''],
+  [r'''Making the clip small...''', r'''بصغّر الفيديو...'''],
+  [r'''Clip too big. Record up to 15 seconds.''', r'''الفيديو كبير. سجّل لحد ١٥ ثانية.'''],
+  [r'''Could not prepare the clip.''', r'''معرفتش أجهز الفيديو.'''],
+  [r'''Write a little more, or add a photo or clip.''', r'''اكتب شوية كمان، أو ضيف صورة أو فيديو.'''],
+  [r'''No links or @ handles.''', r'''من غير لينكات أو حسابات @.'''],
+  [r'''Could not post. Try again.''', r'''معرفتش أنشر. حاول تاني.'''],
+  [r'''Post story''', r'''انشر الحكاية'''],
+  [r'''Could not send.''', r'''متبعتش.'''],
+  [r'''Egypt''', r'''مصر'''],
+  [r'''Prologue: The Archive''', r'''الفصل صفر: الأرشيف'''],
+  [r'''Puzzle done''', r'''اللغز خلص'''],
+  [r'''Correct! +15 XP, +3 ink and a stamp.''', r'''صح! +١٥ نقطة، +٣ حبر وختم.'''],
+  [r'''Not yet. Try again.''', r'''لسه. حاول تاني.'''],
+  [r'''Chapter done. +stamp, +XP''', r'''الفصل خلص. +ختم، +نقاط'''],
+  [r'''First papyrus''', r'''أول بردية'''],
+  [r'''3 countries explored''', r'''٣ دول اتزارت'''],
+  [r'''7-day streak''', r'''سلسلة ٧ أيام'''],
+  [r'''Streak''', r'''السلسلة'''],
+  [r'''Trust score''', r'''درجة الثقة'''],
+  [r'''Papyri sent''', r'''برديات مبعوتة'''],
+  [r'''Countries explored''', r'''دول اتزارت'''],
+  [r'''Could not detect. Tap the flag to choose.''', r'''معرفتش أحدد. دوس على العلم واختار.'''],
+  [r'''Tap the flag to choose your country''', r'''دوس على العلم واختار بلدك'''],
+  [r'''Please confirm you are 18 or older''', r'''من فضلك أكد إنك ١٨ سنة أو أكتر'''],
+  [r'''Could not detect. Pick your country.''', r'''معرفتش أحدد. اختار بلدك.'''],
+  [r'''Choose your country''', r'''اختار بلدك'''],
+  [r'''Nile''', r'''النيل'''],
+  [r'''Messages''', r'''رسايل'''],
+  [r'''My stories''', r'''حكاياتي'''],
+  [r'''Moon''', r'''القمر'''],
+  [r'''Public holidays''', r'''الإجازات'''],
+  [r'''On this day''', r'''في مثل النهارده'''],
+  [r'''Nothing to show''', r'''مفيش حاجة تتعرض'''],
+  [r'''Sailing down the Nile''', r'''بتبحر في النيل'''],
+  [r'''Drifting out to sea''', r'''بتطلع للبحر'''],
+  [r'''Adrift. It lands with a real person who catches it.''', r'''في البحر. هتوصل لحد حقيقي يلاقيها.'''],
+  [r'''Tale • الطرق الضائعة''', r'''الطرق الضائعة'''],
+  [r'''Phrasebook • عبارات''', r'''عبارات'''],
+  [r'''• 18+ only. Self-declared: Nilo cannot check your age.
+• Text only. No links, phone numbers or social handles.
+• Never send money or share bank or ID details.
+• Meet only in public places and tell a friend.
+• Report and block anyone who makes you uncomfortable.
+• Machine translation can be wrong.''', r'''• ١٨+ فقط. بإقرارك: نيلو مش بيقدر يتأكد من سنك.
+• نص بس. من غير لينكات أو أرقام تليفون أو حسابات سوشيال.
+• متبعتش فلوس ولا بيانات بنك أو هوية.
+• قابل الناس في أماكن عامة وقول لصاحبك.
+• بلّغ واحظر أي حد بيضايقك.
+• الترجمة الآلية ممكن تغلط.'''],
+  [r'''Copy link + code''', r'''انسخ اللينك + الكود'''],
+  [r'''📜 A letter from another traveler''', r'''📜 خطاب من مسافر تاني'''],
+  [r'''TripAdvisor forum''', r'''منتدى TripAdvisor'''],
+  [r'''© OpenStreetMap contributors. Volunteer data: may be missing or outdated.''', r'''© مساهمو OpenStreetMap. بيانات متطوعين: ممكن تكون ناقصة أو قديمة.'''],
+  [r'''No real name needed''', r'''مش لازم اسم حقيقي'''],
+  [r'''No stories yet today.
+Be the first. Stories disappear after 24 hours.''', r'''مفيش حكايات لسه النهارده.
+كن أول واحد. الحكايات بتختفي بعد ٢٤ ساعة.'''],
+  [r'''Stories are for travelers 18 and older.
+Join once to read and share.''', r'''الحكايات للمسافرين ١٨ سنة وأكتر.
+انضم مرة عشان تقرا وتشارك.'''],
+  [r'''Calculated on your phone from today's date.''', r'''بيتحسب على تليفونك من تاريخ النهارده.'''],
+  [r'''TRAVEL PASSPORT''', r'''جواز سفر'''],
+  [r'''You solved today's puzzle. Come back tomorrow.''', r'''حليت لغز النهارده. ارجع بكرة.'''],
+  [r'''rules''', r'''القواعد'''],
+  [r'''Type or speak…''', r'''اكتب أو اتكلم…'''],
+  [r'''Switch mode''', r'''تبديل الوضع'''],
+  [r'''Marketing and sales company''', r'''شركة تسويق ومبيعات'''],
+  [r'''Sales room''', r'''غرفة المبيعات'''],
+  [r'''Translator''', r'''مترجم'''],
+  [r'''Work assistant''', r'''مساعد الشغل'''],
+  [r'''Type or paste here''', r'''اكتب أو الصق هنا'''],
+  [r'''Safe phrases (polite no, taxi, women, food)''', r'''جمل الأمان (رفض مهذب، تاكسي، سيدات، أكل)'''],
+  [r'''Or type the room code''', r'''أو اكتب كود الغرفة'''],
+  [r'''Tale • The Lost Roads''', r'''حكاية • الطرق الضائعة'''],
+  [r'''• Text only. No links, phone numbers or social handles.
+• Be kind. Never ask for or send money.
+• Someone anywhere may answer. Report and block if needed.''', r'''• نص بس. من غير لينكات أو أرقام تليفون أو حسابات سوشيال.
+• كن لطيف. متطلبش ولا تبعت فلوس.
+• أي حد في أي مكان ممكن يرد. بلّغ واحظر لو احتاجت.'''],
+  [r'''Machine translation can be wrong, double-check anything important. Free, no account, no ads.
+تطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa''', r'''الترجمة الآلية ممكن تغلط، راجع أي حاجة مهمة. مجاني، من غير حساب ولا إعلانات.
+تطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa'''],
+  [r'''Records the audio playing on your phone (video or voice note) and translates it. Android 10 or newer. Android asks your permission every time.
+Some apps block recording, and calls are not recorded. Try first; if it comes out empty use the mic or share the file.''', r'''بتسجل الصوت اللي بيطلع من موبايلك (فيديو أو فويس) وتترجمه. أندرويد 10 أو أحدث. أندرويد بيطلب إذنك كل مرة.
+بعض التطبيقات بتمنع التسجيل والمكالمات مش بتتسجل. جرّب الأول، ولو طلع فاضي استخدم المايك أو مشاركة الملف.'''],
+  [r'''1. Tap "Open App info" below.
+2. Tap the three dots at the top right, then "Allow restricted settings". If the option is not shown, open Accessibility settings and try to turn Nilo on once, then come back here.
+3. Tap "Open Accessibility settings", choose Nilo and turn it on.''', r'''1. اضغط "افتح معلومات التطبيق" تحت.
+2. اضغط النقط التلاتة فوق على اليمين، ثم "السماح بالإعدادات المقيّدة" (Allow restricted settings). لو الاختيار مش ظاهر، افتح إعدادات إمكانية الوصول وجرب تفعّل نيلو مرة الأول، وبعدين ارجع هنا.
+3. اضغط "افتح إعدادات إمكانية الوصول"، اختار نيلو وفعّله.'''],
+  [r'''Write something kind for whoever opens it...''', r'''اكتب حاجة لطيفة لمن يفتحه...'''],
+  [r'''Write a reply (text only, no links or numbers)''', r'''اكتب رد (نص بس، من غير لينكات أو أرقام)'''],
+  [r'''Nickname (not your real name)''', r'''الاسم المستعار (مش اسمك الحقيقي)'''],
+  [r'''Service (camel, taxi, boat...)''', r'''الخدمة (جمل، تاكسي، مركب...)'''],
+  [r'''Price''', r'''السعر'''],
+  [r'''Code''', r'''الكود'''],
+  [r'''City name (as written on a map)''', r'''اسم المدينة (زي المكتوب على الخريطة)'''],
+  [r'''What happened today?''', r'''إيه اللي حصل النهارده؟'''],
+  [r'''Write a comment (no links or numbers)''', r'''اكتب تعليق (من غير لينكات أو أرقام)'''],
+  [r'''Your answer (English or Arabic)''', r'''إجابتك (إنجليزي أو عربي)'''],
+  [r'''Tools''', r'''أدوات'''],
+  [r'''Settings''', r'''الإعدادات'''],
+  [r'''Blood type''', r'''فصيلة الدم'''],
+  [r'''Allergies (drugs, food)''', r'''الحساسية (أدوية، أكل)'''],
+  [r'''Conditions and medicines''', r'''الأمراض والأدوية'''],
+  [r'''Emergency contact''', r'''جهة اتصال للطوارئ'''],
+  [r'''Block''', r'''احظر'''],
+  [r'''No result''', r'''مفيش نتيجة'''],
+  [r'''+5 Reeds''', r'''+٥ ريدز'''],
+  [r'''18+ only (self-declared). No links or phone numbers. Report or block anyone. Content hides after reports. Meet only in public places.''', r'''١٨+ فقط (بإقرارك). ممنوع اللينكات وأرقام التليفون. بلّغ أو احظر أي حد. المحتوى بيختفي بعد البلاغات. قابل الناس في أماكن عامة بس.'''],
+  [r'''18+ self-declared. Text only. No links or numbers. Report and block in every conversation.''', r'''١٨+ بإقرارك. نص بس. من غير لينكات أو أرقام. بلّغ واحظر في أي محادثة.'''],
+  [r'''18+. No links, emails or phone numbers. Meet only in public places.''', r'''١٨+. من غير لينكات أو إيميلات أو أرقام. قابل الناس في أماكن عامة بس.'''],
+  [r'''A floating bubble that translates what is on your screen, over any app. Turn it on once in Accessibility. If Android says the setting is restricted, use the steps page first.''', r'''زر عايم بيترجم اللي على شاشتك فوق أي تطبيق. فعّله مرة من إمكانية الوصول. لو أندرويد قال الإعداد مقيّد، افتح صفحة الخطوات الأول.'''],
+  [r'''A guest account lives on this phone only. If you lose the phone you lose it. Create an account to keep your papyri.''', r'''حساب الضيف موجود على التليفون ده بس. لو ضاع التليفون بيضيع. اعمل حساب عشان تحافظ على برديّاتك.'''],
+  [r'''Allow once''', r'''اسمح مرة'''],
+  [r'''Android blocks accessibility for apps installed outside Google Play ("Restricted setting"). Open App info, tap the three-dot menu, choose "Allow restricted settings", then enable Nilo in Accessibility. The exact wording varies by phone brand and Android version.''', r'''أندرويد بيمنع إمكانية الوصول للتطبيقات المثبّتة من برّه Google Play ("إعداد مقيّد"). افتح معلومات التطبيق، دوس على النقط التلاتة، اختار "السماح بالإعدادات المقيّدة"، وبعدين فعّل نيلو من إمكانية الوصول. الكلمات بتختلف حسب نوع التليفون وإصدار أندرويد.'''],
+  [r'''Anonymous accounts: if you are blocked or banned you could come back with a new one. Pattern filters miss tricks. Report anything wrong.''', r'''الحسابات المجهولة: لو اتحظرت ممكن ترجع بحساب جديد. الفلاتر بتفوّت حِيَل. بلّغ عن أي حاجة غلط.'''],
+  [r'''Automatic translation can be wrong. Do not rely on it alone for medical decisions.''', r'''الترجمة الآلية ممكن تغلط. متعتمدش عليها لوحدها في قرارات طبية.'''],
+  [r'''Block this person''', r'''احظر الشخص ده'''],
+  [r'''Camera''', r'''كاميرا'''],
+  [r'''Cancel''', r'''إلغاء'''],
+  [r'''Catch a papyrus''', r'''امسك بردية'''],
+  [r'''Change''', r'''غيّر'''],
+  [r'''Check''', r'''تحقق'''],
+  [r'''Checked 26 Nov 2026 against UK FCDO and the US Embassy in Cairo.''', r'''اتراجع في ٢٦ نوفمبر ٢٠٢٦ على موقع الخارجية البريطانية وسفارة أمريكا في القاهرة.'''],
+  [r'''Choose from gallery''', r'''اختار من المعرض'''],
+  [r'''Clip (15s)''', r'''فيديو (١٥ث)'''],
+  [r'''Comments''', r'''تعليقات'''],
+  [r'''Could not connect. Check internet and try again.''', r'''مفيش اتصال. اتأكد من النت وحاول تاني.'''],
+  [r'''Could not load. Check your connection.''', r'''متحمّلش. اتأكد من الاتصال.'''],
+  [r'''Daily word''', r'''كلمة اليوم'''],
+  [r'''Delete''', r'''احذف'''],
+  [r'''Delete my story''', r'''احذف حكايتي'''],
+  [r'''Done''', r'''تم'''],
+  [r'''Earn Reeds by real actions: send a papyrus (+10), finish a story chapter (+10), post a story (+5), solve the daily puzzle (+5), open the app each day (+5). They only buy looks for your send animation. Kept on this phone.''', r'''اكسب ريدز بأفعال حقيقية: ابعت بردية (+١٠)، خلّص فصل حكاية (+١٠)، انشر حكاية (+٥)، حل لغز اليوم (+٥)، افتح التطبيق كل يوم (+٥). بتشتري بيها أشكال لحركة الإرسال بس. محفوظة على التليفون.'''],
+  [r'''Enter''', r'''ادخل'''],
+  [r'''Fewer notifications, no send animation''', r'''إشعارات أقل، من غير حركة الإرسال'''],
+  [r'''Fill it and show the screen to the driver before you ride.''', r'''املاها واعرض الشاشة للسواق قبل ما تركب.'''],
+  [r'''Find your country''', r'''دوّر على بلدك'''],
+  [r'''Fun travel passport inside the Nilo app. Not a government document.''', r'''جواز سفر للتسلية جوّه نيلو. مش مستند حكومي.'''],
+  [r'''Got it, +stamp''', r'''تمام، +ختم'''],
+  [r'''I am 18+ and accept the rules (text only, no links or numbers, report and block)''', r'''أنا ١٨+ وموافق على القواعد (نص بس، من غير لينكات أو أرقام، بلّغ واحظر)'''],
+  [r'''Join''', r'''انضم'''],
+  [r'''Leave it there''', r'''سيبه هناك'''],
+  [r'''Letters can only be opened in the city they were left in. Your phone checks the city once, from approximate location. Coordinates are never saved or sent.''', r'''الخطابات بتتفتح بس في المدينة اللي اتساب فيها. التليفون بيتحقق من المدينة مرة واحدة من موقع تقريبي. الإحداثيات مش بتتحفظ ولا بتتبعت.'''],
+  [r'''Loaded live from open sources each time: Wikivoyage, Wikipedia, OpenStreetMap, Open-Meteo. Nothing here is written or checked by Nilo.''', r'''بيتحمّل مباشرة من مصادر مفتوحة كل مرة: ويكي فوياج، ويكيبيديا، أوبن ستريت ماب، Open-Meteo. نيلو مش بيكتب ولا بيراجع حاجة هنا.'''],
+  [r'''More countries are coming. Only your country code is saved, on this phone.''', r'''دول تانية جاية. بيتحفظ كود دولتك بس، على التليفون.'''],
+  [r'''More items later. Nothing here costs money.''', r'''حاجات تانية بعدين. مفيش حاجة هنا بفلوس.'''],
+  [r'''My papyri''', r'''برديّاتي'''],
+  [r'''New story''', r'''حكاية جديدة'''],
+  [r'''No comments yet.''', r'''مفيش تعليقات لسه.'''],
+  [r'''No stamps yet. Pick a country, solve the daily puzzle, learn a word, or send a papyrus.''', r'''مفيش أختام لسه. اختار دولة، حل لغز اليوم، اتعلم كلمة، أو ابعت بردية.'''],
+  [r'''No, use phone region''', r'''لأ، استخدم منطقة التليفون'''],
+  [r'''Nothing here yet.''', r'''مفيش حاجة هنا لسه.'''],
+  [r'''Nothing yet. Send or catch a papyrus.''', r'''مفيش حاجة لسه. ابعت أو امسك بردية.'''],
+  [r'''Passport''', r'''الجواز'''],
+  [r'''Papyrus & Stories safety''', r'''أمان البردي والحكايات'''],
+  [r'''Photo''', r'''صورة'''],
+  [r'''Photo expired''', r'''الصورة انتهت'''],
+  [r'''Photos and clips are paused today (storage is full). Text stories still work.''', r'''الصور والفيديوهات واقفة النهارده (المساحة مليانة). حكايات النص شغالة.'''],
+  [r'''Places nearby (Wikipedia)''', r'''أماكن قريبة (ويكيبيديا)'''],
+  [r'''Play''', r'''شغّل'''],
+  [r'''Privacy''', r'''الخصوصية'''],
+  [r'''Real map outlines (Natural Earth, public domain). The route is an animation: we do not know who will catch it or where they live. When someone replies, you will see it in your inbox.''', r'''خرائط حقيقية (Natural Earth، ملكية عامة). المسار مجرد حركة: مش بنعرف مين هيمسكها ولا ساكن فين. لما حد يرد هتلاقي الرد في صندوقك.'''],
+  [r'''Report''', r'''بلّغ'''],
+  [r'''Report this conversation''', r'''بلّغ عن المحادثة دي'''],
+  [r'''Report this story''', r'''بلّغ عن الحكاية دي'''],
+  [r'''Safety: never send money or ID details. Meet only in public places. Report anything wrong.''', r'''الأمان: متبعتش فلوس ولا بيانات هوية. قابل الناس في أماكن عامة بس. بلّغ عن أي حاجة غلط.'''],
+  [r'''Save''', r'''احفظ'''],
+  [r'''Saved on this phone only.''', r'''محفوظ على التليفون ده بس.'''],
+  [r'''Services within 2 km (OpenStreetMap)''', r'''خدمات في نطاق ٢ كم (أوبن ستريت ماب)'''],
+  [r'''Share a story''', r'''شارك حكاية'''],
+  [r'''Show big''', r'''اعرض كبير'''],
+  [r'''Show only their stories''', r'''اعرض حكاياتهم بس'''],
+  [r'''Show to doctor (Arabic)''', r'''اعرض للدكتور (بالعربي)'''],
+  [r'''Skips the send animation''', r'''بيلغي حركة الإرسال'''],
+  [r'''Source: Nager.Date. Dates of moon-based holidays can differ by a day locally.''', r'''المصدر: Nager.Date. مواعيد الأعياد القمرية ممكن تختلف يوم محليًا.'''],
+  [r'''Source: Wikipedia (English). Text is not translated.''', r'''المصدر: ويكيبيديا (إنجليزي). النص مش مترجم.'''],
+  [r'''Spend Reeds on looks for your send animation''', r'''اصرف الريدز على أشكال لحركة الإرسال'''],
+  [r'''Store''', r'''المتجر'''],
+  [r'''Stored on this phone only. Stamps are for fun.''', r'''محفوظ على التليفون ده بس. الأختام للتسلية.'''],
+  [r'''Tap to play clip''', r'''دوس لتشغيل الفيديو'''],
+  [r'''Taxi and Uber checklist''', r'''قائمة التاكسي وأوبر'''],
+  [r'''Terms''', r'''الشروط'''],
+  [r'''Text and photos. Stories vanish after 24 hours. Tap ⋮ to report or block. Long-press a circle for a profile card.''', r'''نص وصور. الحكايات بتختفي بعد ٢٤ ساعة. دوس ⋮ للبلاغ أو الحظر. اضغط مطوّلاً على دايرة لكارت البروفايل.'''],
+  [r'''The city name must match the name your phone gives there (for example Cairo, Paris, Tokyo). 18+, no links or phone numbers.''', r'''اسم المدينة لازم يطابق الاسم اللي تليفونك بيديه هناك (مثلاً Cairo، Paris، Tokyo). ١٨+، من غير لينكات أو أرقام.'''],
+  [r'''The free holiday source has no data for this country.''', r'''مصدر الأعياد المجاني مفيهوش بيانات للدولة دي.'''],
+  [r'''This conversation is closed.''', r'''المحادثة دي اتقفلت.'''],
+  [r'''Translate (machine, may be wrong)''', r'''ترجم (آلي، ممكن يغلط)'''],
+  [r'''Translate to:''', r'''ترجم إلى:'''],
+  [r'''Trust score is a local number from your own streak and papyri. It is not verified by anyone.''', r'''درجة الثقة رقم محلي من نشاطك وبرديّاتك. مفيش حد بيتحقق منها.'''],
+  [r'''Turn-based, not instant: each sentence takes a few seconds. Needs internet on both phones. Text (not your voice) goes through the free public ntfy.sh relay, so anyone who guesses the room code could read it. Do not share private details.''', r'''بالدور مش لحظي: كل جملة بتاخد كام ثانية. محتاج نت على التليفونين. النص (مش صوتك) بيعدّي على خدمة ntfy.sh العامة المجانية، فأي حد يخمّن كود الغرفة يقدر يقراه. متشاركش بيانات خاصة.'''],
+  [r'''Use''', r'''استخدم'''],
+  [r'''Version 1.5''', r'''الإصدار ١.٥'''],
+  [r'''Visible for 24 hours. Photos and clips are shown to other adults, so no nudity, no minors, no private or ID documents. Anyone can report; a reported photo or clip is hidden at once. Your country flag is shown, never your location. Limit: 3 photo/clip stories and 6 stories per day.''', r'''ظاهرة ٢٤ ساعة. الصور والفيديوهات بتظهر لبالغين، فممنوع العري والقاصرين والمستندات الخاصة. أي حد يقدر يبلّغ، والصورة المبلّغ عنها بتختفي فوراً. بتظهر علم بلدك مش موقعك. الحد: ٣ حكايات صور/فيديو و٦ حكايات في اليوم.'''],
+  [r'''Wikipedia articles within 8 km, nearest first. Not a curated list: can include governorates and non-tourist pages. Hours and prices are not in this source.''', r'''مقالات ويكيبيديا في نطاق ٨ كم، الأقرب الأول. مش قائمة منتقاة: ممكن تشمل محافظات وصفحات مش سياحية. المواعيد والأسعار مش في المصدر ده.'''],
+  [r'''Wikivoyage (CC BY-SA), community-written, may be out of date''', r'''ويكي فوياج (CC BY-SA)، كتبها المجتمع، ممكن تكون قديمة'''],
+  [r'''Word of the day''', r'''كلمة اليوم'''],
+  [r'''Write a papyrus and watch it travel the world. Someone anywhere finds it.''', r'''اكتب بردية وشوفها بتسافر حوالين العالم. حد في أي مكان هيلاقيها.'''],
+  [r'''You get +10 Reeds for every friend who enters your code, and the friend gets +20. One code per person. Reeds only buy looks in the store, never money. Counts are checked on the server; Reeds are kept on the phone.''', r'''بتاخد +١٠ ريدز عن كل صديق يدخل كودك، والصديق ياخد +٢٠. كود واحد للشخص. الريدز بتشتري أشكال في المتجر بس، مش فلوس. العدد بيتراجع على السيرفر، والريدز محفوظة على التليفون.'''],
+  [r'''Your code, link and Reeds perks''', r'''كودك ولينك الدعوة ومكافآت الريدز'''],
+  [r'''Nilo can use your approximate location once to work out your country. Only the country code is saved, on this phone and in your profile. Your coordinates are not stored. The Android geocoder service turns the position into a country name, so the position is sent to it for that moment. Location can be faked, so this only reduces cheating. If you say no, Nilo uses your phone region setting instead.''', r'''نيلو ممكن يستخدم موقعك التقريبي مرة واحدة عشان يعرف بلدك. بيتحفظ كود البلد بس، على التليفون وفي بروفايلك. الإحداثيات مش بتتخزن. خدمة الـ geocoder بتاعة أندرويد بتحوّل الموقع لاسم بلد، فالموقع بيتبعت لها للحظة. الموقع ممكن يتزوّر، فده بيقلل الغش بس. لو رفضت، نيلو هيستخدم منطقة التليفون.'''],
+  [r'''Rules''', r'''القواعد'''],
+  [r'''Let it travel''', r'''سيبها تسافر'''],
+  [r'''Home''', r'''الرئيسية'''],
+  [r'''Language''', r'''اللغة'''],
+  [r'''Interface language''', r'''لغة التطبيق'''],
+  [r'''Automatic (phone)''', r'''تلقائي (التليفون)'''],
+  [r'''Arabic''', r'''العربية'''],
+  [r'''English''', r'''English'''],
+  [r'''Send''', r'''ابعت'''],
+  [r'''Reeds''', r'''ريدز'''],
+  [r'''Today''', r'''النهارده'''],
+  [r'''Write''', r'''اكتب'''],
+  [r'''Stories''', r'''الحكايات'''],
+  [r'''Circles''', r'''الدوائر'''],
+  [r'''Letters''', r'''الخطابات'''],
+  [r'''Tale''', r'''حكاية'''],
+  [r'''Back''', r'''رجوع'''],
+  [r'''Next''', r'''التالي'''],
+  [r'''Try again''', r'''حاول تاني'''],
+  [r'''Loading...''', r'''بيتحمّل...'''],
+  [r'''Open''', r'''افتح'''],
+  [r'''Close''', r'''اقفل'''],
+  [r'''Share''', r'''شارك'''],
+  [r'''Copy''', r'''انسخ'''],
+  [r'''Copied''', r'''اتنسخ'''],
+  [r'''Yes''', r'''أيوه'''],
+  [r'''No''', r'''لأ'''],
+  [r'''OK''', r'''تمام'''],
+  [r'''Last choice''', r'''آخر اختيار'''],
+  [r'''Yes, I can hear you''', r'''أيوه، سامعك'''],
+  [r'''Start sign-up''', r'''ابدأ التسجيل'''],
+  [r'''Send papyrus''', r'''ابعت بردية'''],
+  [r'''Enter the room''', r'''ادخل الغرفة'''],
+  [r'''Upload a voice note''', r'''ارفع فويس'''],
+  [r'''Create a new room''', r'''اعمل غرفة جديدة'''],
+  [r'''Open Accessibility settings''', r'''افتح إعدادات إمكانية الوصول'''],
+  [r'''Open App info''', r'''افتح معلومات التطبيق'''],
+  [r'''Open ↗''', r'''افتح ↗'''],
+  [r'''Machine translation can be wrong.''', r'''الترجمة الآلية ممكن تغلط.'''],
+  [r'''Phrases in Egyptian Arabic (spoken aloud), with the meaning in your language. Tap a phrase for its meaning. Saved for offline use.''', r'''الجمل بالعربي المصري (بتتنطق)، ومعناها بلغتك. دوس الجملة لمعناها. بتتحفظ للاستخدام من غير نت.'''],
+  [r'''I wrote these phrases and they were not reviewed by an Egyptian speaker. Translation is automatic. Double-check emergency and allergy phrases.''', r'''الجمل كتبتها أنا ومترجعتش مع متحدث مصري. الترجمة آلية. راجع الطوارئ والحساسية.'''],
+  [r'''Steps''', r'''الخطوات'''],
+  [r'''This button uses the Accessibility service to read the text on screen and translate it. Turning it on needs steps in Android settings, and it is not yet tested on many devices.''', r'''الزر ده بيستخدم خدمة "إمكانية الوصول" عشان يقرا النص اللي على الشاشة ويترجمه. التفعيل بيحتاج خطوات من إعدادات أندرويد، ومتجرّبش لسه على أجهزة كتير.'''],
+  [r'''Paste and translate''', r'''الصق وترجم'''],
+  [r'''The image is shrunk and sent for translation and is not saved. Handwriting and dark photos may fail.''', r'''الصورة بتتصغر وبتتبعت للترجمة ومش بتتحفظ. الخط اليدوي والصور الغامقة ممكن تفشل.'''],
+  [r'''The picture did not come out''', r'''الصورة ماطلعتش'''],
+  [r'''Sources:''', r'''المصادر:'''],
+  [r'''Runs on the free Gemini model. Machine translation can be wrong.''', r'''بيشتغل بنموذج Gemini المجاني. الترجمة الآلية ممكن تغلط.'''],
+  [r'''Translate''', r'''ترجم'''],
+  [r'''Machine translation: may be wrong''', r'''ترجمة آلية: ممكن تغلط'''],
+  [r'''Translate app audio''', r'''ترجمة صوت التطبيقات'''],
+  [r'''Back-translation to check''', r'''ترجمة عكسية للتأكد'''],
+  [r'''Nilo travel passport''', r'''جواز سفر نيلو'''],
+  [r'''One story for the whole world. A new chapter every day, or faster when you send a papyrus.''', r'''حكاية واحدة للعالم كله. فصل جديد كل يوم، أو أسرع لما تبعت بردية.'''],
+  [r'''Take a photo''', r'''صوّر'''],
+  [r'''Voice from Telegram/WhatsApp: tap Share on the voice note and choose Nilo (Nilo translate).''', r'''فويس من تليجرام/واتساب: اضغط مشاركة على الفويس واختار Nilo (ترجمة نيلو).'''],
+  [r'''Each person on their own phone. One makes a room and sends the code to the other, who joins with it. You speak, and the other hears your translation in their language a few seconds later.''', r'''كل واحد على موبايله. واحد يعمل غرفة ويبعت الكود للتاني، والتاني يدخل بيه. بتتكلم، والتاني يسمع ترجمتك بلغته بعد ثواني.'''],
+  [r'''Nothing saved yet. Tap the star under any translation and it will show up here, and work offline (text only, audio from the device).''', r'''لسه مفيش حاجة محفوظة. دوس النجمة تحت أي ترجمة وهتلاقيها هنا، وتشتغل من غير نت (النص بس، الصوت من الجهاز).'''],
+  [r'''Your language''', r'''لغتك'''],
+  [r'''New chat''', r'''محادثة جديدة'''],
+  [r'''What do you need right now?''', r'''محتاج إيه دلوقتي؟'''],
+  [r'''Call''', r'''مكالمة'''],
+  [r'''From gallery''', r'''من المعرض'''],
+  [r'''We will open only this screen for you and not remind you of the rest. You can switch any time.''', r'''هنفتحلك الشاشة دي بس، ومش هنفكرك بالباقي. تقدر تبدّل في أي وقت.'''],
+  [r'''Mutual rules: 18+ only, text only with no links or numbers, never send money, meet in a public place, report and block anyone who bothers you''', r'''٠ للكبار ١٨+ فقط  ٠ نص بس، من غير لينكات أو أرقام  ٠ متبعتش فلوس  ٠ قابل حد في مكان عام  ٠ بلّغ واحظر أي حد يضايقك'''],
+  [r'''• Check the plate and car in the app before you get in (my general advice, not an official rule).''', r'''• اتأكد من اللوحة والعربية في التطبيق قبل ما تركب (نصيحة عامة مني، مش قاعدة رسمية).'''],
+  [r'''• Many taxis lack working meters: agree the fare first or use a ride app (source: atlas-guide.com, read 26 Nov 2026).''', r'''• تاكسيات كتير عدّادها مش شغال: اتفق على الأجرة الأول أو استخدم تطبيق ركوب (المصدر: atlas-guide.com، اتقرا ٢٦ نوفمبر ٢٠٢٦).'''],
+  [r'''• Pay the amount shown in the app. Complaints about drivers asking for more: TripAdvisor forum, Dec 2024.''', r'''• ادفع المبلغ الظاهر في التطبيق. شكاوى عن سواقين بيطلبوا أكتر: منتدى TripAdvisor، ديسمبر ٢٠٢٤.'''],
+  [r'''• Report crime to the tourist police: 126 (UK FCDO).''', r'''• بلّغ عن الجرائم لشرطة السياحة: ١٢٦ (الخارجية البريطانية).'''],
+  [r'''A letter from another traveler''', r'''خطاب من مسافر تاني'''],
+];

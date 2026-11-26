@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
@@ -15,11 +16,11 @@ Widget niloJoinGate(BuildContext context, VoidCallback after) => Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('🧭', style: TextStyle(fontSize: 54)),
+          Text(L('🧭'), style: TextStyle(fontSize: 54)),
           const SizedBox(height: 10),
-          const Text('For travelers 18 and older.\nJoin once to take part. • للمسافرين ١٨ سنة وأكتر', textAlign: TextAlign.center),
+          Text(L('For travelers 18 and older.\nJoin once to take part. • للمسافرين ١٨ سنة وأكتر'), textAlign: TextAlign.center),
           const SizedBox(height: 14),
-          FilledButton(onPressed: () async { await Navigator.of(context).push(niloRoute(const BottlesPage())); after(); }, child: const Text('Join • انضم')),
+          FilledButton(onPressed: () async { await Navigator.of(context).push(niloRoute(BottlesPage())); after(); }, child: Text(L('Join • انضم'))),
         ]),
       ),
     );
@@ -74,7 +75,7 @@ class _CirclesPageState extends State<CirclesPage> {
 
   Future<void> _pick() async {
     final code = await showModalBottomSheet<String>(context: context, backgroundColor: const Color(0xFF0E2A45), isScrollControlled: true, builder: (_) => SafeArea(child: SizedBox(height: MediaQuery.of(context).size.height * 0.7, child: ListView(children: [
-      const Padding(padding: EdgeInsets.all(16), child: Text('Choose a destination • اختار وجهة', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
+      Padding(padding: EdgeInsets.all(16), child: Text(L('Choose a destination • اختار وجهة'), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16))),
       for (final w in kWorld) ListTile(leading: Text(w[3] as String, style: const TextStyle(fontSize: 26)), title: Text('${w[1]} • ${w[2]}'), onTap: () => Navigator.pop(context, w[0] as String)),
     ]))));
     if (code == null) return;
@@ -101,10 +102,10 @@ class _CirclesPageState extends State<CirclesPage> {
   Future<void> _menu(Map s) async {
     final mine = s['author'] == Sb.uid;
     final v = await showModalBottomSheet<String>(context: context, backgroundColor: const Color(0xFF0E2A45), builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      if (mine) ListTile(leading: const Icon(Icons.delete_outline), title: const Text('Delete'), onTap: () => Navigator.pop(context, 'del'))
+      if (mine) ListTile(leading: Icon(Icons.delete_outline), title: Text(L('Delete')), onTap: () => Navigator.pop(context, 'del'))
       else ...[
-        ListTile(leading: const Icon(Icons.flag_outlined), title: const Text('Report'), onTap: () => Navigator.pop(context, 'rep')),
-        ListTile(leading: const Icon(Icons.block), title: const Text('Block this person'), onTap: () => Navigator.pop(context, 'blk')),
+        ListTile(leading: Icon(Icons.flag_outlined), title: Text(L('Report')), onTap: () => Navigator.pop(context, 'rep')),
+        ListTile(leading: Icon(Icons.block), title: Text(L('Block this person')), onTap: () => Navigator.pop(context, 'blk')),
       ],
     ])));
     if (v == null) return;
@@ -133,9 +134,9 @@ class _CirclesPageState extends State<CirclesPage> {
                 child: busy
                     ? const Center(child: CircularProgressIndicator())
                     : err.isNotEmpty
-                        ? Center(child: Text(err))
+                        ? Center(child: Text(L(err)))
                         : posts.isEmpty
-                            ? const Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Nobody has written here yet.\nAsk a question or share a tip for this destination.\nمحدش كتب هنا لسه. اسأل أو شارك نصيحة.', textAlign: TextAlign.center, style: TextStyle(height: 1.5))))
+                            ? Center(child: Padding(padding: EdgeInsets.all(24), child: Text(L('Nobody has written here yet.\nAsk a question or share a tip for this destination.\nمحدش كتب هنا لسه. اسأل أو شارك نصيحة.'), textAlign: TextAlign.center, style: TextStyle(height: 1.5))))
                             : ListView.builder(
                                 padding: const EdgeInsets.all(12),
                                 itemCount: posts.length,
@@ -165,13 +166,13 @@ class _CirclesPageState extends State<CirclesPage> {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
                   child: Row(children: [
-                    Expanded(child: TextField(controller: c, maxLength: 300, maxLines: 2, minLines: 1, decoration: const InputDecoration(counterText: '', hintText: 'Ask or share a tip • اسأل أو شارك', filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(20)), borderSide: BorderSide.none)))),
+                    Expanded(child: TextField(controller: c, maxLength: 300, maxLines: 2, minLines: 1, decoration: InputDecoration(counterText: '', hintText: L('Ask or share a tip • اسأل أو شارك'), filled: true, border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(20)), borderSide: BorderSide.none)))),
                     const SizedBox(width: 8),
                     IconButton.filled(onPressed: _post, icon: const Icon(Icons.send)),
                   ]),
                 ),
               ),
-              const Padding(padding: EdgeInsets.only(bottom: 4), child: Text('18+. No links, emails or phone numbers. Meet only in public places.', style: TextStyle(fontSize: 10, color: Colors.white38))),
+              Padding(padding: EdgeInsets.only(bottom: 4), child: Text(L('18+. No links, emails or phone numbers. Meet only in public places.'), style: TextStyle(fontSize: 10, color: Colors.white38))),
             ]),
     );
   }

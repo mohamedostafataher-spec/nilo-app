@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
@@ -63,16 +64,16 @@ class _AuthPageState extends State<AuthPage> {
       body: SafeArea(
         child: ListView(padding: const EdgeInsets.all(24), children: [
           const SizedBox(height: 20),
-          const Center(child: Text('𓂀', style: TextStyle(fontSize: 48, color: Color(0xFFE0B04A)))),
-          const Center(child: Text('Nilo • نيلو', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900))),
+          Center(child: Text(L('𓂀'), style: TextStyle(fontSize: 48, color: Color(0xFFE0B04A)))),
+          Center(child: Text(L('Nilo • نيلو'), style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900))),
           const SizedBox(height: 24),
-          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+          Text(L(title), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           const SizedBox(height: 12),
-          TextField(controller: email, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: const InputDecoration(labelText: 'Email • الإيميل', border: OutlineInputBorder())),
+          TextField(controller: email, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: InputDecoration(labelText: L('Email • الإيميل'), border: OutlineInputBorder())),
           const SizedBox(height: 10),
           if (mode != _Mode.forgot || codeSent) ...[
             if (mode == _Mode.forgot) ...[
-              TextField(controller: code, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Code from email • الكود', border: OutlineInputBorder())),
+              TextField(controller: code, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: L('Code from email • الكود'), border: OutlineInputBorder())),
               const SizedBox(height: 10),
             ],
             TextField(
@@ -89,18 +90,18 @@ class _AuthPageState extends State<AuthPage> {
           ),
           const SizedBox(height: 6),
           if (mode == _Mode.signIn) ...[
-            TextButton(onPressed: () => setState(() { mode = _Mode.forgot; error = null; info = null; codeSent = false; }), child: const Text('Forgot password? • نسيت كلمة السر؟')),
-            TextButton(onPressed: () => setState(() { mode = _Mode.signUp; error = null; }), child: const Text('New here? Create an account • حساب جديد')),
+            TextButton(onPressed: () => setState(() { mode = _Mode.forgot; error = null; info = null; codeSent = false; }), child: Text(L('Forgot password? • نسيت كلمة السر؟'))),
+            TextButton(onPressed: () => setState(() { mode = _Mode.signUp; error = null; }), child: Text(L('New here? Create an account • حساب جديد'))),
           ] else
-            TextButton(onPressed: () => setState(() { mode = _Mode.signIn; error = null; info = null; }), child: const Text('Back to sign in • رجوع')),
+            TextButton(onPressed: () => setState(() { mode = _Mode.signIn; error = null; info = null; }), child: Text(L('Back to sign in • رجوع'))),
           const Divider(height: 28),
-          OutlinedButton(onPressed: busy ? null : _done, child: const Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text('Continue as guest • كمل كضيف'))),
+          OutlinedButton(onPressed: busy ? null : _done, child: Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text(L('Continue as guest • كمل كضيف')))),
           const SizedBox(height: 6),
-          const Text('A guest account lives on this phone only. If you lose the phone you lose it. Create an account to keep your papyri.', style: TextStyle(fontSize: 11, color: Colors.white54)),
+          Text(L('A guest account lives on this phone only. If you lose the phone you lose it. Create an account to keep your papyri.'), style: TextStyle(fontSize: 11, color: Colors.white54)),
           const SizedBox(height: 14),
           Wrap(alignment: WrapAlignment.center, children: [
-            TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TextDocPage('Privacy Policy', kPrivacy))), child: const Text('Privacy', style: TextStyle(fontSize: 12))),
-            TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TextDocPage('Terms of Use', kTerms))), child: const Text('Terms', style: TextStyle(fontSize: 12))),
+            TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TextDocPage('Privacy Policy', kPrivacy))), child: Text(L('Privacy'), style: TextStyle(fontSize: 12))),
+            TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TextDocPage('Terms of Use', kTerms))), child: Text(L('Terms'), style: TextStyle(fontSize: 12))),
           ]),
         ]),
       ),

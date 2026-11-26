@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'main.dart';
@@ -48,7 +49,7 @@ class TextDocPage extends StatelessWidget {
   const TextDocPage(this.title, this.body, {super.key});
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(title), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L(title)), backgroundColor: kBg),
         body: SingleChildScrollView(padding: const EdgeInsets.all(18), child: SelectableText(body, style: const TextStyle(height: 1.5, fontSize: 14))),
       );
 }
@@ -68,9 +69,9 @@ class _SettingsPageState extends State<SettingsPage> {
     final r = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Nickname • الاسم'),
-        content: TextField(controller: c, maxLength: 20, decoration: const InputDecoration(hintText: 'No real name needed')),
-        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')), TextButton(onPressed: () => Navigator.pop(ctx, c.text.trim()), child: const Text('Save'))],
+        title: Text(L('Nickname • الاسم')),
+        content: TextField(controller: c, maxLength: 20, decoration: InputDecoration(hintText: L('No real name needed'))),
+        actions: [TextButton(onPressed: () => Navigator.pop(ctx), child: Text(L('Cancel'))), TextButton(onPressed: () => Navigator.pop(ctx, c.text.trim()), child: Text(L('Save')))],
       ),
     );
     if (r != null && r.isNotEmpty) { setState(() => Passport.nickname = r); }
@@ -78,9 +79,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    Widget sw(String t, String sub, String k) => SwitchListTile(title: Text(t), subtitle: Text(sub, style: const TextStyle(fontSize: 12)), value: Passport.flag(k), onChanged: (v) => setState(() => Passport.setFlag(k, v)));
+    Widget sw(String t, String sub, String k) => SwitchListTile(title: Text(L(t)), subtitle: Text(L(sub), style: TextStyle(fontSize: 12)), value: Passport.flag(k), onChanged: (v) => setState(() => Passport.setFlag(k, v)));
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings • الإعدادات'), backgroundColor: kBg),
+      appBar: AppBar(title: Text(L('Settings • الإعدادات')), backgroundColor: kBg),
       body: ListView(children: [
         FutureBuilder<SharedPreferences>(future: SharedPreferences.getInstance(), builder: (c, snap) {
           final em = snap.data?.getString('acct_email');
@@ -98,32 +99,46 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           );
         }),
-        ListTile(leading: const Icon(Icons.person), title: const Text('Profile • الملف'), subtitle: Text(Passport.nickname.isEmpty ? 'Set a nickname' : Passport.nickname), onTap: _editName),
+        ListTile(leading: Icon(Icons.person), title: Text(L('Profile • الملف')), subtitle: Text(Passport.nickname.isEmpty ? 'Set a nickname' : Passport.nickname), onTap: _editName),
+        ListTile(
+          leading: const Icon(Icons.language),
+          title: Text(L('Interface language • لغة التطبيق')),
+          subtitle: Text(Ui.pref == 'auto' ? L('Automatic (phone) • تلقائي (التليفون)') : Ui.pref == 'ar' ? 'العربية' : 'English'),
+          onTap: () async {
+            final v = await showDialog<String>(context: context, builder: (c) => SimpleDialog(
+              title: Text(L('Interface language • لغة التطبيق')),
+              children: [
+                for (final o in const [['auto', 'Automatic (phone) • تلقائي (التليفون)'], ['ar', 'العربية'], ['en', 'English']])
+                  SimpleDialogOption(onPressed: () => Navigator.pop(c, o[0]), child: Text(L(o[1]))),
+              ]));
+            if (v != null) { await Ui.set(v); if (mounted) setState(() {}); }
+          },
+        ),
         sw('Sound • الصوت', 'Sound effects in the app', 'sound'),
-        SwitchListTile(title: const Text('Reduce motion • حركة أقل'), subtitle: const Text('Skips the send animation', style: TextStyle(fontSize: 12)), value: Passport.flag('reduce_motion', false), onChanged: (v) => setState(() => Passport.setFlag('reduce_motion', v))),
+        SwitchListTile(title: Text(L('Reduce motion • حركة أقل')), subtitle: Text(L('Skips the send animation'), style: TextStyle(fontSize: 12)), value: Passport.flag('reduce_motion', false), onChanged: (v) => setState(() => Passport.setFlag('reduce_motion', v))),
         SwitchListTile(
-          title: const Text('Calm mode • وضع الهدوء'),
-          subtitle: const Text('Fewer notifications, no send animation', style: TextStyle(fontSize: 12)),
+          title: Text(L('Calm mode • وضع الهدوء')),
+          subtitle: Text(L('Fewer notifications, no send animation'), style: TextStyle(fontSize: 12)),
           value: Passport.flag('calm', false),
           onChanged: (v) => setState(() { Passport.setFlag('calm', v); Passport.setFlag('reduce_motion', v); }),
         ),
-        ListTile(leading: const Icon(Icons.storefront), title: Text('Store • المتجر  (${Passport.reeds} 🌿)'), subtitle: const Text('Spend Reeds on looks for your send animation'), onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const StorePage())); setState(() {}); }),
+        ListTile(leading: Icon(Icons.storefront), title: Text('Store • المتجر  (${Passport.reeds} 🌿)'), subtitle: Text(L('Spend Reeds on looks for your send animation')), onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => StorePage())); setState(() {}); }),
         const Divider(),
-        const ListTile(leading: Icon(Icons.shield), title: Text('Papyrus & Stories safety'), subtitle: Text('18+ only (self-declared). No links or phone numbers. Report or block anyone. Content hides after reports. Meet only in public places.')),
-        ListTile(leading: const Icon(Icons.lock), title: const Text('Privacy policy • الخصوصية'), onTap: () => _go(const TextDocPage('Privacy Policy', kPrivacy))),
-        ListTile(leading: const Icon(Icons.gavel), title: const Text('Terms of use • الشروط'), onTap: () => _go(const TextDocPage('Terms of Use', kTerms))),
+        ListTile(leading: Icon(Icons.shield), title: Text(L('Papyrus & Stories safety')), subtitle: Text(L('18+ only (self-declared). No links or phone numbers. Report or block anyone. Content hides after reports. Meet only in public places.'))),
+        ListTile(leading: Icon(Icons.lock), title: Text(L('Privacy policy • الخصوصية')), onTap: () => _go(TextDocPage('Privacy Policy', kPrivacy))),
+        ListTile(leading: Icon(Icons.gavel), title: Text(L('Terms of use • الشروط')), onTap: () => _go(TextDocPage('Terms of Use', kTerms))),
         const Divider(),
-        ListTile(leading: const Icon(Icons.share), title: const Text('Invite friends • ادعُ صديق'), subtitle: const Text('Your code, link and Reeds perks'), onTap: () => _go(const InvitePage())),
-        ListTile(leading: const Icon(Icons.bug_report), title: const Text('Report a problem • أبلغ عن مشكلة'), onTap: () => openUrl('mailto:mohamedostafataher@gmail.com?subject=Nilo%20problem')),
+        ListTile(leading: Icon(Icons.share), title: Text(L('Invite friends • ادعُ صديق')), subtitle: Text(L('Your code, link and Reeds perks')), onTap: () => _go(InvitePage())),
+        ListTile(leading: Icon(Icons.bug_report), title: Text(L('Report a problem • أبلغ عن مشكلة')), onTap: () => openUrl('mailto:mohamedostafataher@gmail.com?subject=Nilo%20problem')),
         ListTile(
           leading: const Icon(Icons.info),
-          title: const Text('About Nilo • عن نيلو'),
-          subtitle: const Text('Created & Founded by Mohamed Mostafa Taher\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa'),
+          title: Text(L('About Nilo • عن نيلو')),
+          subtitle: Text(L('Created & Founded by Mohamed Mostafa Taher\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa')),
           isThreeLine: true,
-          onTap: () => showAboutDialog(context: context, applicationName: 'Nilo • نيلو', applicationVersion: '1.5', children: const [Text('Created & Founded by Mohamed Mostafa Taher\nتطبيق مصري')]),
+          onTap: () => showAboutDialog(context: context, applicationName: 'Nilo • نيلو', applicationVersion: '1.5', children: [Text(L('Created & Founded by Mohamed Mostafa Taher\nتطبيق مصري'))]),
         ),
         ListTile(
-          title: const Text('Version 1.5', style: TextStyle(color: Colors.white38, fontSize: 12)),
+          title: Text(L('Version 1.5'), style: TextStyle(color: Colors.white38, fontSize: 12)),
           onTap: () { _taps++; if (_taps >= 7) { _taps = 0; toast(context, 'Founder area is not built yet'); } },
         ),
       ]),

@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'main.dart';
 import 'world.dart' show Passport;
@@ -44,7 +45,7 @@ class _StorePageState extends State<StorePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBg,
-      appBar: AppBar(title: const Text('Store • المتجر'), backgroundColor: kBg),
+      appBar: AppBar(title: Text(L('Store • المتجر')), backgroundColor: kBg),
       body: ListView(padding: const EdgeInsets.all(14), children: [
         Container(
           padding: const EdgeInsets.all(16),
@@ -52,7 +53,7 @@ class _StorePageState extends State<StorePage> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('🌿 ${Passport.reeds} Reeds • قصب', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
             const SizedBox(height: 6),
-            const Text('Earn Reeds by real actions: send a papyrus (+10), finish a story chapter (+10), post a story (+5), solve the daily puzzle (+5), open the app each day (+5). They only buy looks for your send animation. Kept on this phone.', style: TextStyle(fontSize: 12, height: 1.4, color: Colors.white70)),
+            Text(L('Earn Reeds by real actions: send a papyrus (+10), finish a story chapter (+10), post a story (+5), solve the daily puzzle (+5), open the app each day (+5). They only buy looks for your send animation. Kept on this phone.'), style: TextStyle(fontSize: 12, height: 1.4, color: Colors.white70)),
           ]),
         ),
         const SizedBox(height: 12),
@@ -70,7 +71,7 @@ class _StorePageState extends State<StorePage> {
               ),
             ),
           ),
-        const Padding(padding: EdgeInsets.all(12), child: Text('More items later. Nothing here costs money.', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),
+        Padding(padding: EdgeInsets.all(12), child: Text(L('More items later. Nothing here costs money.'), textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white54))),
       ]),
     );
   }

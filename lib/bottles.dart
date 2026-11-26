@@ -1,3 +1,4 @@
+import 'i18n.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -218,7 +219,7 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Papyrus • بردية'), backgroundColor: kBg),
+      appBar: AppBar(title: Text(L('Papyrus • بردية')), backgroundColor: kBg),
       body: busy
           ? const Center(child: CircularProgressIndicator())
           : ready ? _home() : _gate(),
@@ -237,32 +238,32 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
     bool conf = false;
     return StatefulBuilder(builder: (c, set) => ListView(padding: const EdgeInsets.all(16), children: [
       _river(),
-      const Text('Write a papyrus and watch it travel the world. Someone anywhere finds it.', style: TextStyle(fontSize: 17, height: 1.4)),
+      Text(L('Write a papyrus and watch it travel the world. Someone anywhere finds it.'), style: TextStyle(fontSize: 17, height: 1.4)),
       const SizedBox(height: 12),
-      TextField(controller: nickC, maxLength: 20, decoration: const InputDecoration(labelText: 'Nickname (not your real name)', border: OutlineInputBorder())),
+      TextField(controller: nickC, maxLength: 20, decoration: InputDecoration(labelText: L('Nickname (not your real name)'), border: OutlineInputBorder())),
       DropdownButton<String>(
         value: lang,
         isExpanded: true,
-        items: [for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text('I read papyri in: ${kNames[i]}'))],
+        items: [for (var i = 0; i < kCodes.length; i++) DropdownMenuItem(value: kCodes[i], child: Text(Ui.rtl ? 'أقرا البرديات بـ: ${kNames[i]}' : 'I read papyri in: ${kNames[i]}'))],
         onChanged: (v) => set(() => lang = v ?? 'en'),
       ),
-      CheckboxListTile(value: conf, onChanged: (v) => set(() => conf = v ?? false), title: const Text('I am 18+ and accept the rules (text only, no links or numbers, report and block)', style: TextStyle(fontSize: 13))),
-      if (failed) const Text('Could not connect. Check internet and try again.', style: TextStyle(color: Colors.orangeAccent)),
-      FilledButton(onPressed: () => _join(conf), child: const Text('Enter')),
+      CheckboxListTile(value: conf, onChanged: (v) => set(() => conf = v ?? false), title: Text(L('I am 18+ and accept the rules (text only, no links or numbers, report and block)'), style: TextStyle(fontSize: 13))),
+      if (failed) Text(L('Could not connect. Check internet and try again.'), style: TextStyle(color: Colors.orangeAccent)),
+      FilledButton(onPressed: () => _join(conf), child: Text(L('Enter'))),
       const SizedBox(height: 10),
-      const Text('Anonymous accounts: if you are blocked or banned you could come back with a new one. Pattern filters miss tricks. Report anything wrong.', style: TextStyle(fontSize: 11, color: Colors.white38)),
+      Text(L('Anonymous accounts: if you are blocked or banned you could come back with a new one. Pattern filters miss tricks. Report anything wrong.'), style: TextStyle(fontSize: 11, color: Colors.white38)),
     ]));
   }
 
   Widget _home() => ListView(padding: const EdgeInsets.all(16), children: [
         _river(),
-        Text('Hi $nick', style: const TextStyle(fontSize: 18)),
+        Text(Ui.rtl ? 'أهلاً $nick' : 'Hi $nick', style: TextStyle(fontSize: 18)),
         const SizedBox(height: 8),
         _tile(Icons.send, 'Send a papyrus', 'Ask about a place, teach a phrase, or say hello', () => Navigator.push(context, MaterialPageRoute(builder: (_) => ThrowPage(lang: lang)))),
         _tile(Icons.search, 'Catch a papyrus', 'Pick one papyrus from someone else', () => Navigator.push(context, MaterialPageRoute(builder: (_) => CatchPage(lang: lang)))),
         _tile(Icons.inbox, 'My papyri', 'Replies and conversations', () => Navigator.push(context, MaterialPageRoute(builder: (_) => InboxPage(lang: lang)))),
         const SizedBox(height: 10),
-        const Text('18+ self-declared. Text only. No links or numbers. Report and block in every conversation.', style: TextStyle(fontSize: 11, color: Colors.white38)),
+        Text(L('18+ self-declared. Text only. No links or numbers. Report and block in every conversation.'), style: TextStyle(fontSize: 11, color: Colors.white38)),
       ]);
 
   Widget _tile(IconData i, String t, String s, VoidCallback f) => Card(
@@ -345,11 +346,11 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
   void _rules() => showModalBottomSheet(context: context, backgroundColor: const Color(0xFF12304D), builder: (_) => Padding(
         padding: const EdgeInsets.all(20),
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Before you write • قبل ما تكتب', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: kGreen)),
+          Text(L('Before you write • قبل ما تكتب'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: kGreen)),
           const SizedBox(height: 10),
-          const Text('• Text only. No links, phone numbers or social handles.\n• Be kind. Never ask for or send money.\n• Someone anywhere may answer. Report and block if needed.', style: TextStyle(height: 1.6)),
+          Text(L('• Text only. No links, phone numbers or social handles.\n• Be kind. Never ask for or send money.\n• Someone anywhere may answer. Report and block if needed.'), style: TextStyle(height: 1.6)),
           const SizedBox(height: 14),
-          SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(context), child: const Text('Got it • تمام'))),
+          SizedBox(width: double.infinity, child: FilledButton(onPressed: () => Navigator.pop(context), child: Text(L('Got it • تمام')))),
         ]),
       )).then((_) { if (mounted) focus.requestFocus(); });
 
@@ -439,7 +440,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
                     onPressed: busy ? null : _send,
                     style: FilledButton.styleFrom(shape: const StadiumBorder()),
                     icon: busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.send),
-                    label: const Text('Send into the Nile • ابعتها في النيل', style: TextStyle(fontSize: 16)),
+                    label: Text(L('Send into the Nile • ابعتها في النيل'), style: TextStyle(fontSize: 16)),
                   ),
                 ),
               ),
@@ -485,16 +486,16 @@ class _CatchPageState extends State<CatchPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Catch a papyrus'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('Catch a papyrus')), backgroundColor: kBg),
         body: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             const Icon(Icons.water, size: 72, color: kGreen),
             const SizedBox(height: 12),
             Text(done ? 'No papyri are travelling right now. Send one, and check back later.' : 'A random papyrus from someone else will arrive. You can reply, report or block.', textAlign: TextAlign.center),
-            if (err.isNotEmpty) Text(err, style: const TextStyle(color: Colors.orangeAccent)),
+            if (err.isNotEmpty) Text(L(err), style: TextStyle(color: Colors.orangeAccent)),
             const SizedBox(height: 16),
-            FilledButton(onPressed: busy ? null : _catch, child: busy ? const CircularProgressIndicator() : Text('Look for a papyrus (${Passport.catchesLeft} left today)')),
+            FilledButton(onPressed: busy ? null : _catch, child: busy ? CircularProgressIndicator() : Text(Ui.rtl ? 'دوّر على بردية (فاضل ${Passport.catchesLeft} النهارده)' : 'Look for a papyrus (${Passport.catchesLeft} left today)')),
           ]),
         ),
       );
@@ -530,13 +531,13 @@ class _InboxPageState extends State<InboxPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('My papyri'), backgroundColor: kBg),
+        appBar: AppBar(title: Text(L('My papyri')), backgroundColor: kBg),
         body: busy
             ? const Center(child: CircularProgressIndicator())
             : err.isNotEmpty
-                ? Center(child: Text(err))
+                ? Center(child: Text(L(err)))
                 : l.isEmpty
-                    ? const Center(child: Text('Nothing yet. Send or catch a papyrus.'))
+                    ? Center(child: Text(L('Nothing yet. Send or catch a papyrus.')))
                     : ListView(children: [
                         for (final b in l)
                           ListTile(
@@ -606,7 +607,7 @@ class _ThreadPageState extends State<ThreadPage> {
 
   Future<void> _report() async {
     final reasons = ['Asked for money', 'Asked for contact details', 'Sexual or inappropriate', 'Says they are under 18', 'Hate or threats', 'Other'];
-    final pick = await showDialog<String>(context: context, builder: (c) => SimpleDialog(title: const Text('Report this conversation'), children: [for (final r in reasons) SimpleDialogOption(onPressed: () => Navigator.pop(c, r), child: Text(r))]));
+    final pick = await showDialog<String>(context: context, builder: (c) => SimpleDialog(title: Text(L('Report this conversation')), children: [for (final r in reasons) SimpleDialogOption(onPressed: () => Navigator.pop(c, r), child: Text(r))]));
     if (pick == null) return;
     try {
       await Sb.post('reports', {'reporter': Sb.uid, 'bottle_id': bid, 'reason': pick});
@@ -637,7 +638,7 @@ class _ThreadPageState extends State<ThreadPage> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(text),
             if (tr[key] != null) Text(tr[key]!, style: const TextStyle(color: kGreen)),
-            if (!mine && tr[key] == null) InkWell(onTap: () => _translate(key, text), child: const Padding(padding: EdgeInsets.only(top: 6), child: Text('Translate (machine, may be wrong)', style: TextStyle(fontSize: 12, color: Colors.white54)))),
+            if (!mine && tr[key] == null) InkWell(onTap: () => _translate(key, text), child: Padding(padding: EdgeInsets.only(top: 6), child: Text(L('Translate (machine, may be wrong)'), style: TextStyle(fontSize: 12, color: Colors.white54)))),
           ]),
         ),
       );
@@ -648,28 +649,28 @@ class _ThreadPageState extends State<ThreadPage> {
     final closed = b['status'] == 'closed';
     return Scaffold(
       appBar: AppBar(title: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus'), backgroundColor: kBg, actions: [
-        IconButton(icon: const Icon(Icons.flag_outlined), tooltip: 'Report', onPressed: _report),
-        IconButton(icon: const Icon(Icons.block), tooltip: 'Block', onPressed: _block),
+        IconButton(icon: Icon(Icons.flag_outlined), tooltip: L('Report'), onPressed: _report),
+        IconButton(icon: Icon(Icons.block), tooltip: L('Block'), onPressed: _block),
       ]),
       body: Column(children: [
         Expanded(
           child: ListView(padding: const EdgeInsets.all(12), children: [
             _msg('b', (b['body'] ?? '').toString(), b['author'] == Sb.uid),
             for (final r in replies) _msg(r['id'].toString(), (r['body'] ?? '').toString(), r['author'] == Sb.uid),
-            if (err.isNotEmpty) Text(err),
-            const Padding(padding: EdgeInsets.all(8), child: Text('Safety: never send money or ID details. Meet only in public places. Report anything wrong.', style: TextStyle(fontSize: 11, color: Colors.white38))),
+            if (err.isNotEmpty) Text(L(err)),
+            Padding(padding: EdgeInsets.all(8), child: Text(L('Safety: never send money or ID details. Meet only in public places. Report anything wrong.'), style: TextStyle(fontSize: 11, color: Colors.white38))),
           ]),
         ),
         if (!closed)
           Padding(
             padding: const EdgeInsets.all(8),
             child: Row(children: [
-              Expanded(child: TextField(controller: c, maxLength: 400, decoration: const InputDecoration(hintText: 'Write a reply (text only, no links or numbers)', counterText: '', border: OutlineInputBorder()))),
+              Expanded(child: TextField(controller: c, maxLength: 400, decoration: InputDecoration(hintText: L('Write a reply (text only, no links or numbers)'), counterText: '', border: OutlineInputBorder()))),
               IconButton(icon: const Icon(Icons.send, color: kGreen), onPressed: _send),
             ]),
           )
         else
-          const Padding(padding: EdgeInsets.all(12), child: Text('This conversation is closed.')),
+          Padding(padding: EdgeInsets.all(12), child: Text(L('This conversation is closed.'))),
       ]),
     );
   }
