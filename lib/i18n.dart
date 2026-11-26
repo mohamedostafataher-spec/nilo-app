@@ -66,6 +66,7 @@ String L(String s) {
 }
 
 const kPairs = <List<String>>[
+  [r'''UNESCO sites in any country (live, Wikidata)''', r'''مواقع اليونسكو في أي دولة (مباشر، Wikidata)'''],
   [r'''Notable places • أماكن مميزة''', r'''أماكن مميزة'''],
   [r'''UNESCO World Heritage sites, loaded live from Wikidata (CC0). Not a complete list of places worth visiting, and some entries are regions or groups of sites. Tap to read more on Wikipedia (English).''', r'''مواقع التراث العالمي لليونسكو، بتتحمل مباشرة من Wikidata (CC0). مش قائمة كاملة بالأماكن المميزة، وبعض العناصر مناطق أو مجموعات مواقع. دوس لقراءة المزيد على ويكيبيديا (إنجليزي).'''],
   [r'''No UNESCO sites found for this country in Wikidata.''', r'''مفيش مواقع يونسكو للدولة دي في Wikidata.'''],

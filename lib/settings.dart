@@ -1,4 +1,5 @@
 import 'i18n.dart';
+import 'places.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'main.dart';
@@ -122,6 +123,7 @@ class _SettingsPageState extends State<SettingsPage> {
           value: Passport.flag('calm', false),
           onChanged: (v) => setState(() { Passport.setFlag('calm', v); Passport.setFlag('reduce_motion', v); }),
         ),
+        ListTile(leading: Icon(Icons.public), title: Text(L('Notable places • أماكن مميزة')), subtitle: Text(L('UNESCO sites in any country (live, Wikidata)')), onTap: () => _go(PlacesOfPage())),
         ListTile(leading: Icon(Icons.storefront), title: Text('Store • المتجر  (${Passport.reeds} 🌿)'), subtitle: Text(L('Spend Reeds on looks for your send animation')), onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => StorePage())); setState(() {}); }),
         const Divider(),
         ListTile(leading: Icon(Icons.shield), title: Text(L('Papyrus & Stories safety')), subtitle: Text(L('18+ only (self-declared). No links or phone numbers. Report or block anyone. Content hides after reports. Meet only in public places.'))),
