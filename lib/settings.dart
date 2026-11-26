@@ -3,6 +3,11 @@ import 'package:flutter/services.dart';
 import 'main.dart';
 import 'screens.dart' show toast, openUrl;
 import 'world.dart' show Passport;
+import 'bottles.dart' show Sb;
+import 'auth.dart';
+import 'extras.dart' show niloRoute;
+import 'home.dart' show TouristHome;
+import 'package:shared_preferences/shared_preferences.dart';
 
 const kPrivacy = '''Privacy Policy • سياسة الخصوصية
 
@@ -75,6 +80,22 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Settings • الإعدادات'), backgroundColor: kBg),
       body: ListView(children: [
+        FutureBuilder<SharedPreferences>(future: SharedPreferences.getInstance(), builder: (c, snap) {
+          final em = snap.data?.getString('acct_email');
+          return ListTile(
+            leading: const Icon(Icons.account_circle),
+            title: Text(em == null ? 'Guest • ضيف' : 'Account • الحساب'),
+            subtitle: Text(em ?? 'Create an account to keep your papyri'),
+            trailing: TextButton(
+              onPressed: () async {
+                await Sb.signOut();
+                if (!c.mounted) return;
+                Navigator.of(c).pushAndRemoveUntil(niloRoute(AuthPage(next: const TouristHome())), (_) => false);
+              },
+              child: Text(em == null ? 'Sign in' : 'Sign out'),
+            ),
+          );
+        }),
         ListTile(leading: const Icon(Icons.person), title: const Text('Profile • الملف'), subtitle: Text(Passport.nickname.isEmpty ? 'Set a nickname' : Passport.nickname), onTap: _editName),
         sw('Sound • الصوت', 'Sound effects in the app', 'sound'),
         sw('Reduce motion • حركة أقل', 'Fewer animations (saves battery)', 'reduce_motion'),

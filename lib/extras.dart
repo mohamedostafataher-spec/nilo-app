@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'auth.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
@@ -109,7 +110,9 @@ class _SplashGateState extends State<SplashGate> with SingleTickerProviderStateM
     final seen = p.getBool('onboarded') ?? false;
     await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(niloRoute(seen ? (Passport.country.isEmpty ? const FirstRunPage(next: TouristHome()) : const TouristHome()) : const OnboardingPage()));
+    final Widget target = seen ? (Passport.country.isEmpty ? const FirstRunPage(next: TouristHome()) : const TouristHome()) : const OnboardingPage();
+    final authDone = p.getBool('auth_done') ?? false;
+    Navigator.of(context).pushReplacement(niloRoute(authDone ? target : AuthPage(next: target)));
   }
 
   @override

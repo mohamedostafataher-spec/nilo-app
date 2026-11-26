@@ -44,6 +44,52 @@ class Sb {
     return false;
   }
 
+  // ---- Accounts (Supabase Auth: email + password, email code for reset) ----
+  static String _err(http.Response r) {
+    try { final j = jsonDecode(utf8.decode(r.bodyBytes)); return (j['msg'] ?? j['error_description'] ?? j['message'] ?? j['error'] ?? 'Error ${r.statusCode}').toString(); } catch (_) { return 'Error ${r.statusCode}'; }
+  }
+  static Future<String?> _authCall(Future<http.Response> f, SharedPreferences p, {bool save = true}) async {
+    try {
+      final r = await f.timeout(const Duration(seconds: 20));
+      if (r.statusCode >= 300) return _err(r);
+      if (save) { final j = jsonDecode(utf8.decode(r.bodyBytes)); if (j is Map && j['access_token'] != null) _save(p, j); }
+      return null;
+    } catch (_) { return 'No connection'; }
+  }
+  /// Create account: upgrades the current anonymous user (keeps your papyri) to an email account.
+  static Future<String?> signUp(String email, String pw) async {
+    final p = await SharedPreferences.getInstance();
+    if (!await signIn()) return 'No connection';
+    final e = await _authCall(http.put(Uri.parse('$_sbUrl/auth/v1/user'), headers: _h(), body: jsonEncode({'email': email, 'password': pw})), p, save: false);
+    if (e == null) await p.setString('acct_email', email);
+    return e;
+  }
+  static Future<String?> signInPassword(String email, String pw) async {
+    final p = await SharedPreferences.getInstance();
+    final e = await _authCall(http.post(Uri.parse('$_sbUrl/auth/v1/token?grant_type=password'), headers: _h(false), body: jsonEncode({'email': email, 'password': pw})), p);
+    if (e == null) await p.setString('acct_email', email);
+    return e;
+  }
+  static Future<String?> sendResetCode(String email) async {
+    final p = await SharedPreferences.getInstance();
+    return _authCall(http.post(Uri.parse('$_sbUrl/auth/v1/recover'), headers: _h(false), body: jsonEncode({'email': email})), p, save: false);
+  }
+  /// Checks the emailed code, signs in, then sets the new password.
+  static Future<String?> resetWithCode(String email, String code, String newPw) async {
+    final p = await SharedPreferences.getInstance();
+    final e = await _authCall(http.post(Uri.parse('$_sbUrl/auth/v1/verify'), headers: _h(false), body: jsonEncode({'type': 'recovery', 'email': email, 'token': code})), p);
+    if (e != null) return e;
+    final e2 = await _authCall(http.put(Uri.parse('$_sbUrl/auth/v1/user'), headers: _h(), body: jsonEncode({'password': newPw})), p, save: false);
+    if (e2 == null) await p.setString('acct_email', email);
+    return e2;
+  }
+  static Future<void> signOut() async {
+    final p = await SharedPreferences.getInstance();
+    try { await http.post(Uri.parse('$_sbUrl/auth/v1/logout'), headers: _h()).timeout(const Duration(seconds: 10)); } catch (_) {}
+    _token = null; uid = null;
+    await p.remove('sb_rt'); await p.remove('acct_email'); await p.remove('auth_done');
+  }
+
   static void _save(SharedPreferences p, dynamic j) {
     _token = j['access_token'] as String?;
     uid = (j['user'] ?? {})['id'] as String?;
