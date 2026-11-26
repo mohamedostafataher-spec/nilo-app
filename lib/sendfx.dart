@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
+import 'world.dart' show Passport;
 
 /// The send sequence (about 4 seconds, tap to skip): the page settles, rolls up, a wax seal drops,
 /// a cord ties it, it lands on a felucca and sails off. Pure drawing, no assets.
@@ -45,6 +46,24 @@ class _SendSequenceState extends State<SendSequence> with SingleTickerProviderSt
 double _seg(double t, double a, double b) => ((t - a) / (b - a)).clamp(0.0, 1.0);
 double _ease(double x) => x * x * (3 - 2 * x);
 
+(Color, Color) _seal() {
+  switch (Passport.equipped('seal')) {
+    case 'seal_gold': return (const Color(0xFFD9A441), const Color(0xFF8A5A12));
+    case 'seal_teal': return (const Color(0xFF1F8A8A), const Color(0xFF0E4A4A));
+    case 'seal_violet': return (const Color(0xFF7A5AA6), const Color(0xFF3A2160));
+    default: return (const Color(0xFFB3202A), const Color(0xFF7A1119));
+  }
+}
+
+Color _sail() {
+  switch (Passport.equipped('sail')) {
+    case 'sail_saffron': return const Color(0xFFF2B33D);
+    case 'sail_turquoise': return const Color(0xFF5CC8C0);
+    case 'sail_rose': return const Color(0xFFE88AA0);
+    default: return const Color(0xFFF2E8D0);
+  }
+}
+
 class _SendPainter extends CustomPainter {
   final double t;
   _SendPainter(this.t);
@@ -79,7 +98,7 @@ class _SendPainter extends CustomPainter {
     c.drawPath(hull, Paint()..color = kGreen.withOpacity(op)..style = PaintingStyle.stroke..strokeWidth = 2);
     c.drawLine(const Offset(-6, -6), const Offset(-6, -92), Paint()..color = const Color(0xFFD9C8A0).withOpacity(op)..strokeWidth = 3);
     final sailP = Path()..moveTo(-2, -90)..quadraticBezierTo(48 + sail * 8, -52, 52, -10)..lineTo(-2, -10)..close();
-    c.drawPath(sailP, Paint()..color = const Color(0xFFF2E8D0).withOpacity(op));
+    c.drawPath(sailP, Paint()..color = _sail().withOpacity(op));
     c.restore();
     // wake
     if (sail > 0) {
@@ -126,8 +145,8 @@ class _SendPainter extends CustomPainter {
     // wax seal
     if (seal > 0) {
       final k = seal < 0.6 ? 1.6 - seal / 0.6 * 0.7 : 0.9 + (seal - 0.6) / 0.4 * 0.1;
-      c.drawCircle(Offset.zero, 21 * k, Paint()..color = const Color(0xFFB3202A));
-      c.drawCircle(Offset.zero, 21 * k, Paint()..color = const Color(0xFF7A1119)..style = PaintingStyle.stroke..strokeWidth = 2.5);
+      c.drawCircle(Offset.zero, 21 * k, Paint()..color = _seal().$1);
+      c.drawCircle(Offset.zero, 21 * k, Paint()..color = _seal().$2..style = PaintingStyle.stroke..strokeWidth = 2.5);
       final tp = TextPainter(text: TextSpan(text: 'N', style: TextStyle(color: const Color(0xFFF2C66B), fontSize: 22 * k, fontWeight: FontWeight.w900)), textDirection: TextDirection.ltr)..layout();
       tp.paint(c, Offset(-tp.width / 2, -tp.height / 2));
     }

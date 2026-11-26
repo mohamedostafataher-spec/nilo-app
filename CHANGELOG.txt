@@ -1,4 +1,5 @@
-New story feed: circles, masonry cards, New / Popular / Mine, profile card
-Real weather and real day/night on the Nile home (tap the chip to change city)
-New one-screen first run, floating nav bar, full-screen write page with send animation
-Smaller download size
+New Today page: moon phase, public holidays by country, on this day
+New Reeds and a cosmetics store: seal colours and felucca sails for your send animation
+Calm mode and a fixed reduce-motion switch
+New story feed, real weather and real day/night on the Nile home
+New first run, floating nav bar, full-screen write page with send animation

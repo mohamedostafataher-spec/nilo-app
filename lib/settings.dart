@@ -7,6 +7,7 @@ import 'bottles.dart' show Sb;
 import 'auth.dart';
 import 'extras.dart' show niloRoute;
 import 'home.dart' show TouristHome;
+import 'store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 const kPrivacy = '''Privacy Policy • سياسة الخصوصية
@@ -105,6 +106,7 @@ class _SettingsPageState extends State<SettingsPage> {
           value: Passport.flag('calm', false),
           onChanged: (v) => setState(() { Passport.setFlag('calm', v); Passport.setFlag('reduce_motion', v); }),
         ),
+        ListTile(leading: const Icon(Icons.storefront), title: Text('Store • المتجر  (${Passport.reeds} 🌿)'), subtitle: const Text('Spend Reeds on looks for your send animation'), onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const StorePage())); setState(() {}); }),
         const Divider(),
         const ListTile(leading: Icon(Icons.shield), title: Text('Papyrus & Stories safety'), subtitle: Text('18+ only (self-declared). No links or phone numbers. Report or block anyone. Content hides after reports. Meet only in public places.')),
         ListTile(leading: const Icon(Icons.lock), title: const Text('Privacy policy • الخصوصية'), onTap: () => _go(const TextDocPage('Privacy Policy', kPrivacy))),

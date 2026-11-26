@@ -326,6 +326,7 @@ class _StoryComposerState extends State<StoryComposer> {
         if (!await Sb.upload(path, bytes!, mime!)) throw Exception('upload');
       }
       await Sb.post('stories', {'author': Sb.uid, 'nick': widget.nick, 'country': Passport.country, 'body': t, 'mood': mood, if (path != null) 'media_path': path, if (path != null) 'media_type': mime == 'video/mp4' ? 'video' : 'image'});
+      Passport.addReeds(5);
       if (mounted) Navigator.pop(context, true);
     } catch (e) {
       if (mounted) { setState(() { busy = false; status = ''; }); toast(context, '$e'.contains('limit') ? 'Daily limit reached: 3 photo/clip stories and 6 stories per day.' : 'Could not post. Try again.'); }

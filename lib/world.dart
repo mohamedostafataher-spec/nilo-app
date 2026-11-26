@@ -73,6 +73,14 @@ class Passport {
   static String get country => _p.getString('w_country') ?? '';
   static set country(String v) => _p.setString('w_country', v);
   static int get xp => _p.getInt('w_xp') ?? 0;
+  /// Reeds: earned only by real actions on this phone (sending a papyrus, posting a story, a daily visit, a solved puzzle, a finished chapter). Cosmetics only, never bought with money.
+  static int get reeds => _p.getInt('w_reeds') ?? 0;
+  static void addReeds(int n) => _p.setInt('w_reeds', reeds + n);
+  static bool spendReeds(int n) { if (reeds < n) return false; _p.setInt('w_reeds', reeds - n); return true; }
+  static List<String> get owned => _p.getStringList('w_owned') ?? [];
+  static void own(String id) { final l = owned; if (!l.contains(id)) { l.add(id); _p.setStringList('w_owned', l); } }
+  static String equipped(String slot) => _p.getString('w_eq_$slot') ?? '';
+  static void equip(String slot, String id) => _p.setString('w_eq_$slot', id);
   static int get streak => _p.getInt('w_streak') ?? 0;
   static String get nickname => _p.getString('w_nick') ?? '';
   static set nickname(String v) => _p.setString('w_nick', v);
@@ -94,7 +102,7 @@ class Passport {
     final yd = '${y.year}-${y.month}-${y.day}';
     _p.setInt('w_streak', last == yd ? streak + 1 : 1);
     _p.setString('w_last', _today());
-    addXp(5);
+    addXp(5); addReeds(5);
   }
   /// Daily batch: 10 papyri to catch and 10 ink to send, renewed at 12:00 local time (checked when the app opens).
   static String _noonKey() { final d = DateTime.now().subtract(const Duration(hours: 12)); return '${d.year}-${d.month}-${d.day}'; }
@@ -107,12 +115,12 @@ class Passport {
   static void addInk(int n) { _p.setInt('w_ink', ink + n); }
   static bool useCatch() { if (catchesLeft <= 0) return false; _p.setInt('w_catch', catchesLeft - 1); return true; }
   static bool get puzzleDone => _p.getString('w_puz') == _today();
-  static void puzzleSolved() { _p.setString('w_puz', _today()); addXp(15); addInk(3); addStamp('puzzle-${_today()}'); }
+  static void puzzleSolved() { _p.setString('w_puz', _today()); addXp(15); addReeds(5); addInk(3); addStamp('puzzle-${_today()}'); }
   static int get papyri => _p.getInt('w_sent') ?? 0;
-  static void papyrusSent() { _p.setInt('w_sent', papyri + 1); addXp(10); }
+  static void papyrusSent() { _p.setInt('w_sent', papyri + 1); addXp(10); addReeds(10); }
   /// Chapters open one per day, or faster with papyri sent.
   static int get unlocked => math.min(kChapters.length, 1 + math.max(_dayNum() - startDay, papyri));
-  static void finishChapter(int i) { if (i >= chapter) { _p.setInt('w_chapter', i + 1); addStamp('chapter-$i'); addXp(25); } }
+  static void finishChapter(int i) { if (i >= chapter) { _p.setInt('w_chapter', i + 1); addStamp('chapter-$i'); addXp(25); addReeds(10); } }
 }
 
 /// Detects the country on the device. Asks for approximate (coarse) location, turns it into a country code with Android's geocoder,
