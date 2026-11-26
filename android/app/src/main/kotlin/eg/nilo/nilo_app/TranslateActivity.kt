@@ -94,7 +94,10 @@ class TranslateActivity : Activity() {
         }
         val cl = Button(this); cl.text = "إغلاق"
         cl.setOnClickListener { finish() }
+        val ac = Button(this); ac.text = "فعّل الزر العايم"
+        ac.setOnClickListener { startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)) }
         row.addView(cp); row.addView(op); row.addView(cl)
+        root.addView(ac)
         root.addView(row)
         setContentView(root)
         if (clipMode) { res.text = "بقرا الحافظة…"; }
