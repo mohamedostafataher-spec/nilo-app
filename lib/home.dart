@@ -9,6 +9,7 @@ import 'net.dart';
 import 'bottles.dart';
 import 'screens.dart';
 import 'stories.dart';
+import 'navbar.dart';
 
 /// Main shell: one living Nile scene + simple bottom nav.
 class TouristHome extends StatefulWidget {
@@ -19,50 +20,65 @@ class TouristHome extends StatefulWidget {
 
 class _TouristHomeState extends State<TouristHome> {
   int tab = 0;
-  @override
-  Widget build(BuildContext context) {
-    final pages = <Widget>[
-      const NileScene(),
-      const MessagesTab(),
-      const StoryPage(),
-      const StoriesTab(),
-      const PassportPage(),
-    ];
-    return Scaffold(
-      backgroundColor: kBg,
-      body: pages[tab],
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(color: Color(0xFF0B1F33), border: Border(top: BorderSide(color: Color(0x33D9A441)))),
-        child: SafeArea(
-          top: false,
-          child: SizedBox(
-            height: 62,
+  int hub = 0; // inside the stories hub: 0 = حكاية (story), 1 = قصص (stories)
+
+  Future<void> _send() async {
+    final p = await SharedPreferences.getInstance();
+    final joined = (p.getBool('b_age') ?? false) && (p.getString('b_nick') ?? '').isNotEmpty;
+    if (!mounted) return;
+    if (!joined) { Navigator.of(context).push(niloRoute(const BottlesPage())); return; }
+    final lang = p.getString('b_lang') ?? 'en';
+    final ok = await Sb.signIn();
+    if (!mounted) return;
+    if (!ok) { toast(context, 'No connection. Try again.'); return; }
+    Navigator.of(context).push(niloRoute(ThrowPage(lang: lang)));
+  }
+
+  Widget _hub() => Column(children: [
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
             child: Row(children: [
-              for (final e in const [
-                [Icons.sailing, 'النيل'],
-                [Icons.chat_bubble_outline, 'رسايل'],
-                [Icons.menu_book_outlined, 'حكاية'],
-                [Icons.auto_awesome_motion, 'قصص'],
-                [Icons.badge_outlined, 'جواز'],
-              ].asMap().entries)
+              for (final e in const [[0, 'حكاية'], [1, 'قصص']].map((x) => x))
                 Expanded(
-                  child: InkWell(
-                    onTap: () { HapticFeedback.selectionClick(); setState(() => tab = e.key); },
-                    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        decoration: BoxDecoration(color: tab == e.key ? kGreen.withOpacity(0.22) : Colors.transparent, borderRadius: BorderRadius.circular(16)),
-                        child: Icon(e.value[0] as IconData, size: 24, color: tab == e.key ? kGreen : Colors.white54),
+                  child: GestureDetector(
+                    onTap: () => setState(() => hub = e[0] as int),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        color: hub == e[0] ? kGreen.withOpacity(0.22) : Colors.white10,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: hub == e[0] ? kGreen : Colors.transparent),
                       ),
-                      Text(e.value[1] as String, style: TextStyle(fontSize: 11, color: tab == e.key ? kGreen : Colors.white54)),
-                    ]),
+                      child: Center(child: Text(e[1] as String, style: TextStyle(fontWeight: FontWeight.w700, color: hub == e[0] ? kGreen : Colors.white60))),
+                    ),
                   ),
                 ),
             ]),
           ),
         ),
+        Expanded(child: hub == 0 ? const StoryPage() : const StoriesTab()),
+      ]);
+
+  @override
+  Widget build(BuildContext context) {
+    final pages = <Widget>[
+      const NileScene(),
+      const MessagesTab(),
+      _hub(),
+      const PassportPage(),
+    ];
+    return Scaffold(
+      backgroundColor: kBg,
+      extendBody: false,
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 260),
+        child: KeyedSubtree(key: ValueKey(tab), child: pages[tab]),
       ),
+      bottomNavigationBar: NiloNavBar(index: tab, onTab: (i) => setState(() => tab = i), onSend: _send),
     );
   }
 }
