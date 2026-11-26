@@ -22,7 +22,7 @@ class _TouristHomeState extends State<TouristHome> {
   Widget build(BuildContext context) {
     final pages = <Widget>[
       const NileScene(),
-      const BottlesPage(),
+      const MessagesTab(),
       const StoryPage(),
       const ToolsPage(),
       const PassportPage(),
@@ -38,11 +38,11 @@ class _TouristHomeState extends State<TouristHome> {
             height: 62,
             child: Row(children: [
               for (final e in const [
-                [Icons.sailing, 'Nile'],
-                [Icons.mark_email_unread_outlined, 'Papyri'],
-                [Icons.menu_book_outlined, 'Story'],
-                [Icons.translate, 'Tools'],
-                [Icons.badge_outlined, 'Passport'],
+                [Icons.sailing, 'النيل'],
+                [Icons.chat_bubble_outline, 'رسايل'],
+                [Icons.menu_book_outlined, 'حكاية'],
+                [Icons.public, 'العالم'],
+                [Icons.badge_outlined, 'جواز'],
               ].asMap().entries)
                 Expanded(
                   child: InkWell(
@@ -281,4 +281,29 @@ class _ScenePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ScenePainter o) => o.t != t;
+}
+
+/// Messages tab: real inbox when joined, otherwise the join gate.
+class MessagesTab extends StatefulWidget {
+  const MessagesTab({super.key});
+  @override
+  State<MessagesTab> createState() => _MessagesTabState();
+}
+
+class _MessagesTabState extends State<MessagesTab> {
+  Widget? page;
+  @override
+  void initState() { super.initState(); _go(); }
+  Future<void> _go() async {
+    final p = await SharedPreferences.getInstance();
+    final joined = (p.getBool('b_age') ?? false) && (p.getString('b_nick') ?? '').isNotEmpty;
+    Widget w = const BottlesPage();
+    if (joined) {
+      final ok = await Sb.signIn();
+      if (ok) w = InboxPage(lang: p.getString('b_lang') ?? 'en');
+    }
+    if (mounted) setState(() => page = w);
+  }
+  @override
+  Widget build(BuildContext context) => page ?? const Scaffold(body: Center(child: CircularProgressIndicator()));
 }

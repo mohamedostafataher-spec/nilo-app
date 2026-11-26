@@ -65,9 +65,10 @@ if not tap_text('Get my passport') :
     pass
 tap_class('EditText'); adb('shell','input','text','Traveler'); adb('shell','input','keyevent','4'); time.sleep(1); tap_text('18 or older'); time.sleep(1); shot('first_run_4'); tap_text('Get my passport'); time.sleep(4); shot('home_with_world')
 time.sleep(5); shot('home_scene2')
-for t in ['Story','Passport']:
+tap_text('رسايل'); time.sleep(5); shot('tab_messages')
+for t in ['حكاية','جواز']:
     if tap_text(t): time.sleep(3); shot('tab_'+t)
-tap_text('Tools'); time.sleep(2); shot('tab_Tools'); tap_text('Translation hub'); time.sleep(2); shot('hub_translate'); back(); tap_text('Travel help hub'); time.sleep(2); shot('hub_travel'); back()
+tap_text('العالم'); time.sleep(2); shot('tab_Tools'); tap_text('Translation hub'); time.sleep(2); shot('hub_translate'); back(); tap_text('Travel help hub'); time.sleep(2); shot('hub_travel'); back()
 for tile in ['Translate', 'Phrasebook', 'Stay Safe', 'Places', 'Emergency', 'Official services', 'Floating button', 'Face to face', 'Saved']:
     if tap_text(tile):
         time.sleep(4); shot(tile.replace(' ', '_')); back(); time.sleep(1)
