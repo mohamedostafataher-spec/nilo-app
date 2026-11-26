@@ -63,7 +63,7 @@ shot('auth_signin')
 tap_text('Create an account'); time.sleep(1); shot('auth_signup'); tap_text('Back to sign in'); time.sleep(1)
 tap_text('Forgot password'); time.sleep(1); shot('auth_forgot'); tap_text('Back to sign in'); time.sleep(1)
 tap_text('Continue as guest'); time.sleep(3)
-time.sleep(10); shot('first_run')
+time.sleep(4); tap_text('Skip'); time.sleep(3); tap_text('Skip'); time.sleep(8); shot('first_run')
 import subprocess
 def dump(tag):
     o = subprocess.run('adb logcat -d | grep -E "FATAL|AndroidRuntime|flutter|Exception|Error" | tail -60', shell=True, capture_output=True, text=True).stdout
