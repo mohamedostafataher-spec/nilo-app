@@ -50,6 +50,14 @@ for _ in range(3):
     if any('Translate' in t or 'Phrasebook' in t for t,_,_ in nodes()): break
     tap_text('Start') or tap_text('Skip'); time.sleep(3)
 time.sleep(2); shot('home')
+tap_text('Pick your home'); time.sleep(2); shot('country_picker'); tap_text('Egypt'); time.sleep(2); shot('home_with_world')
+for t in ['Daily puzzle','Story 1','Passport']:
+    if tap_text(t):
+        time.sleep(3); shot(t.replace(' ','_'))
+        if t=='Story 1':
+            tap_text('Prologue'); time.sleep(2); shot('chapter')
+            back()
+        back(); time.sleep(1)
 open(OUT+'/labels.txt','w').write('\n'.join(t for t,_,_ in nodes()))
 adb('shell', 'input', 'swipe', '540', '1600', '540', '600'); time.sleep(1); shot('home_scrolled')
 adb('shell', 'input', 'swipe', '540', '600', '540', '1600'); time.sleep(1)
@@ -57,15 +65,15 @@ for tile in ['Translate', 'Phrasebook', 'Stay Safe', 'Places', 'Emergency', 'Off
     if tap_text(tile):
         time.sleep(4); shot(tile.replace(' ', '_')); back(); time.sleep(1)
 # Nile Bottles
-if tap_text('Nile Bottles'):
+if tap_text('Papyrus'):
     time.sleep(3); shot('bottles_gate')
     tap_class('EditText'); adb('shell', 'input', 'text', 'ShotBot'); adb('shell', 'input', 'keyevent', '4'); time.sleep(1)
     tap_text('18 or older'); time.sleep(1); shot('bottles_gate_filled')
-    tap_text('Enter'); time.sleep(6); shot('bottles_home')
-    if tap_text('Throw a bottle'):
+    tap_text('Enter'); time.sleep(6); shot('papyrus_home')
+    if tap_text('Send a papyrus'):
         time.sleep(2); shot('bottles_throw'); back()
-    if tap_text('Catch a bottle'):
+    if tap_text('Catch a papyrus'):
         time.sleep(2); shot('bottles_catch')
-        tap_text('Look for a bottle'); time.sleep(5); shot('bottles_catch_result'); back()
-    if tap_text('My bottles'):
+        tap_text('Look for a papyrus'); time.sleep(5); shot('bottles_catch_result'); back()
+    if tap_text('My papyri'):
         time.sleep(4); shot('bottles_inbox')
