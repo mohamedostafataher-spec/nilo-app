@@ -56,6 +56,15 @@ class TranslateActivity : Activity() {
                 }
             } catch (e: Exception) { src = "مقدرتش أفتح الفويس." }
         }
+        if (intent.getBooleanExtra("stop_capture", false)) {
+            val cp = AudioCaptureService.stopAndSave()
+            if (cp == null) src = "مفيش صوت اتسجل. ممكن التطبيق بيمنع تسجيل صوته، أو الفويس ماشتغلش."
+            else try {
+                val bytes = java.io.File(cp).readBytes()
+                if (bytes.size > 2_900_000) src = "التسجيل طويل. قصّره."
+                else { audioB64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP); audioMime = "audio/wav"; src = "🎙 صوت الجهاز" }
+            } catch (e: Exception) { src = "مقدرتش أقرا التسجيل." }
+        }
         val dp = resources.displayMetrics.density
         val pad = (16 * dp).toInt()
         val root = LinearLayout(this)
@@ -119,7 +128,7 @@ class TranslateActivity : Activity() {
         sp.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(p: AdapterView<*>?, v: View?, pos: Int, id: Long) {
                 if (src.any { it in '\u0600'..'\u06FF' }) getSharedPreferences("nilo_tr", Context.MODE_PRIVATE).edit().putString("out", codes[pos]).apply()
-                if (src.isNotEmpty() && (audioB64 != null || !src.startsWith("الفويس طويل") && !src.startsWith("مقدرتش"))) go(codes[pos])
+                if (src.isNotEmpty() && (audioB64 != null || !src.startsWith("الفويس طويل") && !src.startsWith("مقدرتش") && !src.startsWith("مفيش صوت") && !src.startsWith("التسجيل طويل"))) go(codes[pos])
             }
             override fun onNothingSelected(p: AdapterView<*>?) {}
         }
@@ -166,7 +175,7 @@ class TranslateActivity : Activity() {
                 val j = JSONObject(s)
                 out = j.optString("translation", "")
                 if (audioB64 != null && j.optString("original", "").isNotEmpty()) runOnUiThread { orig.text = j.optString("original") }
-                if (out.isEmpty()) note = j.optString("error", "الترجمة مش متاحة دلوقتي")
+                if (out.isEmpty()) note = j.optString("error", "الترجمة مش متاحة دلوقتي") + (if (audioB64 != null && audioMime == "audio/wav") " (لو التسجيل كان فاضي، ممكن التطبيق بيمنع تسجيل صوته)" else "")
                 else note = (j.optString("rom", "") + " " + j.optString("note", "")).trim()
             } catch (e: Exception) { note = "مفيش اتصال بالنت" }
             runOnUiThread {
