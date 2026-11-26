@@ -11,8 +11,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 void main() => runApp(const NiloApp());
 
-const kGreen = Color(0xFF1F9D6B);
-const kBg = Color(0xFF0E1A16);
+const kGreen = Color(0xFFD9A441);
+const kBg = Color(0xFF16191D);
 
 class NiloApp extends StatelessWidget {
   const NiloApp({super.key});
@@ -30,9 +30,9 @@ class NiloApp extends StatelessWidget {
 
 const kSite = 'https://nilo-eg.vercel.app';
 const kModes = [
-  ['chat', '💬', 'دردشة نيلو', 'اسأل واتكلم مع نيلو'],
-  ['sales', '📈', 'مبيعات', 'غرفة المبيعات والعملاء'],
-  ['tr', '🌐', 'ترجمة', 'ترجمة نص وفويس ومحادثة'],
+  ['chat', 'chat', 'دردشة نيلو', 'اسأل واتكلم مع نيلو'],
+  ['sales', 'sales', 'مبيعات', 'غرفة المبيعات والعملاء'],
+  ['tr', 'tr', 'ترجمة', 'ترجمة نص وفويس ومحادثة'],
 ];
 
 class ModeGate extends StatefulWidget {
@@ -79,9 +79,9 @@ class _ModeGateState extends State<ModeGate> {
           const SizedBox(height: 16),
           for (final m in kModes)
             Card(
-              color: mode == m[0] ? const Color(0xFF16352A) : const Color(0xFF14241D),
+              color: mode == m[0] ? const Color(0xFF2A2F36) : const Color(0xFF1F2328),
               child: ListTile(
-                leading: Text(m[1], style: const TextStyle(fontSize: 28)),
+                leading: Icon(m[1] == 'chat' ? Icons.chat_bubble_outline : m[1] == 'sales' ? Icons.show_chart : Icons.translate, size: 28, color: kGreen),
                 title: Text(m[2]),
                 subtitle: Text(m[3]),
                 trailing: mode == m[0] ? const Text('آخر اختيار', style: TextStyle(fontSize: 12, color: Colors.white54)) : null,
@@ -89,7 +89,7 @@ class _ModeGateState extends State<ModeGate> {
               ),
             ),
           const Spacer(),
-          const Center(child: Text('🇪🇬 تطبيق مصري خالص', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
+          const Center(child: Text('تطبيق مصري خالص', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600))),
           const Center(child: Text('صُنع بواسطة Mohamed Mostafa', style: TextStyle(fontSize: 13, color: Colors.white60))),
           const SizedBox(height: 2),
           const Center(child: Text('بيشتغل بنموذج Gemini المجاني. الترجمة الآلية ممكن تغلط.', style: TextStyle(fontSize: 11, color: Colors.white38))),
@@ -483,7 +483,7 @@ class _ChatPageState extends State<ChatPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: Drawer(
-        backgroundColor: const Color(0xFF0B1511),
+        backgroundColor: const Color(0xFF1F2328),
         child: SafeArea(
           child: Column(children: [
             Padding(
