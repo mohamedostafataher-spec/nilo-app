@@ -62,6 +62,15 @@ class _AuthPageState extends State<AuthPage> {
     }
     if (!mounted) return;
     if (r == null) { await _done(); return; }
+    final low = (r).toLowerCase();
+    if (mode == _Mode.signUp && (low.contains('already') && (low.contains('registered') || low.contains('exists')))) {
+      setState(() { busy = false; mode = _Mode.signIn; error = null; pw.clear(); info = L('This email already has an account. Sign in with your password. Forgot it? Use "Forgot password".'); });
+      return;
+    }
+    if (mode == _Mode.signIn && low.contains('invalid login')) {
+      setState(() { busy = false; error = L('Wrong email or password. If you never created an account with this email, tap "New here?".'); });
+      return;
+    }
     setState(() { busy = false; error = r; });
   }
 

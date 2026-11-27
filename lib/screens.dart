@@ -143,8 +143,8 @@ class ToolsPage extends StatelessWidget {
       ['Daily puzzle', 'لغز اليوم وكلمة اليوم', Icons.extension, [
         ['Daily puzzle', 'لغز اليوم وكلمة اليوم', Icons.extension, () => const PuzzlePage()],
       ]],
-      ['Chat & sales', 'دردشة نيلو', Icons.forum, [
-        ['Chat & sales', 'دردشة نيلو', Icons.forum, () => const ModeGate()],
+      ['Nilo chat', 'دردشة نيلو', Icons.forum, [
+        ['Nilo chat', 'دردشة نيلو', Icons.forum, () => const ModeGate()],
       ]],
     ];
     Widget sub(String title, List items) => Scaffold(
@@ -186,7 +186,7 @@ class ToolsPage extends StatelessWidget {
               ),
             ),
           const SizedBox(height: 10),
-          Text(L('الترجمة الآلية ممكن تغلط، راجع أي حاجة مهمة. مجاني، من غير حساب ولا إعلانات.\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa'), style: TextStyle(fontSize: 12, color: Colors.white54)),
+          Text(L('الترجمة الآلية ممكن تغلط، راجع أي حاجة مهمة. مجاني، من غير حساب ولا إعلانات.\nتطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa'), textAlign: TextAlign.center, textDirection: TextDirection.rtl, style: TextStyle(fontSize: 12, height: 1.5, color: Colors.white54)),
         ]),
       ]),
     );

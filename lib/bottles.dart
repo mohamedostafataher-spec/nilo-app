@@ -621,11 +621,40 @@ class _InboxPageState extends State<InboxPage> {
 
   Future<void> _load() async {
     try {
-      final r = await Sb.get('bottles?select=*&order=created_at.desc&limit=50');
+      final r = await Sb.get('bottles?select=*,replies(id,author)&order=created_at.desc&limit=50');
       if (mounted) setState(() { l = r as List; busy = false; });
     } catch (e) {
       if (mounted) setState(() { busy = false; err = '$e'; });
     }
+  }
+
+  String _ago(String? iso) {
+    final d = DateTime.tryParse(iso ?? '')?.toLocal();
+    if (d == null) return '';
+    final m = DateTime.now().difference(d).inMinutes;
+    if (m < 1) return L('just now');
+    if (m < 60) return '$m ${L('min ago')}';
+    if (m < 1440) return '${m ~/ 60} ${L('h ago')}';
+    return '${m ~/ 1440} ${L('d ago')}';
+  }
+
+  Widget _tile(Map b) {
+    final mine = b['author'] == Sb.uid;
+    final reps = ((b['replies'] ?? []) as List);
+    final theirs = reps.where((r) => (r as Map)['author'] != Sb.uid).length;
+    String st; Color col;
+    if (b['status'] == 'closed') { st = L('Closed'); col = Colors.white38; }
+    else if (theirs > 0) { st = '${L('Replied')} ($theirs)'; col = kGreen; }
+    else if (mine && b['catcher'] == null) { st = L('Floating: nobody caught it yet'); col = Colors.amberAccent; }
+    else if (mine) { st = L('Caught by someone'); col = Colors.lightBlueAccent; }
+    else { st = reps.isEmpty ? L('You caught it: write back') : L('You caught it'); col = Colors.lightBlueAccent; }
+    return ListTile(
+      leading: Icon(mine ? Icons.send : Icons.download, color: kGreen),
+      title: Text((b['body'] ?? '').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
+      subtitle: Text('${mine ? L('Sent by you') : L('Caught by you')} • ${_ago(b['created_at']?.toString())}${b['place'] != null ? ' • ${b['place']}' : ''}\n$st', style: TextStyle(color: col)),
+      isThreeLine: true,
+      onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => ThreadPage(bottle: Map<String, dynamic>.from(b), lang: widget.lang))); _load(); },
+    );
   }
 
   @override
@@ -637,15 +666,9 @@ class _InboxPageState extends State<InboxPage> {
                 ? Center(child: Text(L(err)))
                 : l.isEmpty
                     ? Center(child: Text(L('Nothing yet. Send or catch a papyrus.')))
-                    : ListView(children: [
-                        for (final b in l)
-                          ListTile(
-                            leading: Icon(b['author'] == Sb.uid ? Icons.send : Icons.download, color: kGreen),
-                            title: Text((b['body'] ?? '').toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
-                            subtitle: Text('${b['kind']}${b['place'] != null ? ' • ${b['place']}' : ''} • ${b['status']}'),
-                            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ThreadPage(bottle: Map<String, dynamic>.from(b as Map), lang: widget.lang))),
-                          ),
-                      ]),
+                    : RefreshIndicator(onRefresh: _load, child: ListView(physics: const AlwaysScrollableScrollPhysics(), children: [
+                        for (final b in l) _tile(b as Map),
+                      ])),
       );
 }
 
