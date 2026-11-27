@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final p = await SharedPreferences.getInstance();
     try { placed = Map<String, String>.from(jsonDecode(p.getString('home_slots') ?? '{}')); } catch (_) {}
     trees = p.getInt('focus_trees') ?? 0;
-    try { stamps = (jsonDecode(p.getString('globe_stamps') ?? '[]') as List).length; } catch (_) {}
+    stamps = (p.getStringList('globe_stamps') ?? <String>[]).length;
     if (mounted) setState(() {});
   }
 
