@@ -287,6 +287,13 @@ const List<List<Object>> kChapters = [
     'How will you carry this scroll forward?', ['Share it with a friend', 'Keep exploring alone']],
 ];
 
+/// The form your papyrus takes, by home country. Cosmetic only. Countries not listed keep the scroll.
+const Map<String, String> kPapyrusForms = {
+  'JP': '✈️', 'FR': '🪶', 'CA': '🍁', 'GB': '💌', 'US': '🦅', 'IT': '🍕', 'DE': '🥨', 'ES': '💃', 'BR': '⚽', 'IN': '🪔',
+  'CN': '🏮', 'KR': '🌸', 'MX': '🌮', 'TR': '🧿', 'EG': '📜', 'AU': '🦘', 'NL': '🌷', 'GR': '🏛️', 'RU': '🪆', 'SA': '🌴',
+};
+String papyrusForm(String cc) => kPapyrusForms[cc.toUpperCase()] ?? '📜';
+
 class Passport {
   static late SharedPreferences _p;
   static Future<void> init() async { _p = await SharedPreferences.getInstance(); }

@@ -212,7 +212,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
                       child: Text(L('بردية • Papyrus'), style: TextStyle(color: Color(0xFF3B2A12), fontWeight: FontWeight.w700, fontSize: 14)),
                     ),
                     const SizedBox(height: 2),
-                    Text(L('📜'), style: TextStyle(fontSize: 34)),
+                    Text(papyrusForm(Passport.country), style: const TextStyle(fontSize: 34)),
                   ]),
                 ),
               ));
