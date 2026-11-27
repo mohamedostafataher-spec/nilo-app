@@ -74,15 +74,19 @@ class _EarthPageState extends State<EarthPage> {
           mapController: _map,
           options: MapOptions(
             initialCenter: const LatLng(25, 25),
-            initialZoom: 2.3,
+            initialZoom: 2.0,
             minZoom: 1.5,
             maxZoom: layer == 1 ? 13 : (layer == 2 ? 8 : 9),
             backgroundColor: const Color(0xFF050E1A),
             interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
           ),
           children: [
+            if (layer == 0) TileLayer(
+              urlTemplate: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',
+              maxNativeZoom: 8, userAgentPackageName: 'app.nilo.nilo_app',
+            ),
             _tiles(),
-            if (night) PolygonLayer(polygons: [Polygon(points: _nightPolygon(), color: const Color(0x66000820), borderStrokeWidth: 0)]),
+            if (night) PolygonLayer(polygons: [Polygon(points: _nightPolygon(), color: const Color(0x99000820), borderStrokeWidth: 1.5, borderColor: const Color(0x88FFD27A))]),
           ],
         ),
         Positioned(
