@@ -1,3 +1,4 @@
+import 'gender.dart';
 import 'i18n.dart';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -156,6 +157,7 @@ class _StoriesTabState extends State<StoriesTab> {
       const SizedBox(height: 6),
       Text(_flag((s['country'] ?? '').toString()), style: const TextStyle(fontSize: 30)),
       Text((s['nick'] ?? '').toString(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+      FutureBuilder<dynamic>(future: Sb.rpc('get_profile', {'p_uid': a}), builder: (c, sn) { final g = (sn.data is List && (sn.data as List).isNotEmpty) ? ((sn.data as List).first as Map)['gender']?.toString() ?? '' : ''; return g.isEmpty ? const SizedBox.shrink() : Text(Gender.label(g), style: const TextStyle(color: Colors.white70, fontSize: 13)); }),
       const SizedBox(height: 4),
       Text('$mine ${mine == 1 ? 'story' : 'stories'} in the last 24 hours • حكايات آخر ٢٤ ساعة', style: const TextStyle(color: Colors.white70, fontSize: 12)),
       const SizedBox(height: 12),

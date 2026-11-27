@@ -1,4 +1,5 @@
 import 'health.dart';
+import 'gender.dart';
 import 'cache.dart';
 import 'i18n.dart';
 import 'dart:convert';
@@ -39,7 +40,7 @@ class _TouristHomeState extends State<TouristHome> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { Health.offerUpdate(context); Health.refreshUnread(); } });
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { Health.offerUpdate(context); Health.refreshUnread(); Gender.ensure(context); } });
   }
 
   Future<void> _send() async {

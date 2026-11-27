@@ -8,6 +8,7 @@ import 'main.dart';
 import 'world.dart' show Passport;
 import 'bottles.dart' show Sb;
 import 'screens.dart' show toast;
+import 'gender.dart';
 
 const kAvatars = ['🦊', '🐼', '🐯', '🦁', '🐸', '🐙', '🦉', '🐧', '🦄', '🐲', '🐨', '🐰', '🦋', '🐢', '🦒', '🐘', '🐬', '🦅', '🐝', '🐱', '🐶', '🐵', '🦜', '🐪'];
 const _bg = [Color(0xFFD9A441), Color(0xFF3FA796), Color(0xFF7B5EA7), Color(0xFFD1604D), Color(0xFF4B8BBE), Color(0xFF6BA368)];
@@ -43,7 +44,7 @@ class ProfileEditPage extends StatefulWidget {
 
 class _ProfileEditPageState extends State<ProfileEditPage> {
   final bio = TextEditingController(), nick = TextEditingController();
-  String avatar = '', path = '';
+  String avatar = '', path = '', gender = '';
   bool busy = false;
 
   @override
@@ -51,7 +52,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     super.initState();
     SharedPreferences.getInstance().then((p) {
       if (!mounted) return;
-      setState(() { avatar = p.getString('p_avatar') ?? ''; path = p.getString('p_avatar_path') ?? ''; bio.text = p.getString('p_bio') ?? ''; nick.text = Passport.nickname; });
+      setState(() { avatar = p.getString('p_avatar') ?? ''; path = p.getString('p_avatar_path') ?? ''; bio.text = p.getString('p_bio') ?? ''; nick.text = Passport.nickname; gender = p.getString('p_gender') ?? ''; });
     });
   }
 
@@ -93,6 +94,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
     if (nick.text.trim().isNotEmpty) Passport.nickname = nick.text.trim();
     final p = await SharedPreferences.getInstance();
     await p.setString('p_avatar', avatar); await p.setString('p_avatar_path', path); await p.setString('p_bio', b);
+    if (gender.isNotEmpty) await Gender.set(gender);
     try {
       await Sb.rpc('set_profile', {'p_bio': b, 'p_avatar': avatar, 'p_avatar_path': path});
       if (mounted) { toast(context, 'Saved'); Navigator.pop(context, true); }
@@ -125,6 +127,10 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
           ]),
           const SizedBox(height: 18),
           TextField(controller: nick, maxLength: 20, decoration: InputDecoration(labelText: L('Display name • الاسم'), hintText: L('No real name needed'), border: const OutlineInputBorder())),
+          const SizedBox(height: 12),
+          Text(L('You are • أنت'), style: const TextStyle(fontWeight: FontWeight.w700)),
+          const SizedBox(height: 6),
+          SegmentedButton<String>(segments: [ButtonSegment(value: 'm', label: Text(L('Male • ذكر'))), ButtonSegment(value: 'f', label: Text(L('Female • أنثى')))], selected: gender.isEmpty ? <String>{} : {gender}, emptySelectionAllowed: true, onSelectionChanged: (v) => setState(() => gender = v.isEmpty ? '' : v.first)),
           const SizedBox(height: 12),
           TextField(controller: bio, maxLength: 160, maxLines: 3, decoration: InputDecoration(labelText: L('About you (optional)'), hintText: L('A line about you. No links or phone numbers.'), border: const OutlineInputBorder())),
           const SizedBox(height: 8),

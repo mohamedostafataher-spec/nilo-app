@@ -1,3 +1,4 @@
+import 'gender.dart';
 import 'journey.dart';
 import 'health.dart';
 import 'dart:async';
@@ -945,7 +946,7 @@ class _ThreadPageState extends State<ThreadPage> {
     final closed = b['status'] == 'closed';
     final waiting = b['catcher'] == null && b['author'] == Sb.uid;
     return Scaffold(
-      appBar: AppBar(title: Row(children: [if (_prof.isNotEmpty) Padding(padding: const EdgeInsets.only(right: 10), child: AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 34)), Flexible(child: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus', overflow: TextOverflow.ellipsis))]), backgroundColor: kBg, actions: [
+      appBar: AppBar(title: Row(children: [if (_prof.isNotEmpty) Padding(padding: const EdgeInsets.only(right: 10), child: AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 34)), Flexible(child: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus', overflow: TextOverflow.ellipsis)), if ((_prof['gender'] ?? '').toString().isNotEmpty) Padding(padding: const EdgeInsets.only(left: 8), child: Text(Gender.icon(_prof['gender'].toString()), style: const TextStyle(fontSize: 18)))]), backgroundColor: kBg, actions: [
         if (b['author'] == Sb.uid) IconButton(icon: const Icon(Icons.delete_outline), tooltip: L('Delete'), onPressed: _deleteMine),
         IconButton(icon: Icon(Icons.translate, color: auto ? kGreen : Colors.white54), tooltip: L('Language bridge'), onPressed: _toggleAuto),
         IconButton(icon: const Icon(Icons.public), tooltip: L('Journey'), onPressed: _journey),

@@ -99,7 +99,9 @@ class _VrPageState extends State<VrPage> {
       final three = await rootBundle.loadString('assets/vr/three.min.js');
       final lang = Ui.rtl ? 'ar' : 'en';
       final sp = await SharedPreferences.getInstance();
-      final av = sp.getString('vr_avatar') ?? '{}';
+      var av = sp.getString('vr_avatar') ?? '{}';
+      final gnd = sp.getString('p_gender') ?? '';
+      if (gnd.isNotEmpty) { try { final m = Map<String, dynamic>.from(jsonDecode(av) as Map); m['bd'] = gnd == 'f' ? 1 : 0; if (gnd != 'f') m['hj'] = 0; av = jsonEncode(m); } catch (_) {} }
       final facePath = sp.getString('p_avatar_path') ?? '';
       final mp = await _mpConfig(sp, facePath);
       final texd = <String, String>{};
@@ -123,7 +125,7 @@ class _VrPageState extends State<VrPage> {
           gald.add({'d': 'data:image/jpeg;base64,$d', 'en': '${m['en']}', 'ar': '${m['ar']}', 'by': '${m['by']}', 'lic': '${m['lic']}'});
         }
       } catch (_) {}
-      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)};window.MODD=${jsonEncode(modd)};window.GALD=${jsonEncode(gald)};window.GAL_ON=false;window.HUMD=$humd;window.HUMDF=$humf</script><script>$three</script>');
+      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)};window.MODD=${jsonEncode(modd)};window.GALD=${jsonEncode(gald)};window.GAL_ON=false;window.GLOCK=${gnd.isNotEmpty ? 1 : 0};window.HUMD=$humd;window.HUMDF=$humf</script><script>$three</script>');
       html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}&mp=${Uri.encodeQueryComponent(mp)}')");
       await wc.loadHtmlString(html, baseUrl: 'https://nilo-dl.vercel.app/');
       _face(facePath);
