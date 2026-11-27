@@ -60,7 +60,7 @@ class _StoriesTabState extends State<StoriesTab> {
       if (!await Sb.signIn()) throw Exception('No connection');
       _cleanup();
       final since = DateTime.now().toUtc().subtract(const Duration(hours: 24)).toIso8601String();
-      final r = await Sb.get('stories?select=*,story_reactions(emoji,user_id),story_comments(id)&created_at=gte.$since&order=created_at.desc&limit=60');
+      final r = await Sb.get('stories?select=*,story_reactions(emoji,user_id),story_comments(id)&created_at=gte.$since&order=created_at.desc&limit=30');
       l = r as List;
     } catch (e) {
       err = 'Could not load stories. Check your connection.';
@@ -236,7 +236,7 @@ class _StoriesTabState extends State<StoriesTab> {
         ])),
         const SizedBox(height: 8),
         if (items.isEmpty)
-          Padding(padding: EdgeInsets.all(30), child: Text(L('Nothing here yet.'), textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)))
+          Padding(padding: EdgeInsets.all(30), child: Text(filter == 2 ? L('You have not posted a story yet. Tap + to share a moment from your trip. It vanishes after 24 hours.') : L('No stories yet. Be the first to share a moment from where you are. It vanishes after 24 hours.'), textAlign: TextAlign.center, style: TextStyle(color: Colors.white70, height: 1.5)))
         else
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Column(children: left))),
@@ -290,6 +290,7 @@ class _StoryComposerState extends State<StoryComposer> {
   @override
   void initState() {
     super.initState();
+    Sb.gateOpen(context);
     Sb.rpc('storage_ok').then((v) { if (mounted) setState(() => mediaOk = v == true); }).catchError((_) {});
   }
 

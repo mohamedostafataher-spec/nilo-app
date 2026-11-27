@@ -1,3 +1,4 @@
+import 'cache.dart';
 import 'i18n.dart';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -44,7 +45,7 @@ class _TodayPageState extends State<TodayPage> {
   Future<void> _hol() async {
     setState(() { holDone = false; holErr = false; });
     try {
-      final r = await http.get(Uri.parse('https://date.nager.at/api/v3/NextPublicHolidays/$cc')).timeout(const Duration(seconds: 12));
+      final r = await cachedGet('https://date.nager.at/api/v3/NextPublicHolidays/$cc', 360);
       final l = jsonDecode(r.body) as List;
       hol = l.take(5).map((e) => Map<String, dynamic>.from(e as Map)).toList();
     } catch (_) { holErr = true; }
@@ -55,7 +56,7 @@ class _TodayPageState extends State<TodayPage> {
     try {
       final n = DateTime.now();
       final mm = n.month.toString().padLeft(2, '0'), dd = n.day.toString().padLeft(2, '0');
-      final r = await http.get(Uri.parse('https://api.wikimedia.org/feed/v1/wikipedia/en/onthisday/events/$mm/$dd'), headers: {'User-Agent': 'Nilo/1.5 (mohamedostafataher@gmail.com)'}).timeout(const Duration(seconds: 12));
+      final r = await cachedGet('https://api.wikimedia.org/feed/v1/wikipedia/en/onthisday/events/$mm/$dd', 720, headers: {'User-Agent': 'Nilo/1.5 (mohamedostafataher@gmail.com)'});
       final l = (jsonDecode(utf8.decode(r.bodyBytes)) as Map)['events'] as List;
       final out = <String>[];
       for (final e in l) {

@@ -1,3 +1,4 @@
+import 'cache.dart';
 import 'i18n.dart';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -121,7 +122,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
   Future<void> _weather() async {
     final c = _cities[_city];
     try {
-      final r = await http.get(Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=${c[2]}&longitude=${c[3]}&current=temperature_2m,weather_code,is_day&timezone=Africa%2FCairo')).timeout(const Duration(seconds: 10));
+      final r = await cachedGet('https://api.open-meteo.com/v1/forecast?latitude=${c[2]}&longitude=${c[3]}&current=temperature_2m,weather_code,is_day&timezone=Africa%2FCairo', 30, timeoutSec: 10);
       final cur = (jsonDecode(r.body) as Map)['current'] as Map;
       final day = (cur['is_day'] as num).toInt();
       final t = DateTime.now();
@@ -175,7 +176,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
     return Stack(children: [
       Positioned.fill(
         child: RepaintBoundary(
-          child: AnimatedBuilder(animation: _c, builder: (_, __) => CustomPaint(painter: _ScenePainter(_c.value, night))),
+          child: RepaintBoundary(child: AnimatedBuilder(animation: _c, builder: (_, __) => CustomPaint(painter: _ScenePainter(_c.value, night)))),
         ),
       ),
       // floating papyri with flag + country
@@ -299,7 +300,7 @@ class _ScenePainter extends CustomPainter {
         : const [Color(0xFF3F4E86), Color(0xFFE08A5B), Color(0xFFFFD58A)];
     canvas.drawRect(Rect.fromLTWH(0, 0, w, horizon + 2), Paint()..shader = LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: sky).createShader(Rect.fromLTWH(0, 0, w, horizon)));
     if (night) {
-      for (var i = 0; i < 40; i++) {
+      for (var i = 0; i < 22; i++) {
         final tw = 0.4 + 0.6 * ((math.sin(t * 4 * math.pi + i) + 1) / 2);
         canvas.drawCircle(Offset((i * 37 % 100) / 100 * w, (i * 61 % 100) / 100 * horizon), 0.8 + (i % 3) * 0.4, Paint()..color = Colors.white.withOpacity(0.55 * tw));
       }

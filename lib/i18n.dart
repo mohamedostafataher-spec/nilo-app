@@ -66,6 +66,8 @@ String L(String s) {
 }
 
 const kPairs = <List<String>>[
+  [r'''You have not posted a story yet. Tap + to share a moment from your trip. It vanishes after 24 hours.''', r'''لسه منزلتش حكاية. دوس + وشارك لحظة من رحلتك. بتختفي بعد 24 ساعة.'''],
+  [r'''No stories yet. Be the first to share a moment from where you are. It vanishes after 24 hours.''', r'''مفيش حكايات لسه. كن أول واحد يشارك لحظة من مكانه. بتختفي بعد 24 ساعة.'''],
   [r'''just now''', r'''دلوقتي'''],
   [r'''min ago''', r'''دقيقة'''],
   [r'''h ago''', r'''ساعة'''],

@@ -48,7 +48,9 @@ class Sb {
     return ok;
   }
 
+  static DateTime? _tokAt;
   static Future<bool> _signIn0() async {
+    if (_token != null && uid != null && _tokAt != null && DateTime.now().difference(_tokAt!).inMinutes < 45) return true;
     final p = await SharedPreferences.getInstance();
     final rt = p.getString('sb_rt');
     if (rt != null) {
@@ -142,6 +144,21 @@ class Sb {
     }
     return true;
   }
+  /// Call from a write screen's initState: guests are asked before they type anything.
+  static void gateOpen(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!await loadGuest() || !context.mounted) return;
+      final go = await showDialog<bool>(context: context, barrierDismissible: false, builder: (c) => AlertDialog(
+        title: Text(L('Create a free account')),
+        content: Text(L('Guests can browse and translate. To post, react, comment or send papyri you need a free account. It also keeps your papyri if you change phone.')),
+        actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text(L('Not now'))), FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(L('Create account')))],
+      ));
+      if (!context.mounted) return;
+      if (go == true) { Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => AuthPage(next: const TouristHome()))); }
+      else { Navigator.of(context).pop(); }
+    });
+  }
+
   /// Deletes the account and everything tied to it on the server, then clears this phone.
   static Future<String?> deleteAccount() async {
     try {
@@ -175,11 +192,12 @@ class Sb {
   static Future<void> signOut() async {
     final p = await SharedPreferences.getInstance();
     try { await http.post(Uri.parse('$_sbUrl/auth/v1/logout'), headers: _h()).timeout(const Duration(seconds: 10)); } catch (_) {}
-    _token = null; uid = null;
+    _token = null; uid = null; _tokAt = null;
     await p.remove('sb_rt'); await p.remove('acct_email'); await p.remove('auth_done');
   }
 
   static void _save(SharedPreferences p, dynamic j) {
+    _tokAt = DateTime.now();
     _token = j['access_token'] as String?;
     uid = (j['user'] ?? {})['id'] as String?;
     final rt = j['refresh_token'] as String?;
@@ -418,6 +436,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    Sb.gateOpen(context);
     SharedPreferences.getInstance().then((p) async {
       if (!(p.getBool('rules_seen') ?? false)) {
         await p.setBool('rules_seen', true);
