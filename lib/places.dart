@@ -77,7 +77,7 @@ class _PlacesOfPageState extends State<PlacesOfPage> {
               title: Text(Ui.rtl && it['ar']!.isNotEmpty ? it['ar']! : it['en']!),
               subtitle: Ui.rtl && it['ar']!.isNotEmpty ? Text(it['en']!, style: const TextStyle(fontSize: 11)) : null,
               trailing: it['url']!.isEmpty ? null : const Icon(Icons.open_in_new, size: 18, color: kGreen),
-              onTap: it['url']!.isEmpty ? null : () => openUrl(it['url']!),
+              onTap: it['url']!.isEmpty ? null : () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlacePage(title: Ui.rtl && it['ar']!.isNotEmpty ? it['ar']! : it['en']!, url: it['url']!))),
             ),
           ),
         const SizedBox(height: 12),
@@ -85,4 +85,52 @@ class _PlacesOfPageState extends State<PlacesOfPage> {
       ]),
     );
   }
+}
+
+/// One place: the Wikipedia summary (text CC BY-SA 4.0) and its lead image, loaded live. Nothing is stored.
+/// Image licences differ per file, so the page names Wikimedia Commons and links to the article for the author and licence.
+class PlacePage extends StatefulWidget {
+  final String title, url;
+  const PlacePage({super.key, required this.title, required this.url});
+  @override
+  State<PlacePage> createState() => _PlacePageState();
+}
+
+class _PlacePageState extends State<PlacePage> {
+  bool busy = true;
+  String text = '', img = '', err = '';
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    try {
+      final t = Uri.parse(widget.url).pathSegments.last;
+      final r = await http.get(Uri.https('en.wikipedia.org', '/api/rest_v1/page/summary/$t'), headers: {'User-Agent': 'Nilo/1.5 (mohamedostafataher@gmail.com)'}).timeout(const Duration(seconds: 15));
+      if (r.statusCode != 200) throw Exception('HTTP ${r.statusCode}');
+      final j = jsonDecode(utf8.decode(r.bodyBytes)) as Map;
+      text = (j['extract'] ?? '').toString();
+      img = ((j['thumbnail'] as Map?)?['source'] ?? '').toString();
+      if (mounted) setState(() => busy = false);
+    } catch (_) {
+      if (mounted) setState(() { busy = false; err = L('Could not load. Check your connection.'); });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: Text(widget.title, maxLines: 1, overflow: TextOverflow.ellipsis), backgroundColor: kBg),
+        body: busy
+            ? const Center(child: CircularProgressIndicator())
+            : ListView(padding: const EdgeInsets.all(16), children: [
+                if (img.isNotEmpty) ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.network(img, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                const SizedBox(height: 12),
+                if (err.isNotEmpty) Text(err, style: const TextStyle(color: Colors.orangeAccent)),
+                if (text.isNotEmpty) Text(text, style: const TextStyle(fontSize: 16, height: 1.6)),
+                const SizedBox(height: 14),
+                FilledButton.icon(onPressed: () => openUrl(widget.url), icon: const Icon(Icons.open_in_new), label: Text(L('Read the full article on Wikipedia'))),
+                const SizedBox(height: 14),
+                Text(L('Text: Wikipedia (CC BY-SA 4.0), in English. Image: Wikimedia Commons; the author and licence are on the article page.'), style: const TextStyle(fontSize: 11, color: Colors.white38, height: 1.5)),
+              ]),
+      );
 }
