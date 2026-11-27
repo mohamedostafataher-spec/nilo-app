@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'dart:ui' show PlatformDispatcher;
+import 'package:http/http.dart' as http;
 import 'main.dart';
 import 'settings.dart';
 import 'journey.dart';
@@ -353,6 +354,8 @@ class Passport {
 
 /// Detects the country on the device. Asks for approximate (coarse) location, turns it into a country code with Android's geocoder,
 /// keeps ONLY the code and drops the coordinates. Falls back to the phone's region setting. Returns '' if nothing usable.
+String lastDetectSource = '';
+
 Future<String> detectCountry({required bool allowGps}) async {
   if (allowGps) {
     try {
@@ -362,15 +365,22 @@ Future<String> detectCountry({required bool allowGps}) async {
         final pos = await Geolocator.getCurrentPosition(locationSettings: const LocationSettings(accuracy: LocationAccuracy.low)).timeout(const Duration(seconds: 15));
         final pm = await placemarkFromCoordinates(pos.latitude, pos.longitude).timeout(const Duration(seconds: 10));
         final cc = pm.isNotEmpty ? (pm.first.isoCountryCode ?? '') : '';
-        if (cc.isNotEmpty) return cc.toUpperCase();
+        if (cc.isNotEmpty) { lastDetectSource = 'location'; return cc.toUpperCase(); }
       }
     } catch (_) {}
   }
   // Mobile network / SIM country first: it follows where the phone really is, unlike the language setting (en_US on many Egyptian phones).
   try {
     final r = await const MethodChannel('nilo/native').invokeMethod<String>('region');
-    if (r != null && r.length == 2) return r.toUpperCase();
+    if (r != null && r.length == 2) { lastDetectSource = 'network'; return r.toUpperCase(); }
   } catch (_) {}
+  // No SIM (wifi-only phone or tablet): the country of the internet connection. Only your IP reaches Cloudflare's public trace page; nothing is stored.
+  try {
+    final t = await http.get(Uri.parse('https://www.cloudflare.com/cdn-cgi/trace')).timeout(const Duration(seconds: 4));
+    final m = RegExp(r'^loc=([A-Z]{2})', multiLine: true).firstMatch(t.body);
+    if (m != null) { lastDetectSource = 'ip'; return m.group(1)!; }
+  } catch (_) {}
+  lastDetectSource = 'language';
   return PlatformDispatcher.instance.locale.countryCode?.toUpperCase() ?? '';
 }
 
@@ -949,10 +959,11 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
   bool busy = true, adult = false;
   String code = '';
   final nick = TextEditingController();
+  final nickF = FocusNode();
   @override
   void initState() { super.initState(); _auto(); }
   @override
-  void dispose() { _a.dispose(); nick.dispose(); super.dispose(); }
+  void dispose() { _a.dispose(); nick.dispose(); nickF.dispose(); super.dispose(); }
 
   /// Quiet detection from the mobile network / SIM, no permission and no location.
   Future<void> _auto() async {
@@ -988,7 +999,7 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
 
   void _finish() {
     if (code.isEmpty) { toast(context, 'Tap the flag to choose your country'); return; }
-    if (nick.text.trim().length < 2) { toast(context, 'Choose a nickname (2 to 20 letters)'); return; }
+    if (nick.text.trim().length < 2) { toast(context, 'Choose a nickname (2 to 20 letters)'); nickF.requestFocus(); return; }
     if (!adult) { toast(context, 'Please confirm you are 18 or older'); return; }
     Passport.country = code;
     Passport.addStamp('home-$code');
@@ -1022,12 +1033,13 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
                           Text(has ? 'Welcome from ${c![1]}' : 'Choose your country', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
                           Text(has ? 'أهلا بيك من ${c![2]}' : 'اختار بلدك', style: const TextStyle(fontSize: 15, color: Colors.white70)),
                           const SizedBox(height: 2),
+                          if (has) Text(L(lastDetectSource == 'network' ? 'Detected from your mobile network • من شبكة الموبايل' : lastDetectSource == 'ip' ? 'Detected from your internet connection • من الإنترنت' : lastDetectSource == 'location' ? 'Confirmed with your location • اتأكدت بالموقع' : 'Guessed from your phone language • من لغة الموبايل'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
                           Text(L('Not right? Tap to change • مش صح؟ اضغط'), style: TextStyle(fontSize: 12, color: kGreen)),
                         ]),
                 ),
                 const SizedBox(height: 22),
                 TextField(
-                  controller: nick, maxLength: 20, textAlign: TextAlign.center,
+                  controller: nick, focusNode: nickF, maxLength: 20, textAlign: TextAlign.center,
                   decoration: InputDecoration(border: OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(18))), hintText: L('Nickname, not your real name • اسم مستعار'), counterText: ''),
                 ),
                 const SizedBox(height: 12),
@@ -1040,7 +1052,7 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
                 ]),
                 const SizedBox(height: 14),
                 SizedBox(width: double.infinity, height: 52, child: FilledButton(onPressed: _finish, style: FilledButton.styleFrom(shape: StadiumBorder()), child: Text(L('Get my passport • استلم جوازك'), style: TextStyle(fontSize: 16)))),
-                TextButton(onPressed: busy ? null : _gps, child: Text(L('Detect with my location once • بالموقع مرة'), style: TextStyle(fontSize: 12, color: Colors.white54))),
+                TextButton(onPressed: busy ? null : _gps, child: Text(L('Confirm with my location once (country only, nothing saved) • أكد بالموقع مرة'), style: TextStyle(fontSize: 12, color: Colors.white54))),
               ]),
             ),
           ),
