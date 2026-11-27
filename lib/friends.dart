@@ -303,6 +303,23 @@ class _GroupsPageState extends State<GroupsPage> {
     _load();
   }
 
+  Future<void> _createEvent() async {
+    final t = name.text.trim();
+    if (t.length < 2) { toast(context, 'Write the event name first (for example: Match night).'); return; }
+    final b = niloBad(t);
+    if (b.isNotEmpty) { toast(context, b); return; }
+    final d = await showDatePicker(context: context, initialDate: DateTime.now().add(const Duration(days: 1)), firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 365)));
+    if (d == null || !mounted) return;
+    final tm = await showTimePicker(context: context, initialTime: const TimeOfDay(hour: 20, minute: 0));
+    if (tm == null) return;
+    final at = DateTime(d.year, d.month, d.day, tm.hour, tm.minute).toUtc().toIso8601String();
+    try {
+      final r = (await Sb.rpc('create_event_room', {'p_name': t, 'p_at': at})).toString();
+      if (r.isEmpty) { if (mounted) toast(context, 'Could not create the room.'); } else { name.clear(); if (mounted) toast(context, 'Event room created. Share its code. • اتعملت'); }
+    } catch (_) { if (mounted) toast(context, 'Could not create (max 5 rooms, no links or numbers).'); }
+    _load();
+  }
+
   Future<void> _join() async {
     final t = code.text.trim();
     if (t.isEmpty) return;
@@ -327,6 +344,7 @@ class _GroupsPageState extends State<GroupsPage> {
                   const SizedBox(width: 8),
                   FilledButton(onPressed: _create, child: Text(L('Create'))),
                 ]),
+                Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(onPressed: _createEvent, icon: const Icon(Icons.event, size: 18), label: Text(L('Event room with a date • غرفة حدث')))),
                 const SizedBox(height: 10),
                 Row(children: [
                   Expanded(child: TextField(controller: code, maxLength: 8, autocorrect: false, decoration: InputDecoration(counterText: '', hintText: L('Group code • كود المجموعة'), border: const OutlineInputBorder()))),
@@ -337,8 +355,8 @@ class _GroupsPageState extends State<GroupsPage> {
                 if (groups.isEmpty) Text(L('No groups yet.'), style: const TextStyle(color: Colors.white60)),
                 for (final g in groups)
                   Card(color: Colors.white10, child: ListTile(
-                    title: Text(g['name'].toString(), style: const TextStyle(fontWeight: FontWeight.w800)),
-                    subtitle: Text('${g['members']}/12  •  ${L('code')}: ${g['code']}'),
+                    title: Text('${g['event_at'] != null ? '📅 ' : ''}${g['name']}', style: const TextStyle(fontWeight: FontWeight.w800)),
+                    subtitle: Text('${g['members']}/12  •  ${L('code')}: ${g['code']}${g['event_at'] != null ? '  •  ${DateTime.parse(g['event_at'].toString()).toLocal().toString().substring(0, 16)}' : ''}'),
                     trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                       IconButton(icon: const Icon(Icons.share), onPressed: () => Share.share('Nilo group "${g['name']}" • code: ${g['code']} • https://nilo-dl.vercel.app')),
                       const Icon(Icons.chevron_right),
