@@ -86,19 +86,19 @@ def dump(tag):
 dump('first_run')
 adb('shell','input','tap','124','1484'); time.sleep(1); adb('shell','input','tap','540','1328'); time.sleep(1); adb('shell','input','text','Traveler'); time.sleep(1); adb('shell','input','keyevent','66'); time.sleep(2); shot('first_run_filled')
 adb('shell','input','tap','540','1640'); time.sleep(8); shot('home'); time.sleep(4); shot('home2')
-tap_any('رسايل','Messages'); time.sleep(4); shot('tab_messages')
+tap_any('رسايل','Messages'); time.sleep(12); shot('tab_messages')
 tap_any('حكاياتي','My stories'); time.sleep(4); shot('tab_story')
 tap_any('قصص','حكاياتي','My stories'); time.sleep(4); shot('tab_stories')
 tap_any('جواز','Passport'); time.sleep(4); shot('tab_passport')
 tap_any('النيل','Nile'); time.sleep(3)
-tap_any('ابعت بردية','Send papyrus'); time.sleep(5); shot('write_page'); tap_any('Not now'); time.sleep(2); shot('after_gate'); tap_any('Got it'); time.sleep(1)
+tap_any('ابعت بردية','Send papyrus'); time.sleep(5); shot('write_page'); tap_any('Not now') or adb('shell','input','tap','429','1398'); time.sleep(2); shot('after_gate'); tap_any('Got it'); time.sleep(1)
 tap_class('EditText'); adb('shell','input','text','Hello%sfrom%sEgypt'); time.sleep(1); shot('write_typed'); hide_kb(); time.sleep(1)
 tap_text('Send into the Nile'); 
 for i in range(1, 6):
     time.sleep(0.8); shot('send_%d' % i)
 time.sleep(6); shot('journey')
 dump('after_send')
-tap_any('قصص','حكاياتي','My stories'); time.sleep(5); shot('tab_stories'); tap_any('النيل','Nile'); time.sleep(2); tap_text('Tools'); time.sleep(2); shot('tab_Tools'); tap_text('Translation hub'); time.sleep(2); shot('hub_translate'); back(); tap_text('Travel help hub'); time.sleep(2); shot('hub_travel'); back()
+tap_any('قصص','حكاياتي','My stories'); time.sleep(5); shot('tab_stories'); tap_any('النيل','Nile'); time.sleep(2); adb('shell','input','tap','680','319'); time.sleep(3); shot('tab_Tools'); tap_text('Earth today'); time.sleep(12); shot('earth_a'); time.sleep(10); shot('earth_b'); back(); time.sleep(1); tap_text('Translation hub'); time.sleep(2); shot('hub_translate'); back(); tap_text('Travel help hub'); time.sleep(2); shot('hub_travel'); back()
 for tile in ['Earth today', 'Translate', 'Phrasebook', 'Stay Safe', 'Places', 'Emergency', 'Official services', 'Floating button', 'Face to face', 'Saved']:
     if tap_text(tile):
         time.sleep(4); shot(tile.replace(' ', '_')); back(); time.sleep(1)
