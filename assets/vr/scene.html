@@ -356,7 +356,7 @@ function city(x0,x1,z0,z1,n,hmin,hmax){const cs=['#d9c7a3','#cdb99a','#e2d4b6','
 function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.CylinderGeometry(.35,.5,h,6),new THREE.MeshLambertMaterial({color:0x6b5438}));tr.position.set(x,y+h/2,z);tr.rotation.z=(r2()-.5)*.2;S.add(tr);for(let i=0;i<8;i++){const l=new THREE.Mesh(new THREE.BoxGeometry(7,.15,1.1),new THREE.MeshLambertMaterial({color:0x4a7d34}));l.position.set(x,y+h,z);l.rotation.y=i*Math.PI/4;l.rotation.z=-.35;l.translateX(3.2);S.add(l)}}
  if(Q=='qaitbay'){S.position.z=250;LIMIT=190;
  sea('#1d6f95');
- const lm=new THREE.MeshLambertMaterial({color:0xc9b48c});const stm=new THREE.MeshLambertMaterial({map:stone('#c8b48a')});
+ const lm=new THREE.MeshLambertMaterial({color:0xc9b48c});const stm=new THREE.MeshLambertMaterial({map:stone('#c8b48a')});stm.userData.pbr='pyr';
  const isl=B(420,3,420,new THREE.MeshLambertMaterial({color:0x9c8f74}),0,0,-250);
  // Qaitbay citadel
  B(130,15,130,stm,0,9,-260);
@@ -408,7 +408,7 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  city(-700,700,60,260,60,25,60);
  }
  })();
- var camelsTick=()=>{};var START=[0,0,170],YAW=0;
+ var camelsTick=()=>{};var START=[0,0,SC==='qaitbay'?110:170],YAW=0;
  var introPath=(u)=>{const a=-1.2+u*1.2,r=380-u*210;return [Math.sin(a)*r,70-u*55,Math.cos(a)*r,0,25,0]};
 } else { buildGeneric(); }
 
@@ -626,6 +626,25 @@ function loop(now){requestAnimationFrame(loop);const dtr=(now-last)/1000;const d
  R.render(S,cam);
  labels.forEach(l=>{tmp.copy(l.p).project(cam);const d=cam.position.distanceTo(l.p);const vis=tmp.z<1&&Math.abs(tmp.x)<1.1&&mode==='walk'&&d<700;l.d.style.opacity=vis?1:0;l.d.style.transform=`translate(${(tmp.x*.5+.5)*innerWidth}px,${(-tmp.y*.5+.5)*innerHeight}px) translate(-50%,-50%)`});
 }
+
+// ===== ENGINE QUALITY LAYER (free tech only): PBR materials, sky-based image lighting, Poly Haven CC0 textures =====
+(function(){
+ const lt=k=>{if(!TEXD[k])return null;const t=new THREE.TextureLoader().load(TEXD[k]);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.anisotropy=Math.min(8,R.capabilities.getMaxAnisotropy());return t};
+ const cache={};const pb=(kind)=>{if(cache[kind])return cache[kind];const d=kind==='sand'?lt('psand'):lt('pstone'),n=kind==='sand'?lt('psandN'):lt('pstoneN');return cache[kind]={d,n}};
+ const toStd=(m,kind,rep)=>{const o={color:m.color,map:m.map,side:m.side,transparent:m.transparent,opacity:m.opacity,roughness:.93,metalness:0,fog:m.fog};
+  if(kind==='pyr'){const t=pb('stone');if(t.n){o.normalMap=t.n.clone();o.normalMap.needsUpdate=true;o.normalMap.wrapS=o.normalMap.wrapT=THREE.RepeatWrapping;if(rep)o.normalMap.repeat.set(rep[0]*.5,rep[1]*.5);o.normalScale=new THREE.Vector2(.8,.8)}}else if(kind){const t=pb(kind);if(t.d){o.map=t.d.clone();o.map.needsUpdate=true;o.map.wrapS=o.map.wrapT=THREE.RepeatWrapping;o.normalMap=t.n.clone();o.normalMap.needsUpdate=true;o.normalMap.wrapS=o.normalMap.wrapT=THREE.RepeatWrapping;if(rep){o.map.repeat.set(rep[0],rep[1]);o.normalMap.repeat.set(rep[0],rep[1])}o.color=new THREE.Color(kind==='sand'?0xcfae78:0xeadcc0);o.normalScale=new THREE.Vector2(1.1,1.1)}}
+  return new THREE.MeshStandardMaterial(o)};
+ S.traverse(o=>{if(!o.isMesh||!o.material||Array.isArray(o.material))return;const m=o.material;if(!m.isMeshLambertMaterial)return;
+  let kind=m.userData&&m.userData.pbr||null,rep=null;
+  if(m.map&&m.map===sandTex){kind='sand';rep=[o.geometry.type==='PlaneGeometry'&&o.geometry.parameters.width>1500?90:40,0];rep[1]=rep[0]}
+  else if(o.geometry.type==='ConeGeometry'&&o.geometry.parameters.radialSegments===4){kind='pyr';const p=o.geometry.parameters;rep=[p.radius*2/50,p.height/50]}
+  else if(kind==='stone'||kind==='pyr'){const b=(o.geometry.computeBoundingBox(),o.geometry.boundingBox);const w=Math.max(b.max.x-b.min.x,b.max.z-b.min.z);rep=[Math.max(1,w/40),Math.max(1,(b.max.y-b.min.y)/40)]}
+  o.material=toStd(m,kind,rep);o.receiveShadow=true;if(o.geometry.type!=='PlaneGeometry')o.castShadow=true});
+ // image-based lighting from the same sky gradient (reflections + soft ambient)
+ window.envRefresh=function(){try{const pm=new THREE.PMREMGenerator(R);const es=new THREE.Scene();es.add(new THREE.Mesh(new THREE.SphereGeometry(50,24,16),skyMat));const rt=pm.fromScene(es,0,.1,100);if(window._envRT)window._envRT.dispose();window._envRT=rt;S.environment=rt.texture;S.traverse(o=>{if(o.isMesh&&o.material&&o.material.isMeshStandardMaterial)o.material.envMapIntensity=.18});pm.dispose()}catch(e){console.log('JSERR env '+e)}};
+ envRefresh();
+ const _a=applyTod;applyTod=function(k){_a(k);envRefresh()};
+})();
 requestAnimationFrame(loop);
 </script>
 <script>

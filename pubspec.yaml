@@ -85,6 +85,10 @@ flutter:
     - assets/vr/tex/stoneg.jpg
     - assets/vr/tex/rock.jpg
     - assets/vr/tex/abu1.jpg
+    - assets/vr/tex/psand.jpg
+    - assets/vr/tex/psandN.jpg
+    - assets/vr/tex/pstone.jpg
+    - assets/vr/tex/pstoneN.jpg
     - assets/vr/models/ram.bin
     - assets/vr/gallery.json
     - assets/vr/gal/

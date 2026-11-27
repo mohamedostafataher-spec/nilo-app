@@ -103,7 +103,7 @@ class _VrPageState extends State<VrPage> {
       final facePath = sp.getString('p_avatar_path') ?? '';
       final mp = await _mpConfig(sp, facePath);
       final texd = <String, String>{};
-      for (final k in ['sand', 'grass', 'stone', 'stoneg', 'rock', 'abu1']) {
+      for (final k in ['sand', 'grass', 'stone', 'stoneg', 'rock', 'abu1', 'psand', 'psandN', 'pstone', 'pstoneN']) {
         try { texd[k] = 'data:image/jpeg;base64,${base64Encode((await rootBundle.load('assets/vr/tex/$k.jpg')).buffer.asUint8List())}'; } catch (_) {}
       }
       final modd = <String, String>{};
