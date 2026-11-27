@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -66,7 +68,8 @@ String vrColor(String cc) {
 /// It is NOT real photography and not a scan of the real place. Layout and sizes are approximate.
 class VrPage extends StatefulWidget {
   final String scene, title, biome, color;
-  const VrPage({super.key, required this.scene, required this.title, this.biome = 'green', this.color = 'd8c9a8'});
+  final double? lat, lon;
+  const VrPage({super.key, required this.scene, required this.title, this.biome = 'green', this.color = 'd8c9a8', this.lat, this.lon});
   @override
   State<VrPage> createState() => _VrPageState();
 }
@@ -103,10 +106,69 @@ class _VrPageState extends State<VrPage> {
       html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}&mp=${Uri.encodeQueryComponent(mp)}')");
       await wc.loadHtmlString(html, baseUrl: 'https://nilo-dl.vercel.app/');
       _face(facePath);
+      if (widget.scene == 'osm' && widget.lat != null) _osm();
       if (mounted) setState(() => ready = true);
     } catch (e) {
       if (mounted) setState(() => err = 'Could not start the 3D scene on this phone.');
     }
+  }
+
+  String osmStatus = '';
+
+  /// Real map data around the place from OpenStreetMap (Overpass API). Cached on the phone for 7 days.
+  Future<void> _osm() async {
+    final lat = widget.lat!, lon = widget.lon!;
+    try {
+      if (mounted) setState(() => osmStatus = L('Loading real streets and buildings... • بنحمّل الشوارع والمباني الحقيقية...'));
+      final dir = await getTemporaryDirectory();
+      final f = File('${dir.path}/osm_${lat.toStringAsFixed(3)}_${lon.toStringAsFixed(3)}.json');
+      String json = '';
+      if (await f.exists() && DateTime.now().difference(await f.lastModified()).inDays < 7) json = await f.readAsString();
+      if (json.isEmpty) {
+        final q = '[out:json][timeout:40][maxsize:20000000];(way["building"](around:350,$lat,$lon);way["highway"](around:350,$lat,$lon);way["natural"="water"](around:350,$lat,$lon);way["leisure"~"^(park|garden)\$"](around:350,$lat,$lon););out geom tags 5000;';
+        dynamic data;
+        for (final host in ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {
+          try {
+            final r = await http.post(Uri.parse(host), headers: {'User-Agent': 'Nilo/1.5 (tourist app)'}, body: {'data': q}).timeout(const Duration(seconds: 50));
+            if (r.statusCode == 200) { data = jsonDecode(utf8.decode(r.bodyBytes)); break; }
+          } catch (_) {}
+        }
+        if (data == null) { if (mounted) setState(() => osmStatus = L('Map server is busy. Try again in a minute. • سيرفر الخريطة مشغول. جرب بعد دقيقة.')); return; }
+        json = jsonEncode(_osmCompact(data['elements'] as List, lat, lon));
+        await f.writeAsString(json);
+      }
+      await wc.runJavaScript('window.nilo_loadOsm($json)');
+      if (mounted) setState(() => osmStatus = '');
+    } catch (_) {
+      if (mounted) setState(() => osmStatus = L('Could not load the map data. • مقدرناش نحمّل بيانات الخريطة.'));
+    }
+  }
+
+  Map<String, dynamic> _osmCompact(List els, double lat0, double lon0) {
+    final kx = 111320 * math.cos(lat0 * math.pi / 180), kz = 110540;
+    List<List<double>> pr(List g) => [for (final p in g) [double.parse(((p['lon'] - lon0) * kx).toStringAsFixed(1)), double.parse((-(p['lat'] - lat0) * kz).toStringAsFixed(1))]];
+    const w = {'motorway': 12, 'trunk': 11, 'primary': 10, 'secondary': 8, 'tertiary': 7, 'residential': 6, 'unclassified': 6, 'service': 4, 'pedestrian': 5, 'footway': 2.5, 'path': 2, 'cycleway': 2.5, 'steps': 2};
+    final b = <Map>[], r = <Map>[], wa = <List>[], g = <List>[];
+    for (final e in els) {
+      final t = (e['tags'] ?? {}) as Map, geo = e['geometry'] as List?;
+      if (geo == null || geo.length < 2) continue;
+      final closed = geo.length >= 4 && geo.first['lat'] == geo.last['lat'] && geo.first['lon'] == geo.last['lon'];
+      final poly = closed ? geo.sublist(0, geo.length - 1) : geo;
+      if (t.containsKey('building') && closed) {
+        double? h = double.tryParse(RegExp(r'[0-9.]+').stringMatch((t['height'] ?? '').toString()) ?? '');
+        h ??= (double.tryParse((t['building:levels'] ?? '').toString()) ?? 2.8) * 3.2;
+        if (h < 3) h = 3;
+        if (h > 300) h = 300;
+        b.add({'h': h, 'p': pr(poly)});
+      } else if (t.containsKey('highway')) {
+        r.add({'w': (w[t['highway']] ?? 4), 'p': pr(geo)});
+      } else if (t['natural'] == 'water' && closed) {
+        wa.add(pr(poly));
+      } else if ((t['leisure'] == 'park' || t['leisure'] == 'garden') && closed) {
+        g.add(pr(poly));
+      }
+    }
+    return {'b': b.take(1800).toList(), 'r': r.take(1500).toList(), 'w': wa, 'g': g};
   }
 
   static final _uuid = RegExp(r'^[0-9a-fA-F-]{36}$');
@@ -130,6 +192,7 @@ class _VrPageState extends State<VrPage> {
       final share = (sp.getBool('vr_face') ?? false) && facePath.isNotEmpty;
       return jsonEncode({
         'url': Sb.baseUrl, 'key': Sb.anonKey, 'uid': Sb.uid, 'nick': sp.getString('b_nick') ?? '', 'cc': Passport.country,
+        'room': widget.scene == 'osm' ? 'osm-${widget.lat!.toStringAsFixed(3)}_${widget.lon!.toStringAsFixed(3)}' : '',
         'face': share ? Sb.publicUrl(facePath) : '', 'fp': Sb.publicUrl(''), 'blocked': blocked,
       });
     } catch (_) { return ''; }
@@ -212,6 +275,7 @@ class _VrPageState extends State<VrPage> {
           if (ready) Positioned.fill(child: WebViewWidget(controller: wc)),
           if (!ready && err.isEmpty) const Center(child: CircularProgressIndicator()),
           if (err.isNotEmpty) Center(child: Text(err, style: const TextStyle(color: Colors.orangeAccent))),
+          if (osmStatus.isNotEmpty) Positioned(left: 24, right: 24, bottom: 120, child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)), child: Text(osmStatus, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white)))),
           SafeArea(child: Align(alignment: AlignmentDirectional.topStart, child: Padding(
             padding: const EdgeInsets.only(top: 34, left: 6, right: 6),
             child: IconButton(style: IconButton.styleFrom(backgroundColor: Colors.black45), onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),

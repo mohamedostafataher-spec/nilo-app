@@ -200,13 +200,15 @@ class _PlacePageState extends State<PlacePage> {
     } catch (_) {}
   }
 
+  double? plat, plon;
+
   Future<void> _vrPick() async {
     final key = Uri.parse(widget.url).pathSegments.last;
     final known = kVrScenes[key];
     String types = '', cc = '';
     try {
       final q = 'SELECT ?tl ?cc WHERE { VALUES ?art { <https://en.wikipedia.org/wiki/$key> } ?art schema:about ?s. '
-          'OPTIONAL{ ?s wdt:P31 ?t. ?t rdfs:label ?tl FILTER(LANG(?tl)="en") } OPTIONAL{ ?s wdt:P17 ?c. ?c wdt:P297 ?cc } } LIMIT 20';
+          'OPTIONAL{ ?s wdt:P31 ?t. ?t rdfs:label ?tl FILTER(LANG(?tl)="en") } OPTIONAL{ ?s wdt:P17 ?c. ?c wdt:P297 ?cc } OPTIONAL{ ?s wdt:P625 ?co } } LIMIT 20';
       final r = await _j(Uri.https('query.wikidata.org', '/sparql', {'query': q, 'format': 'json'}));
       final rows = (r['results']['bindings'] as List);
       final ts = <String>{};
@@ -214,6 +216,9 @@ class _PlacePageState extends State<PlacePage> {
         final tl = (b['tl']?['value'] ?? '').toString();
         if (tl.isNotEmpty) ts.add(tl);
         if (cc.isEmpty) cc = (b['cc']?['value'] ?? '').toString();
+        final co = (b['co']?['value'] ?? '').toString();
+        final mm = RegExp(r'Point\(([-0-9.]+) ([-0-9.]+)\)').firstMatch(co);
+        if (mm != null && plat == null) { plon = double.tryParse(mm.group(1)!); plat = double.tryParse(mm.group(2)!); }
       }
       types = ts.join(' ');
     } catch (_) {}
@@ -251,6 +256,15 @@ class _PlacePageState extends State<PlacePage> {
                     label: Text(L('Walk inside in 3D • تمشّى جواها 3D')),
                   ),
                   Padding(padding: const EdgeInsets.only(top: 4, bottom: 10), child: Text(kVrScenes.containsKey(Uri.parse(widget.url).pathSegments.last) ? L('A stylized 3D scene drawn by Nilo, not real photography. Real photos are below.') : L('A generated 3D scene matched to this kind of place (not its real shape), in the colours of its country. Real photos are below.'), style: const TextStyle(fontSize: 11, color: Colors.white54))),
+                ],
+                if (plat != null && plon != null) ...[
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(50), foregroundColor: Colors.white),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VrPage(scene: 'osm', title: widget.title, lat: plat, lon: plon))),
+                    icon: const Icon(Icons.map_outlined),
+                    label: Text(L('Explore the area around it (pilot) • استكشف المنطقة حواليه (تجريبي)')),
+                  ),
+                  Padding(padding: const EdgeInsets.only(top: 4, bottom: 10), child: Text(L('Real streets and buildings from OpenStreetMap contributors (ODbL), drawn as plain 3D shapes. Many heights are guessed and some areas are sparse. Needs internet and can take up to a minute.'), style: const TextStyle(fontSize: 11, color: Colors.white54))),
                 ],
                 if (pano != null) FilledButton.icon(
                   style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2A7FBA), minimumSize: const Size.fromHeight(50)),

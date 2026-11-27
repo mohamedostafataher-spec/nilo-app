@@ -582,4 +582,5 @@ Some apps block recording, and calls are not recorded. Try first; if it comes ou
   [r'''Meet others''', r'''قابل ناس'''],
   [r'''Blocked.''', r'''تم الحظر.'''],
   [r'''Reported. Thank you.''', r'''تم الإبلاغ. شكراً.'''],
+  [r'''Real streets and buildings from OpenStreetMap contributors (ODbL), drawn as plain 3D shapes. Many heights are guessed and some areas are sparse. Needs internet and can take up to a minute.''', r'''شوارع ومباني حقيقية من مساهمي OpenStreetMap (ODbL)، مرسومة كأشكال 3D بسيطة. ارتفاعات كتير تقديرية وبعض المناطق بياناتها قليلة. محتاج إنترنت وممكن ياخد لحد دقيقة.'''],
 ];
