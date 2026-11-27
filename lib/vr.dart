@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/foundation.dart' show consolidateHttpClientResponseBytes;
@@ -79,11 +80,12 @@ class _VrPageState extends State<VrPage> {
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-    wc = WebViewController()
+    wc = WebViewController(onPermissionRequest: (r) => r.grant())
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
       ..addJavaScriptChannel('NiloPhoto', onMessageReceived: (m) => _photo(m.message))
       ..addJavaScriptChannel('NiloReport', onMessageReceived: (m) => _report(m.message))
+      ..addJavaScriptChannel('NiloMic', onMessageReceived: (m) => _mic())
       ..addJavaScriptChannel('NiloAvatar', onMessageReceived: (m) async { try { (await SharedPreferences.getInstance()).setString('vr_avatar', m.message); } catch (_) {} });
     _load();
   }
@@ -99,7 +101,7 @@ class _VrPageState extends State<VrPage> {
       final mp = await _mpConfig(sp, facePath);
       html = html.replaceFirst('<script src="three.min.js"></script>', '<script>$three</script>');
       html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}&mp=${Uri.encodeQueryComponent(mp)}')");
-      await wc.loadHtmlString(html);
+      await wc.loadHtmlString(html, baseUrl: 'https://nilo-dl.vercel.app/');
       _face(facePath);
       if (mounted) setState(() => ready = true);
     } catch (e) {
@@ -138,7 +140,7 @@ class _VrPageState extends State<VrPage> {
     final r = await showDialog<bool>(context: context, barrierDismissible: false, builder: (c) => StatefulBuilder(builder: (c, setS) => AlertDialog(
       title: Text(L('Meet other travellers here? • قابل مسافرين هنا؟')),
       content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(L('Other adults (18+) in the same place see your avatar, nickname, country flag and what you type in the chat bubble. No location, no voice, nothing is saved. Up to 6 people per room. Tap a name to report or block. Meet only in public places; never share contact details.'), style: const TextStyle(fontSize: 13, height: 1.4)),
+        Text(L('Other adults (18+) in the same place see your avatar, nickname, country flag and what you type in the chat bubble. No location, nothing is saved. Voice is optional, off by default, and not moderated. Up to 6 people per room. Tap a name to report or block. Meet only in public places; never share contact details.'), style: const TextStyle(fontSize: 13, height: 1.4)),
         const SizedBox(height: 8),
         SwitchListTile(contentPadding: EdgeInsets.zero, value: face, onChanged: (v) => setS(() => face = v), title: Text(L('Show my profile photo as my avatar face'), style: const TextStyle(fontSize: 13))),
       ]),
@@ -149,6 +151,12 @@ class _VrPageState extends State<VrPage> {
     )));
     (await SharedPreferences.getInstance()).setBool('vr_face', face && r == true);
     return r == true;
+  }
+
+  Future<void> _mic() async {
+    bool ok = false;
+    try { final rec = AudioRecorder(); ok = await rec.hasPermission(); await rec.dispose(); } catch (_) {}
+    try { await wc.runJavaScript('window.nilo_micOk($ok)'); } catch (_) {}
   }
 
   Future<void> _report(String msg) async {
