@@ -14,6 +14,7 @@ import 'world.dart';
 import 'net.dart';
 import 'screens.dart';
 import 'sendfx.dart';
+import 'profile.dart' show AvatarView;
 
 const _sbUrl = 'https://fbfvjihrbzsqlwmoejiq.supabase.co';
 const _sbKey = 'sb_publishable_3Gw07lMxemop4QhYpgUszw_8jlkb5JP';
@@ -721,6 +722,34 @@ class _ThreadPageState extends State<ThreadPage> {
   String get other => (widget.bottle['author'] == Sb.uid ? widget.bottle['catcher'] : widget.bottle['author'])?.toString() ?? '';
 
   Timer? _poll;
+  Map<String, dynamic> _prof = {};
+  bool _profTried = false;
+
+  /// Other person's own profile photo/avatar, shown only once both sides have written in the thread.
+  bool get _bothWrote => replies.any((r) => (r as Map)['author'] == Sb.uid) && (widget.bottle['author'] != Sb.uid || replies.any((r) => (r as Map)['author'] != Sb.uid)) && other.isNotEmpty;
+
+  Future<void> _loadProf() async {
+    if (_profTried || !_bothWrote) return;
+    _profTried = true;
+    try {
+      final r = await Sb.rpc('get_profile', {'p_uid': other});
+      if (r is List && r.isNotEmpty && mounted) setState(() => _prof = Map<String, dynamic>.from(r.first as Map));
+    } catch (_) { _profTried = false; }
+  }
+
+  Future<void> _deleteMine() async {
+    final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+      title: Text(L('Delete this papyrus?')),
+      content: Text(L('The papyrus and all its replies are deleted for both of you. This cannot be undone.')),
+      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text(L('Cancel'))), TextButton(onPressed: () => Navigator.pop(c, true), child: Text(L('Delete')))],
+    ));
+    if (ok != true) return;
+    try {
+      await Sb.rpc('delete_my_bottle', {'p_id': bid});
+      if (mounted) { toast(context, L('Deleted.')); Navigator.pop(context); }
+    } catch (_) { if (mounted) toast(context, L('Could not delete. Try again.')); }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -735,6 +764,7 @@ class _ThreadPageState extends State<ThreadPage> {
     try {
       final r = await Sb.get('replies?bottle_id=eq.$bid&order=created_at.asc');
       if (mounted) setState(() => replies = r as List);
+      _loadProf();
       if (auto) _autoTranslate();
     } catch (e) {
       if (mounted) setState(() => err = '$e');
@@ -833,7 +863,8 @@ class _ThreadPageState extends State<ThreadPage> {
     final closed = b['status'] == 'closed';
     final waiting = b['catcher'] == null && b['author'] == Sb.uid;
     return Scaffold(
-      appBar: AppBar(title: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus'), backgroundColor: kBg, actions: [
+      appBar: AppBar(title: Row(children: [if (_prof.isNotEmpty) Padding(padding: const EdgeInsets.only(right: 10), child: AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 34)), Flexible(child: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus', overflow: TextOverflow.ellipsis))]), backgroundColor: kBg, actions: [
+        if (b['author'] == Sb.uid) IconButton(icon: const Icon(Icons.delete_outline), tooltip: L('Delete'), onPressed: _deleteMine),
         IconButton(icon: Icon(Icons.translate, color: auto ? kGreen : Colors.white54), tooltip: L('Language bridge'), onPressed: _toggleAuto),
         IconButton(icon: Icon(Icons.flag_outlined), tooltip: L('Report'), onPressed: _report),
         IconButton(icon: Icon(Icons.block), tooltip: L('Block'), onPressed: _block),

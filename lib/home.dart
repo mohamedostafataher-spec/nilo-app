@@ -244,12 +244,15 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
               _chip('📜 ${Passport.ink}/10'),
               GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const TodayPage())), child: _chip('🌍')),
               GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const ToolsPage())), child: _chip('🧰 ${L('Tools')}')),
+              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const GlobePage())), child: _chip('🌐 ${L('Globe')}')),
               if (_wx.isNotEmpty)
                 GestureDetector(
                   onTap: () { setState(() => _city = (_city + 1) % _cities.length); _weather(); },
                   child: _chip(_wx),
                 ),
             ]),
+            const SizedBox(height: 8),
+            const LandmarkStrip(),
           ]),
         ),
       ),

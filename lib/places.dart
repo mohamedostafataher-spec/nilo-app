@@ -134,3 +134,67 @@ class _PlacePageState extends State<PlacePage> {
               ]),
       );
 }
+
+/// Real Egyptian landmarks on the home scene. Photos and titles come live from Wikipedia (images are from Wikimedia Commons).
+/// A landmark is shown only when its photo really loaded. Tapping opens the place page with text, photo and credits.
+class LandmarkStrip extends StatefulWidget {
+  const LandmarkStrip({super.key});
+  @override
+  State<LandmarkStrip> createState() => _LandmarkStripState();
+}
+
+class _LandmarkStripState extends State<LandmarkStrip> {
+  static const _items = [
+    ['Giza_pyramid_complex', 'Giza Pyramids', 'أهرامات الجيزة'],
+    ['Abu_Simbel_temples', 'Abu Simbel', 'أبو سمبل'],
+    ['Karnak', 'Karnak', 'الكرنك'],
+    ['Philae', 'Philae', 'فيلة'],
+    ['Luxor_Temple', 'Luxor Temple', 'معبد الأقصر'],
+    ['Bibliotheca_Alexandrina', 'Alexandria Library', 'مكتبة الإسكندرية'],
+  ];
+  static final Map<String, String> _cache = {};
+  bool _done = false;
+
+  @override
+  void initState() { super.initState(); _load(); }
+
+  Future<void> _load() async {
+    await Future.wait(_items.where((i) => !_cache.containsKey(i[0])).map((i) async {
+      try {
+        final r = await http.get(Uri.https('en.wikipedia.org', '/api/rest_v1/page/summary/${i[0]}'), headers: {'User-Agent': 'Nilo/1.5 (mohamedostafataher@gmail.com)'}).timeout(const Duration(seconds: 12));
+        if (r.statusCode == 200) {
+          final u = (((jsonDecode(utf8.decode(r.bodyBytes)) as Map)['thumbnail'] as Map?)?['source'] ?? '').toString();
+          if (u.isNotEmpty) _cache[i[0]] = u;
+        }
+      } catch (_) {}
+    }));
+    if (mounted) setState(() => _done = true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = _items.where((i) => _cache.containsKey(i[0])).toList();
+    if (shown.isEmpty) return const SizedBox.shrink();
+    return SizedBox(
+      height: 84,
+      child: ListView(scrollDirection: Axis.horizontal, children: [
+        for (final i in shown)
+          GestureDetector(
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlacePage(title: Ui.rtl ? i[2] : i[1], url: 'https://en.wikipedia.org/wiki/${i[0]}'))),
+            child: Container(
+              width: 76, margin: const EdgeInsetsDirectional.only(end: 8),
+              child: Column(children: [
+                Container(
+                  width: 56, height: 56,
+                  decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white70, width: 2), boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 6)]),
+                  child: ClipOval(child: Image.network(_cache[i[0]]!, fit: BoxFit.cover, cacheWidth: 160, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
+                ),
+                const SizedBox(height: 3),
+                Text(Ui.rtl ? i[2] : i[1], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w700, shadows: [Shadow(color: Colors.black87, blurRadius: 4)])),
+              ]),
+            ),
+          ),
+      ]),
+    );
+  }
+}
