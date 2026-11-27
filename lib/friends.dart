@@ -100,7 +100,7 @@ class _FriendsPageState extends State<FriendsPage> {
                       Text(code.isEmpty ? '...' : code, style: const TextStyle(fontSize: 26, letterSpacing: 3, fontWeight: FontWeight.w900)),
                       Row(children: [
                         TextButton.icon(onPressed: code.isEmpty ? null : () { Clipboard.setData(ClipboardData(text: code)); toast(context, 'اتنسخ'); }, icon: const Icon(Icons.copy, size: 16), label: Text(L('Copy'))),
-                        TextButton.icon(onPressed: code.isEmpty ? null : () { Share.share('Nilo • https://nilo-dl.vercel.app/?c=$code  (my friend code: $code)'); }, icon: const Icon(Icons.share, size: 16), label: Text(L('Share'))),
+                        TextButton.icon(onPressed: code.isEmpty ? null : () { Share.share('Nilo • https://mohamedostafataher-spec.github.io/nilo-dl/?c=$code  (my friend code: $code)'); }, icon: const Icon(Icons.share, size: 16), label: Text(L('Share'))),
                       ]),
                     ]))),
                     const SizedBox(height: 6),
@@ -358,7 +358,7 @@ class _GroupsPageState extends State<GroupsPage> {
                     title: Text('${g['event_at'] != null ? '📅 ' : ''}${g['name']}', style: const TextStyle(fontWeight: FontWeight.w800)),
                     subtitle: Text('${g['members']}/12  •  ${L('code')}: ${g['code']}${g['event_at'] != null ? '  •  ${DateTime.parse(g['event_at'].toString()).toLocal().toString().substring(0, 16)}' : ''}'),
                     trailing: Row(mainAxisSize: MainAxisSize.min, children: [
-                      IconButton(icon: const Icon(Icons.share), onPressed: () => Share.share('Nilo group "${g['name']}" • code: ${g['code']} • https://nilo-dl.vercel.app')),
+                      IconButton(icon: const Icon(Icons.share), onPressed: () => Share.share('Nilo group "${g['name']}" • code: ${g['code']} • https://mohamedostafataher-spec.github.io/nilo-dl')),
                       const Icon(Icons.chevron_right),
                     ]),
                     onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => GroupChatPage(id: g['id'].toString(), title: g['name'].toString()))).then((_) => _load()),

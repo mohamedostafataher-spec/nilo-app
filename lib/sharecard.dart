@@ -10,7 +10,7 @@ import 'world.dart' show Passport, countryOf;
 
 /// Share card: a picture drawn on the phone (country flag, streak, papyri, countries). It has no name, no ID, no location.
 /// It opens the phone share sheet; the user picks where it goes. Nilo posts nothing and sends nothing by itself.
-const kNiloLink = 'https://nilo-dl.vercel.app';
+const kNiloLink = 'https://mohamedostafataher-spec.github.io/nilo-dl';
 
 Future<void> showShareCard(BuildContext context) => showDialog(context: context, builder: (_) => const _ShareCardDialog());
 
@@ -65,7 +65,7 @@ class _ShareCardDialogState extends State<_ShareCardDialog> {
                 const SizedBox(height: 14),
                 const Text('Papyri across the world, translated for you\nبرديات حوالين العالم، مترجمة ليك', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.white70, height: 1.5)),
                 const SizedBox(height: 10),
-                const Text('nilo-dl.vercel.app', style: TextStyle(fontSize: 12, color: Color(0xFFE0B04A))),
+                const Text('mohamedostafataher-spec.github.io/nilo-dl', style: TextStyle(fontSize: 12, color: Color(0xFFE0B04A))),
                 const SizedBox(height: 4),
                 const Text('تطبيق مصري خالص', style: TextStyle(fontSize: 11, color: Colors.white54)),
               ]),

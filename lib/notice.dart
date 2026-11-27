@@ -102,17 +102,52 @@ class _FounderPageState extends State<FounderPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: kBg,
-        appBar: AppBar(title: const Text('Founder • المؤسس'), backgroundColor: kBg),
+        appBar: AppBar(title: const Text('المؤسس • Founder'), backgroundColor: kBg),
         body: busy
             ? const Center(child: CircularProgressIndicator())
             : denied
                 ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(L('This area is only for the founder account. Sign in with the founder email first.'), textAlign: TextAlign.center)))
                 : ListView(padding: const EdgeInsets.all(16), children: [
-                    Text(L('Totals (no personal data) • أرقام إجمالية'), style: const TextStyle(fontWeight: FontWeight.w800)),
+                    Text(L('Totals (no personal data) • أرقام إجمالية'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                    const SizedBox(height: 10),
+                    GridView.count(shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), crossAxisCount: 2, childAspectRatio: 1.7, mainAxisSpacing: 10, crossAxisSpacing: 10, children: [
+                      for (final c in const [
+                        ['members', 'الأعضاء • Members', Icons.people_alt_outlined],
+                        ['papyri_total', 'كل البرديات • All papyri', Icons.mail_outline],
+                        ['papyri_24h', 'برديات آخر 24 ساعة • Papyri 24h', Icons.bolt_outlined],
+                        ['stories_24h', 'قصص 24 ساعة • Stories 24h', Icons.photo_outlined],
+                        ['answers_24h', 'إجابات 24 ساعة • Answers 24h', Icons.quiz_outlined],
+                        ['friends', 'صداقات • Friendships', Icons.favorite_border],
+                        ['groups', 'مجموعات • Groups', Icons.groups_outlined],
+                        ['chains', 'سلاسل • Chains', Icons.link],
+                        ['reported_items', 'بلاغات • Reports', Icons.flag_outlined],
+                      ])
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white12)),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                            Icon(c[2] as IconData, color: const Color(0xFFE0B04A), size: 20),
+                            Text('${stats?[c[0]] ?? 0}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 24)),
+                            Text(c[1] as String, style: const TextStyle(fontSize: 11, color: Colors.white70), maxLines: 2, overflow: TextOverflow.ellipsis),
+                          ]),
+                        ),
+                    ]),
+                    const SizedBox(height: 16),
+                    Text(L('Countries (top 10) • الدول'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
                     const SizedBox(height: 8),
-                    for (final k in ['members', 'papyri_total', 'papyri_24h', 'stories_24h', 'answers_24h', 'friends', 'groups', 'chains', 'reported_items'])
-                      ListTile(dense: true, title: Text(k), trailing: Text('${stats?[k] ?? 0}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),
-                    ListTile(dense: true, title: const Text('countries (top 10)'), subtitle: Text(((stats?['countries'] ?? {}) as Map).entries.map((e) => '${e.key} ${e.value}').join('   '))),
+                    Builder(builder: (_) {
+                      final m = ((stats?['countries'] ?? {}) as Map).entries.toList();
+                      if (m.isEmpty) return Text(L('No data yet.'), style: const TextStyle(color: Colors.white60));
+                      final mx = m.map((e) => (e.value as num).toDouble()).reduce((x, y) => x > y ? x : y);
+                      return Column(children: [
+                        for (final e in m)
+                          Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(children: [
+                            SizedBox(width: 34, child: Text('${e.key}', style: const TextStyle(fontWeight: FontWeight.w700))),
+                            Expanded(child: ClipRRect(borderRadius: BorderRadius.circular(6), child: LinearProgressIndicator(value: mx == 0 ? 0 : (e.value as num) / mx, minHeight: 10, backgroundColor: Colors.white12, color: const Color(0xFFE0B04A)))),
+                            SizedBox(width: 40, child: Text('${e.value}', textAlign: TextAlign.end, style: const TextStyle(fontWeight: FontWeight.w800))),
+                          ])),
+                      ]);
+                    }),
                     const Divider(),
                     Text(L('Announcement • إعلان'), style: const TextStyle(fontWeight: FontWeight.w800)),
                     TextField(controller: t, maxLength: 80, decoration: const InputDecoration(hintText: 'Title')),

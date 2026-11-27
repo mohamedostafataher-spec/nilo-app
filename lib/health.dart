@@ -53,11 +53,11 @@ class Health {
   static Future<String?> updateUrl() async {
     if (commit.isEmpty) return null;
     try {
-      final r = await http.get(Uri.parse('https://nilo-dl.vercel.app/version.json')).timeout(const Duration(seconds: 8));
+      final r = await http.get(Uri.parse('https://mohamedostafataher-spec.github.io/nilo-dl/version.json')).timeout(const Duration(seconds: 8));
       if (r.statusCode != 200) return null;
       final j = jsonDecode(utf8.decode(r.bodyBytes)) as Map;
       final c = (j['commit'] ?? '').toString();
-      if (c.isNotEmpty && !c.startsWith(commit) && !commit.startsWith(c)) return 'https://nilo-dl.vercel.app';
+      if (c.isNotEmpty && !c.startsWith(commit) && !commit.startsWith(c)) return 'https://mohamedostafataher-spec.github.io/nilo-dl';
     } catch (_) {}
     return null;
   }

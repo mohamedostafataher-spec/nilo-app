@@ -108,7 +108,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
         Row(children: [
           Expanded(child: FilledButton(onPressed: _save, child: Text(L('Save • احفظ')))),
           const SizedBox(width: 8),
-          OutlinedButton.icon(onPressed: () { final t = c.text.trim(); if (t.isEmpty) return; Share.share('${ch[0]} ${ch[2]}\n$t\n\nNilo • https://nilo-dl.vercel.app'); }, icon: const Icon(Icons.share, size: 16), label: Text(L('Share'))),
+          OutlinedButton.icon(onPressed: () { final t = c.text.trim(); if (t.isEmpty) return; Share.share('${ch[0]} ${ch[2]}\n$t\n\nNilo • https://mohamedostafataher-spec.github.io/nilo-dl'); }, icon: const Icon(Icons.share, size: 16), label: Text(L('Share'))),
         ]),
         const SizedBox(height: 6),
         Text(L('Nothing is sent anywhere. Share only opens your phone\'s share sheet.'), style: const TextStyle(color: Colors.white54, fontSize: 12)),

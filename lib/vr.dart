@@ -241,7 +241,7 @@ class _VrPageState extends State<VrPage> {
         TextField(controller: rc, maxLength: 12, onChanged: (v) => sp.setString('vr_room', v.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '')), decoration: InputDecoration(labelText: L('Private room code (friends only) • كود غرفة خاصة'), helperText: L('Empty = public. Only people with the same code in the same place meet you. • فاضي = عام'), helperMaxLines: 2)),
         Row(children: [
           TextButton(onPressed: () { const a = 'abcdefghjkmnpqrstuvwxyz23456789'; final r = math.Random.secure(); final c2 = List.generate(6, (_) => a[r.nextInt(a.length)]).join(); rc.text = c2; sp.setString('vr_room', c2); setS(() {}); }, child: Text(L('New code • كود جديد'))),
-          TextButton(onPressed: () { final c2 = rc.text.trim(); if (c2.length < 4) return; Share.share('Join me in a private room on Nilo. Open the 3D place, tap the groups icon and enter code: $c2\nhttps://nilo-dl.vercel.app'); }, child: Text(L('Share invite • ابعت دعوة'))),
+          TextButton(onPressed: () { final c2 = rc.text.trim(); if (c2.length < 4) return; Share.share('Join me in a private room on Nilo. Open the 3D place, tap the groups icon and enter code: $c2\nhttps://mohamedostafataher-spec.github.io/nilo-dl'); }, child: Text(L('Share invite • ابعت دعوة'))),
         ]),
         Text(L('Changes apply the next time you open a place. • التغييرات بتتطبق لما تفتح مكان تاني.'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
       ]),

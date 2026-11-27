@@ -53,7 +53,7 @@ class _InvitePageState extends State<InvitePage> {
 
   @override
   Widget build(BuildContext context) {
-    final msg = 'Nilo • https://nilo-dl.vercel.app/?c=$code  (my invite code: $code)';
+    final msg = 'Nilo • https://mohamedostafataher-spec.github.io/nilo-dl/?c=$code  (my invite code: $code)';
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(title: Text(L('Invite friends • ادعُ أصحابك')), backgroundColor: kBg),
