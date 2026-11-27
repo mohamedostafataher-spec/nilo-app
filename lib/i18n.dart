@@ -66,6 +66,17 @@ String L(String s) {
 }
 
 const kPairs = <List<String>>[
+  [r'''Create a free account''', r'''أنشئ حساب مجاني'''],
+  [r'''Guests can browse and translate. To post, react, comment or send papyri you need a free account. It also keeps your papyri if you change phone.''', r'''الضيف يقدر يتصفح ويترجم. عشان تنشر أو تتفاعل أو تعلّق أو تبعت برديات لازم حساب مجاني. وبيحفظ بردياتك لو غيرت التليفون.'''],
+  [r'''Not now''', r'''مش دلوقتي'''],
+  [r'''Create account''', r'''إنشاء حساب'''],
+  [r'''Enter the code from your email''', r'''اكتب الكود اللي وصلك على الإيميل'''],
+  [r'''We sent a code to your email. Enter it to finish. If it does not arrive, check spam.''', r'''بعتنالك كود على الإيميل. اكتبه عشان تخلّص. لو مجاش بص في السبام.'''],
+  [r'''Send the code again''', r'''ابعت الكود تاني'''],
+  [r'''Code sent again.''', r'''اتبعت الكود تاني.'''],
+  [r'''Delete my account''', r'''احذف حسابي'''],
+  [r'''Removes your account, profile, papyri, stories and comments for good.''', r'''بيمسح حسابك والبروفايل والبرديات والحكايات والتعليقات نهائي.'''],
+  [r'''This cannot be undone. Type DELETE to confirm.''', r'''مفيش رجوع. اكتب DELETE للتأكيد.'''],
   [r'''Waiting for someone to catch your papyrus. Replies will appear here.''', r'''مستني حد يمسك بوردتك. الردود هتظهر هنا.'''],
   [r'''Could not send. Check your connection and try again.''', r'''مبعتش. اتأكد من النت وجرّب تاني.'''],
   [r'''Like''', r'''إعجاب'''],

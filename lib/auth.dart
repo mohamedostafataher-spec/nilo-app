@@ -7,7 +7,7 @@ import 'bottles.dart' show Sb;
 import 'settings.dart' show TextDocPage, kPrivacy, kTerms;
 import 'world.dart' show NileBackground;
 
-enum _Mode { signIn, signUp, forgot }
+enum _Mode { signIn, signUp, forgot, verify }
 
 /// Shown after the splash. Email + password accounts (Supabase Auth). Guest mode keeps working.
 class AuthPage extends StatefulWidget {
@@ -41,9 +41,16 @@ class _AuthPageState extends State<AuthPage> {
     if (mode == _Mode.signIn) {
       if (pw.text.isEmpty) { setState(() { busy = false; error = 'Enter your password • اكتب كلمة السر'; }); return; }
       r = await Sb.signInPassword(e, pw.text);
+    } else if (mode == _Mode.verify) {
+      if (code.text.trim().length < 6) { setState(() { busy = false; error = L('Enter the code from your email'); }); return; }
+      r = await Sb.verifyCode(code.text.trim());
     } else if (mode == _Mode.signUp) {
       if (pw.text.length < 8) { setState(() { busy = false; error = 'Password: at least 8 characters • كلمة السر 8 حروف على الأقل'; }); return; }
       r = await Sb.signUp(e, pw.text);
+      if (r == Sb.kNeedCode) {
+        setState(() { busy = false; mode = _Mode.verify; code.clear(); error = null; info = L('We sent a code to your email. Enter it to finish. If it does not arrive, check spam.'); });
+        return;
+      }
     } else if (!codeSent) {
       r = await Sb.sendResetCode(e);
       if (r == null) { setState(() { codeSent = true; info = 'We sent a code to your email. If it does not arrive, check spam. • بعتنالك كود على الإيميل'; }); }
@@ -60,8 +67,8 @@ class _AuthPageState extends State<AuthPage> {
 
   @override
   Widget build(BuildContext context) {
-    final title = mode == _Mode.signIn ? 'تسجيل الدخول • Sign in' : mode == _Mode.signUp ? 'إنشاء حساب • Create account' : 'نسيت كلمة السر • Forgot password';
-    final tabs = mode == _Mode.forgot ? <Widget>[] : <Widget>[
+    final title = mode == _Mode.verify ? 'تأكيد الإيميل • Verify email' : mode == _Mode.signIn ? 'تسجيل الدخول • Sign in' : mode == _Mode.signUp ? 'إنشاء حساب • Create account' : 'نسيت كلمة السر • Forgot password';
+    final tabs = (mode == _Mode.forgot || mode == _Mode.verify) ? <Widget>[] : <Widget>[
       Container(
         decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(14)),
         padding: const EdgeInsets.all(4),
@@ -100,10 +107,13 @@ class _AuthPageState extends State<AuthPage> {
             decoration: BoxDecoration(color: const Color(0xFF0E2A45).withOpacity(0.88), borderRadius: BorderRadius.circular(22), border: Border.all(color: Colors.white12)),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           ...tabs,
-          if (mode == _Mode.forgot) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(L(title), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
+          if (mode == _Mode.forgot || mode == _Mode.verify) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(L(title), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
           TextField(controller: email, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: InputDecoration(prefixIcon: const Icon(Icons.mail_outline), labelText: L('Email • الإيميل'), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
           const SizedBox(height: 12),
-          if (mode != _Mode.forgot || codeSent) ...[
+          if (mode == _Mode.verify) ...[
+            TextField(controller: code, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: L('Code from email • الكود'), border: const OutlineInputBorder())),
+            TextButton(onPressed: busy ? null : () async { final r = await Sb.resendCode(); if (mounted) setState(() { error = r; info = r == null ? L('Code sent again.') : null; }); }, child: Text(L('Send the code again'))),
+          ] else if (mode != _Mode.forgot || codeSent) ...[
             if (mode == _Mode.forgot) ...[
               TextField(controller: code, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: L('Code from email • الكود'), border: OutlineInputBorder())),
               const SizedBox(height: 10),
@@ -119,7 +129,7 @@ class _AuthPageState extends State<AuthPage> {
           FilledButton(
             style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
             onPressed: busy ? null : _submit,
-            child: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(mode == _Mode.signIn ? 'Sign in • دخول' : mode == _Mode.signUp ? 'Create account • إنشاء' : (codeSent ? 'Set new password' : 'Send code • ابعت الكود'))),
+            child: Padding(padding: const EdgeInsets.symmetric(vertical: 12), child: busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : Text(mode == _Mode.verify ? 'Verify • تأكيد' : mode == _Mode.signIn ? 'Sign in • دخول' : mode == _Mode.signUp ? 'Create account • إنشاء' : (codeSent ? 'Set new password' : 'Send code • ابعت الكود'))),
           ),
           const SizedBox(height: 6),
           if (mode == _Mode.signIn) ...[

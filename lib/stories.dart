@@ -118,6 +118,7 @@ class _StoriesTabState extends State<StoriesTab> {
       selectedColor: Colors.white30,
       label: Text(e == '❤️' ? (rs.isEmpty ? '❤️ ${L('Like')}' : '❤️ ${rs.length}') : (rs.isEmpty ? e : '$e ${rs.length}')),
       onSelected: (_) async {
+        if (await Sb.needAccount(context)) return;
         try {
           if (mine) { await Sb.delete('story_reactions?story_id=eq.${s['id']}&user_id=eq.${Sb.uid}'); }
           else {
@@ -327,6 +328,7 @@ class _StoryComposerState extends State<StoryComposer> {
   }
 
   Future<void> _post() async {
+    if (await Sb.needAccount(context)) return;
     final t = c.text.trim();
     if (bytes == null && t.length < 3) { toast(context, 'Write a little more, or add a photo or clip.'); return; }
     final bad = RegExp(r'(https?://|www\.|\.com|\.net|\.org|@|t\.me|wa\.me)').hasMatch(t.toLowerCase())
@@ -449,6 +451,7 @@ class _CommentsPageState extends State<CommentsPage> {
   }
 
   Future<void> _send() async {
+    if (await Sb.needAccount(context)) return;
     final t = c.text.trim();
     if (t.isEmpty) return;
     final bad = RegExp(r'(https?://|www\.|\.com|\.net|\.org|@|t\.me|wa\.me)').hasMatch(t.toLowerCase())

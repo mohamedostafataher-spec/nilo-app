@@ -101,6 +101,27 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           );
         }),
+        FutureBuilder<bool>(future: Sb.loadGuest(), builder: (c, snap) => snap.data == false ? ListTile(
+          leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
+          title: Text(L('Delete my account')),
+          subtitle: Text(L('Removes your account, profile, papyri, stories and comments for good.')),
+          onTap: () async {
+            final tc = TextEditingController();
+            final ok = await showDialog<bool>(context: c, builder: (d) => AlertDialog(
+              title: Text(L('Delete my account')),
+              content: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(L('This cannot be undone. Type DELETE to confirm.')),
+                TextField(controller: tc, autocorrect: false),
+              ]),
+              actions: [TextButton(onPressed: () => Navigator.pop(d, false), child: Text(L('Cancel'))), TextButton(onPressed: () => Navigator.pop(d, tc.text.trim() == 'DELETE'), child: Text(L('Delete'), style: const TextStyle(color: Colors.redAccent)))],
+            ));
+            if (ok != true || !c.mounted) return;
+            final e = await Sb.deleteAccount();
+            if (!c.mounted) return;
+            if (e != null) { toast(c, e); return; }
+            Navigator.of(c).pushAndRemoveUntil(niloRoute(AuthPage(next: const TouristHome())), (_) => false);
+          },
+        ) : const SizedBox.shrink()),
         ListTile(leading: Icon(Icons.person), title: Text(L('Profile • الملف')), subtitle: Text(Passport.nickname.isEmpty ? 'Set a nickname' : Passport.nickname), onTap: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => ProfileEditPage())); setState(() {}); }),
         ListTile(
           leading: const Icon(Icons.language),

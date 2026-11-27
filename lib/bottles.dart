@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'auth.dart' show AuthPage;
+import 'home.dart' show TouristHome;
 import 'i18n.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -80,18 +82,81 @@ class Sb {
       return null;
     } catch (_) { return 'No connection'; }
   }
-  /// Create account: upgrades the current anonymous user (keeps your papyri) to an email account.
+  /// Email codes are on when the server setting "Confirm email" is on. The app adapts: if the server
+  /// returns a session, no code is needed; otherwise it asks for the emailed code.
+  static const kNeedCode = 'NEED_CODE';
   static Future<String?> signUp(String email, String pw) async {
     final p = await SharedPreferences.getInstance();
-    if (!await signIn()) return 'No connection';
-    final e = await _authCall(http.put(Uri.parse('$_sbUrl/auth/v1/user'), headers: _h(), body: jsonEncode({'email': email, 'password': pw})), p, save: false);
-    if (e == null) await p.setString('acct_email', email);
+    final hasSession = p.getString('sb_rt') != null && await _refresh(p);
+    try {
+      if (hasSession) {
+        final r = await http.put(Uri.parse('$_sbUrl/auth/v1/user'), headers: _h(), body: jsonEncode({'email': email, 'password': pw})).timeout(const Duration(seconds: 20));
+        if (r.statusCode >= 300) return _err(r);
+        final j = jsonDecode(utf8.decode(r.bodyBytes));
+        if (j is Map && j['new_email'] != null) { await p.setString('pend_email', email); await p.setString('pend_type', 'email_change'); return kNeedCode; }
+        await p.setString('acct_email', email); guest = false;
+        return null;
+      }
+      final r = await http.post(Uri.parse('$_sbUrl/auth/v1/signup'), headers: _h(false), body: jsonEncode({'email': email, 'password': pw})).timeout(const Duration(seconds: 20));
+      if (r.statusCode >= 300) return _err(r);
+      final j = jsonDecode(utf8.decode(r.bodyBytes));
+      if (j is Map && j['access_token'] != null) { _save(p, j); await p.setString('acct_email', email); guest = false; return null; }
+      await p.setString('pend_email', email); await p.setString('pend_type', 'signup');
+      return kNeedCode;
+    } catch (_) { return 'No connection'; }
+  }
+  static Future<bool> _refresh(SharedPreferences p) async {
+    try {
+      final r = await http.post(Uri.parse('$_sbUrl/auth/v1/token?grant_type=refresh_token'), headers: _h(false), body: jsonEncode({'refresh_token': p.getString('sb_rt')})).timeout(const Duration(seconds: 20));
+      if (r.statusCode == 200) { _save(p, jsonDecode(r.body)); return true; }
+    } catch (_) {}
+    return false;
+  }
+  static Future<String?> verifyCode(String code) async {
+    final p = await SharedPreferences.getInstance();
+    final email = p.getString('pend_email') ?? '';
+    final type = p.getString('pend_type') ?? 'signup';
+    final e = await _authCall(http.post(Uri.parse('$_sbUrl/auth/v1/verify'), headers: _h(false), body: jsonEncode({'type': type, 'email': email, 'token': code})), p);
+    if (e == null) { await p.setString('acct_email', email); await p.remove('pend_email'); await p.remove('pend_type'); guest = false; }
     return e;
+  }
+  static Future<String?> resendCode() async {
+    final p = await SharedPreferences.getInstance();
+    final email = p.getString('pend_email') ?? '';
+    final type = p.getString('pend_type') ?? 'signup';
+    return _authCall(http.post(Uri.parse('$_sbUrl/auth/v1/resend'), headers: _h(type == 'email_change'), body: jsonEncode({'type': type, 'email': email})), p, save: false);
+  }
+  static bool guest = true;
+  static Future<bool> loadGuest() async { final p = await SharedPreferences.getInstance(); guest = (p.getString('acct_email') ?? '').isEmpty; return guest; }
+  /// Guests can look around; posting needs a free account. Returns true when the action must stop.
+  static Future<bool> needAccount(BuildContext context) async {
+    if (!await loadGuest()) return false;
+    if (!context.mounted) return true;
+    final go = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+      title: Text(L('Create a free account')),
+      content: Text(L('Guests can browse and translate. To post, react, comment or send papyri you need a free account. It also keeps your papyri if you change phone.')),
+      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text(L('Not now'))), FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(L('Create account')))],
+    ));
+    if (go == true && context.mounted) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => AuthPage(next: const TouristHome())));
+    }
+    return true;
+  }
+  /// Deletes the account and everything tied to it on the server, then clears this phone.
+  static Future<String?> deleteAccount() async {
+    try {
+      await rpc('delete_my_account');
+      await signOut();
+      final p = await SharedPreferences.getInstance();
+      for (final k in p.getKeys().toList()) { if (k.startsWith('b_') || k == 'pend_email' || k == 'pend_type') await p.remove(k); }
+      guest = true; _healed = null;
+      return null;
+    } catch (_) { return 'Could not delete. Check your connection and try again.'; }
   }
   static Future<String?> signInPassword(String email, String pw) async {
     final p = await SharedPreferences.getInstance();
     final e = await _authCall(http.post(Uri.parse('$_sbUrl/auth/v1/token?grant_type=password'), headers: _h(false), body: jsonEncode({'email': email, 'password': pw})), p);
-    if (e == null) await p.setString('acct_email', email);
+    if (e == null) { await p.setString('acct_email', email); guest = false; }
     return e;
   }
   static Future<String?> sendResetCode(String email) async {
@@ -377,6 +442,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
 
   final friend = TextEditingController();
   Future<void> _send() async {
+    if (await Sb.needAccount(context)) return;
     final t = c.text.trim();
     if (t.length < 3) { toast(context, 'Write at least a few words'); return; }
     final b = _bad(t);
@@ -622,6 +688,7 @@ class _ThreadPageState extends State<ThreadPage> {
   }
 
   Future<void> _send() async {
+    if (await Sb.needAccount(context)) return;
     final t = c.text.trim();
     if (t.isEmpty) return;
     final b = _bad(t);
