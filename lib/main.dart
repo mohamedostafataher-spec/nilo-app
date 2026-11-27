@@ -13,17 +13,20 @@ import 'package:url_launcher/url_launcher.dart';
 import 'data.dart';
 import 'extras.dart';
 import 'screens.dart';
+import 'health.dart';
 import 'world.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   Passport.init().then((_) => Passport.touch());
-  FlutterError.onError = (d) => FlutterError.presentError(d);
+  FlutterError.onError = (d) { FlutterError.presentError(d); Health.log(d.exception, d.stack); };
+  PlatformDispatcher.instance.onError = (e, s) { Health.log(e, s); return true; };
+  ErrorWidget.builder = (d) => const Material(color: Color(0xFF0B1F33), child: Center(child: Padding(padding: EdgeInsets.all(24), child: Text('Something went wrong here. Go back and try again.\nحصلت مشكلة هنا. ارجع وجرب تاني.', textAlign: TextAlign.center, style: TextStyle(color: Colors.white70)))));
   runZonedGuarded(() async {
     await Ui.load();
     runApp(const NiloApp());
-  }, (e, s) => debugPrint('nilo error: $e'));
+  }, (e, s) { Health.log(e, s); debugPrint('nilo error: $e'); });
 }
 
 const kGreen = Color(0xFFD9A441);

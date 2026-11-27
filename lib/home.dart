@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'cache.dart';
 import 'i18n.dart';
 import 'dart:convert';
@@ -28,6 +29,12 @@ class TouristHome extends StatefulWidget {
 class _TouristHomeState extends State<TouristHome> {
   int tab = 0;
   int hub = 0; // stories hub: 0 story, 1 stories, 2 circles, 3 place letters
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) Health.offerUpdate(context); });
+  }
 
   Future<void> _send() async {
     final p = await SharedPreferences.getInstance();

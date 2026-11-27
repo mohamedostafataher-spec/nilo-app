@@ -437,7 +437,10 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
   void initState() {
     super.initState();
     Sb.gateOpen(context);
+    c.addListener(() => SharedPreferences.getInstance().then((p) => c.text.isEmpty ? p.remove('draft_throw') : p.setString('draft_throw', c.text)));
     SharedPreferences.getInstance().then((p) async {
+      final d = p.getString('draft_throw');
+      if (d != null && d.isNotEmpty && c.text.isEmpty && mounted) c.text = d;
       if (!(p.getBool('rules_seen') ?? false)) {
         await p.setBool('rules_seen', true);
         if (mounted) _rules();
@@ -478,6 +481,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
         await Sb.post('bottles', {'author': Sb.uid, 'kind': kind, 'place': kind == 'place' ? place : null, 'body': t, 'lang': writeLang});
       }
       HapticFeedback.mediumImpact();
+      SharedPreferences.getInstance().then((p) => p.remove('draft_throw'));
       focus.unfocus();
       if (mounted) setState(() => flying = true);
     } catch (e) {
