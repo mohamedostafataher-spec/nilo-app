@@ -1,4 +1,5 @@
 import 'i18n.dart';
+import 'sharecard.dart';
 // Nilo World: passport (stamps, XP, streak), home country, daily word/puzzle, chapters, papyrus trip animation.
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -640,6 +641,7 @@ class PassportPage extends StatelessWidget {
         _dataPage(countries.length),
         const SizedBox(height: 10),
         Row(children: [tile('🔥', '${Passport.streak}', 'Streak'), tile('🛡️', '$trust', 'Trust score'), tile('📜', '${Passport.papyri}', 'Papyri sent'), tile('🌍', '${countries.length}', 'Countries explored')]),
+        Align(alignment: AlignmentDirectional.centerEnd, child: TextButton.icon(onPressed: () => showShareCard(context), icon: const Icon(Icons.ios_share, size: 18), label: Text(L('Share my card')))),
         Padding(padding: EdgeInsets.fromLTRB(4, 2, 4, 0), child: Text(L('Trust score is a local number from your own streak and papyri. It is not verified by anyone.'), style: TextStyle(fontSize: 11, color: Colors.white38))),
         const SizedBox(height: 14),
         Text(L('Daily scroll • لفافة اليوم'), style: TextStyle(fontWeight: FontWeight.w700, color: gold)),
