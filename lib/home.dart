@@ -18,6 +18,9 @@ import 'navbar.dart';
 import 'today.dart';
 import 'circles.dart';
 import 'letters.dart';
+import 'globe.dart';
+import 'games.dart';
+import 'places.dart';
 
 /// Main shell: one living Nile scene + simple bottom nav.
 class TouristHome extends StatefulWidget {
