@@ -1,4 +1,5 @@
 import 'earth.dart';
+import 'nilefacts.dart';
 import 'i18n.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -143,6 +144,9 @@ class ToolsPage extends StatelessWidget {
       ]],
       ['Earth today', 'الأرض النهاردة', Icons.public, [
         ['Earth today', 'الأرض النهاردة', Icons.public, () => const EarthPage()],
+      ]],
+      ['The Nile', 'النيل بجد', Icons.water, [
+        ['The Nile, real facts', 'النيل: معلومات حقيقية', Icons.water, () => const NileFactsPage()],
       ]],
       ['Daily puzzle', 'لغز اليوم وكلمة اليوم', Icons.extension, [
         ['Daily puzzle', 'لغز اليوم وكلمة اليوم', Icons.extension, () => const PuzzlePage()],
