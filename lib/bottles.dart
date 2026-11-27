@@ -777,6 +777,18 @@ class _ThreadPageState extends State<ThreadPage> {
     } catch (_) { _profTried = false; }
   }
 
+  void _openProf() {
+    final a = other;
+    showModalBottomSheet(context: context, backgroundColor: const Color(0xFF0E2A45), builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
+      AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 84),
+      const SizedBox(height: 8),
+      Text((_prof['nick'] ?? '').toString().isEmpty ? L('Papyrus friend') : _prof['nick'].toString(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+      if ((_prof['gender'] ?? '').toString().isNotEmpty) Text(Gender.label(_prof['gender'].toString()), style: const TextStyle(color: Colors.white70, fontSize: 13)),
+      if ((_prof['bio'] ?? '').toString().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_prof['bio'].toString(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, height: 1.4))),
+      TextButton(onPressed: () async { try { await Sb.rpc('report_profile', {'p_uid': a}); if (mounted) toast(context, L('Reported. Thank you.')); } catch (_) { if (mounted) toast(context, L('Did not work. Try again.')); } }, child: Text(L('Report this profile'), style: const TextStyle(fontSize: 12))),
+    ]))));
+  }
+
   Future<void> _deleteMine() async {
     final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
       title: Text(L('Delete this papyrus?')),
@@ -803,11 +815,11 @@ class _ThreadPageState extends State<ThreadPage> {
   Future<void> _load() async {
     try {
       final r = await Sb.get('replies?bottle_id=eq.$bid&order=created_at.asc');
-      if (mounted) setState(() => replies = r as List);
+      if (mounted) setState(() { replies = r as List; err = ''; });
       _loadProf();
       if (auto) _autoTranslate();
     } catch (e) {
-      if (mounted) setState(() => err = '$e');
+      if (mounted && replies.isEmpty) setState(() => err = L('Could not load the messages. Check your connection.'));
     }
   }
 
@@ -930,6 +942,11 @@ class _ThreadPageState extends State<ThreadPage> {
           constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
           decoration: BoxDecoration(color: mine ? const Color(0xFF1C4A6E) : const Color(0xFF12304D), borderRadius: BorderRadius.circular(14)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (!mine && _prof.isNotEmpty) InkWell(onTap: _openProf, child: Padding(padding: const EdgeInsets.only(bottom: 6), child: Row(mainAxisSize: MainAxisSize.min, children: [
+              AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 24),
+              const SizedBox(width: 6),
+              Flexible(child: Text(((_prof['nick'] ?? '').toString().isEmpty ? L('Papyrus friend') : _prof['nick'].toString()) + ((_prof['gender'] ?? '').toString().isEmpty ? '' : ' ' + Gender.icon(_prof['gender'].toString())), overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kGreen))),
+            ]))),
             if (text.startsWith('🎭') && text.split('\n').length == 4) _truthCard(key, text, mine) else Text(text),
             if (text.startsWith('🔤 ') && text.contains(' = ') && !mine) Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(
               onPressed: () async { final i = text.indexOf(' = '); await saveWord(text.substring(3, i), text.substring(i + 3)); if (mounted) toast(context, L('Saved to your word book.')); },
@@ -958,7 +975,7 @@ class _ThreadPageState extends State<ThreadPage> {
           child: ListView(padding: const EdgeInsets.all(12), children: [
             _msg('b', (b['body'] ?? '').toString(), b['author'] == Sb.uid),
             for (final r in replies) _msg(r['id'].toString(), (r['body'] ?? '').toString(), r['author'] == Sb.uid),
-            if (err.isNotEmpty) Text(L(err)),
+            if (err.isNotEmpty) Row(children: [Expanded(child: Text(err, style: const TextStyle(color: Colors.white70))), TextButton(onPressed: _load, child: Text(L('Retry')))]),
             Padding(padding: EdgeInsets.all(8), child: Text(L('Safety: never send money or ID details. Meet only in public places. Report anything wrong.'), style: TextStyle(fontSize: 11, color: Colors.white38))),
           ]),
         ),
