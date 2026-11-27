@@ -343,7 +343,7 @@ if(SC==='giza'){
   (d.b||[]).forEach((b,i)=>{try{const sh=new THREE.Shape(b.p.map(q=>new THREE.Vector2(q[0],-q[1])));const g=new THREE.ExtrudeGeometry(sh,{depth:b.h,bevelEnabled:false});g.rotateX(-Math.PI/2);const c=wallC[(i*7)%6];const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:c}));S.add(m);nb++}catch(e){}});
   const n=document.getElementById('note');n.textContent=(AR?'بيانات الخريطة © مساهمو OpenStreetMap (ODbL). أشكال بس من غير خامات، وارتفاعات كتير من المباني تقديرية. ':'Map data © OpenStreetMap contributors (ODbL). Shapes only, no textures; many building heights are guessed. ')+nb+(AR?' مبنى':' buildings');
   window.OSM_NOTE=n.textContent}
-} else if(SC==='qaitbay'||SC==='library'||SC==='cairo'){
+} else if(SC==='qaitbay'||SC==='library'||SC==='cairo'||SC==='citadel'){
  // EGYPT rollout scenes: Citadel of Qaitbay / Bibliotheca Alexandrina (procedural, approximate)
  groundH=()=>0;S.fog=new THREE.Fog(0xe6e0cf,500,2600);
  (function(){const S=new THREE.Group();S0.add(S);const Q=SC;let seed=11;const r2=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
@@ -400,6 +400,20 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  city(-1400,1200,-1250,-500,120,30,90);city(-1400,1200,300,1000,110,24,70);
  for(let i=0;i<40;i++)palm(-1300+r2()*2400,150+r2()*80,1);
  }
+ if(Q=='citadel'){S.position.set(0,0,-60);LIMIT=200;
+ const st=new THREE.MeshLambertMaterial({color:0xcdbd98}),st2=new THREE.MeshLambertMaterial({color:0xe6e1d2}),dm=new THREE.MeshLambertMaterial({color:0x9aa3a6});
+ B(1800,2,1800,new THREE.MeshLambertMaterial({color:0xb7a77f}),0,0,0);
+ // enclosure walls with towers
+ [[0,-150,300,0],[0,150,300,0],[-150,0,300,1],[150,0,300,1]].forEach(([x,z,l,v])=>{const w=v?B(8,26,l,st,x,13,z):B(l,26,8,st,x,13,z)});
+ [[-150,-150],[150,-150],[-150,150],[150,150],[0,150]].forEach(([x,z])=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(14,16,36,16),st);t.position.set(x,18,z);t.castShadow=true;S.add(t);const c=new THREE.Mesh(new THREE.ConeGeometry(15,8,16),st);c.position.set(x,40,z);S.add(c)});
+ // Muhammad Ali mosque: courtyard, central dome, 4 half domes, 2 pencil minarets
+ B(70,3,70,st2,0,1.5,-60);B(52,22,52,st2,0,13,-60);
+ const dome=new THREE.Mesh(new THREE.SphereGeometry(20,24,12,0,Math.PI*2,0,Math.PI/2),dm);dome.position.set(0,24,-60);dome.castShadow=true;S.add(dome);
+ [[-24,-60],[24,-60],[0,-84],[0,-36]].forEach(([x,z])=>{const d=new THREE.Mesh(new THREE.SphereGeometry(10,16,8,0,Math.PI*2,0,Math.PI/2),dm);d.position.set(x,24,z);S.add(d)});
+ [[-26,-12],[26,-12]].forEach(([x,z])=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(2.4,3.2,80,12),st2);m.position.set(x,40,z);m.castShadow=true;S.add(m);const g=new THREE.Mesh(new THREE.CylinderGeometry(4,4,2,12),st2);g.position.set(x,62,z);S.add(g);const c=new THREE.Mesh(new THREE.ConeGeometry(2.8,16,12),dm);c.position.set(x,88,z);S.add(c)});
+ for(let i=0;i<30;i++)palm(-130+r2()*260,-130+r2()*260,1);
+ city(-900,900,500,800,60,22,50);
+ }
  if(Q=='library'){S.position.z=300;LIMIT=230;
  sea('#1d6f95',-2);
  const plaza=cv0(256,256,(g,w,h)=>{g.fillStyle='#b9b2a2';g.fillRect(0,0,w,h);for(let y=0;y<h;y+=32)for(let x=0;x<w;x+=32){g.fillStyle=`rgba(${r2()<.5?'255,255,255':'60,55,45'},${r2()*.08})`;g.fillRect(x,y,32,32);g.strokeStyle='rgba(70,65,55,.3)';g.strokeRect(x,y,32,32)}});plaza.repeat.set(40,25);
@@ -433,7 +447,7 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  city(-700,700,60,260,60,25,60);
  }
  })();
- var camelsTick=()=>{};var START=[SC==='cairo'?0:0,0,SC==='qaitbay'?110:SC==='cairo'?-70:170],YAW=0;
+ var camelsTick=()=>{};var START=[SC==='cairo'?0:0,0,SC==='qaitbay'?110:SC==='cairo'?-70:SC==='citadel'?40:170],YAW=0;
  var introPath=(u)=>{const a=-1.2+u*1.2,r=380-u*210;return [Math.sin(a)*r,70-u*55,Math.cos(a)*r,0,25,0]};
 } else { buildGeneric(); }
 

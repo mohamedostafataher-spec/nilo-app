@@ -1,7 +1,7 @@
 # Egypt rollout checklist (27 governorates)
 Status: [ ] not started, [~] rough render, [x] shipped in app with screenshots
 Order: 1 Cairo, 2 Giza, 3 Alexandria, 4 Luxor, 5 Aswan, then the rest.
-- [~] Cairo (Cairo Tower walkable in app, approximate; Citadel, Al-Azhar pending)
+- [~] Cairo (Cairo Tower walkable in app, approximate; Citadel of Saladin + Muhammad Ali mosque rough in app; Al-Azhar pending)
 - [~] Giza (rough pyramids; real OSM fetched)
 - [~] Alexandria (rough Qaitbay; real OSM fetched)
 - [ ] Luxor  - [ ] Aswan  - [ ] Qalyubia  - [ ] Port Said  - [ ] Suez  - [ ] Ismailia
