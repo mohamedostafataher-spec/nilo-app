@@ -112,6 +112,8 @@ class _VrPageState extends State<VrPage> {
       }
       String humd = 'null';
       try { humd = await rootBundle.loadString('assets/vr/human.json'); } catch (_) {}
+      String humf = 'null';
+      try { humf = await rootBundle.loadString('assets/vr/human_f.json'); } catch (_) {}
       final gald = <Map<String, String>>[];
       try {
         final gj = jsonDecode(await rootBundle.loadString('assets/vr/gallery.json')) as Map;
@@ -121,7 +123,7 @@ class _VrPageState extends State<VrPage> {
           gald.add({'d': 'data:image/jpeg;base64,$d', 'en': '${m['en']}', 'ar': '${m['ar']}', 'by': '${m['by']}', 'lic': '${m['lic']}'});
         }
       } catch (_) {}
-      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)};window.MODD=${jsonEncode(modd)};window.GALD=${jsonEncode(gald)};window.GAL_ON=false;window.HUMD=$humd</script><script>$three</script>');
+      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)};window.MODD=${jsonEncode(modd)};window.GALD=${jsonEncode(gald)};window.GAL_ON=false;window.HUMD=$humd;window.HUMDF=$humf</script><script>$three</script>');
       html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}&mp=${Uri.encodeQueryComponent(mp)}')");
       await wc.loadHtmlString(html, baseUrl: 'https://nilo-dl.vercel.app/');
       _face(facePath);

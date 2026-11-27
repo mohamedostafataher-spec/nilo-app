@@ -92,6 +92,7 @@ flutter:
     - assets/vr/models/ram.bin
     - assets/vr/gallery.json
     - assets/vr/human.json
+    - assets/vr/human_f.json
     - assets/vr/gal/
 
   # To add assets to your application, add an assets section, like this:
