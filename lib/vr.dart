@@ -216,6 +216,21 @@ class _VrPageState extends State<VrPage> {
     return r == true;
   }
 
+  Future<void> _settings() async {
+    final sp = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    bool on = sp.getBool('vr_online') ?? false, face = sp.getBool('vr_face') ?? false;
+    await showDialog(context: context, builder: (c) => StatefulBuilder(builder: (c, setS) => AlertDialog(
+      title: Text(L('Meeting others • مقابلة الناس')),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: on, onChanged: (v) { setS(() => on = v); sp.setBool('vr_online', v); }, title: Text(L('Meet other travellers here • قابل مسافرين هنا'), style: const TextStyle(fontSize: 13))),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: face, onChanged: (v) { setS(() => face = v); sp.setBool('vr_face', v); }, title: Text(L('Show my profile photo as my avatar face'), style: const TextStyle(fontSize: 13))),
+        Text(L('Changes apply the next time you open a place. • التغييرات بتتطبق لما تفتح مكان تاني.'), style: const TextStyle(fontSize: 11, color: Colors.black54)),
+      ]),
+      actions: [TextButton(onPressed: () => Navigator.pop(c), child: Text(L('OK')))],
+    )));
+  }
+
   Future<void> _mic() async {
     bool ok = false;
     try { final rec = AudioRecorder(); ok = await rec.hasPermission(); await rec.dispose(); } catch (_) {}
@@ -278,7 +293,11 @@ class _VrPageState extends State<VrPage> {
           if (osmStatus.isNotEmpty) Positioned(left: 24, right: 24, bottom: 120, child: Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)), child: Text(osmStatus, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white)))),
           SafeArea(child: Align(alignment: AlignmentDirectional.topStart, child: Padding(
             padding: const EdgeInsets.only(top: 34, left: 6, right: 6),
-            child: IconButton(style: IconButton.styleFrom(backgroundColor: Colors.black45), onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              IconButton(style: IconButton.styleFrom(backgroundColor: Colors.black45), onPressed: () => Navigator.pop(context), icon: const Icon(Icons.arrow_back, color: Colors.white)),
+              const SizedBox(width: 6),
+              IconButton(style: IconButton.styleFrom(backgroundColor: Colors.black45), onPressed: _settings, icon: const Icon(Icons.groups_outlined, color: Colors.white)),
+            ]),
           ))),
         ]),
       );
