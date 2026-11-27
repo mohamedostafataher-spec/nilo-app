@@ -91,7 +91,7 @@ tap_any('حكاياتي','My stories'); time.sleep(4); shot('tab_story')
 tap_any('قصص','حكاياتي','My stories'); time.sleep(4); shot('tab_stories')
 tap_any('جواز','Passport'); time.sleep(4); shot('tab_passport')
 tap_any('النيل','Nile'); time.sleep(3)
-tap_any('ابعت بردية','Send papyrus'); time.sleep(5); shot('write_page')
+tap_any('ابعت بردية','Send papyrus'); time.sleep(5); shot('write_page'); tap_any('Not now'); time.sleep(2); shot('after_gate'); tap_any('Got it'); time.sleep(1)
 tap_class('EditText'); adb('shell','input','text','Hello%sfrom%sEgypt'); time.sleep(1); shot('write_typed'); hide_kb(); time.sleep(1)
 tap_text('Send into the Nile'); 
 for i in range(1, 6):
@@ -99,7 +99,7 @@ for i in range(1, 6):
 time.sleep(6); shot('journey')
 dump('after_send')
 tap_any('قصص','حكاياتي','My stories'); time.sleep(5); shot('tab_stories'); tap_any('النيل','Nile'); time.sleep(2); tap_text('Tools'); time.sleep(2); shot('tab_Tools'); tap_text('Translation hub'); time.sleep(2); shot('hub_translate'); back(); tap_text('Travel help hub'); time.sleep(2); shot('hub_travel'); back()
-for tile in ['Translate', 'Phrasebook', 'Stay Safe', 'Places', 'Emergency', 'Official services', 'Floating button', 'Face to face', 'Saved']:
+for tile in ['Earth today', 'Translate', 'Phrasebook', 'Stay Safe', 'Places', 'Emergency', 'Official services', 'Floating button', 'Face to face', 'Saved']:
     if tap_text(tile):
         time.sleep(4); shot(tile.replace(' ', '_')); back(); time.sleep(1)
 # Nile Bottles
