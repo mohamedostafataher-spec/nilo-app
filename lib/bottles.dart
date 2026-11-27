@@ -1,3 +1,4 @@
+import 'journey.dart';
 import 'health.dart';
 import 'dart:async';
 import 'auth.dart' show AuthPage;
@@ -745,6 +746,16 @@ class _ThreadPageState extends State<ThreadPage> {
   bool auto = false, _autoBusy = false;
 
   String get bid => widget.bottle['id'].toString();
+
+  Future<void> _journey() async {
+    String from = '', to = '';
+    try {
+      final r = await Sb.rpc('bottle_journey', {'p_id': bid}) as List;
+      if (r.isNotEmpty) { from = (r.first['from_cc'] ?? '').toString(); to = (r.first['to_cc'] ?? '').toString(); }
+    } catch (_) {}
+    if (!mounted) return;
+    Navigator.push(context, MaterialPageRoute(builder: (_) => JourneyPage(fromCc: from, toCc: to)));
+  }
   String get other => (widget.bottle['author'] == Sb.uid ? widget.bottle['catcher'] : widget.bottle['author'])?.toString() ?? '';
 
   Timer? _poll;
@@ -935,6 +946,7 @@ class _ThreadPageState extends State<ThreadPage> {
       appBar: AppBar(title: Row(children: [if (_prof.isNotEmpty) Padding(padding: const EdgeInsets.only(right: 10), child: AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 34)), Flexible(child: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus', overflow: TextOverflow.ellipsis))]), backgroundColor: kBg, actions: [
         if (b['author'] == Sb.uid) IconButton(icon: const Icon(Icons.delete_outline), tooltip: L('Delete'), onPressed: _deleteMine),
         IconButton(icon: Icon(Icons.translate, color: auto ? kGreen : Colors.white54), tooltip: L('Language bridge'), onPressed: _toggleAuto),
+        IconButton(icon: const Icon(Icons.public), tooltip: L('Journey'), onPressed: _journey),
         IconButton(icon: Icon(Icons.flag_outlined), tooltip: L('Report'), onPressed: _report),
         IconButton(icon: Icon(Icons.block), tooltip: L('Block'), onPressed: _block),
       ]),

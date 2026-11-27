@@ -1,133 +1,160 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'land.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'i18n.dart';
+import 'main.dart';
+import 'places.dart' show PlacePage, PlacesOfPage;
+import 'vr.dart';
+import 'world.dart' show kWorld, countryOf;
 
-/// Real geography (Natural Earth land outlines), orthographic globe.
-/// Stage 1: the papyrus sails down the Nile (real river course, approximate).
-/// Stage 2: the camera pulls back and the papyrus is set adrift from the Nile delta into the Mediterranean.
-class Pt { final double lat, lon; const Pt(this.lat, this.lon); }
+/// Papyrus journey map. Only the two country codes of a papyrus are used (sender, and the person who caught it).
+/// No coordinates of any person are stored or shown. The path is a straight line over the globe between the two
+/// countries' reference points, so the countries "passed" are the ones near that line. It is an illustration of the
+/// route, not a tracked flight (a papyrus travels instantly on the server).
+class JourneyPage extends StatefulWidget {
+  final String fromCc, toCc;
+  const JourneyPage({super.key, required this.fromCc, required this.toCc});
+  @override
+  State<JourneyPage> createState() => _JourneyPageState();
+}
 
-const kNile = [Pt(22.0, 31.3), Pt(24.09, 32.90), Pt(25.70, 32.64), Pt(26.16, 32.72), Pt(27.18, 31.18), Pt(28.11, 30.75), Pt(29.07, 31.10), Pt(30.04, 31.24), Pt(30.9, 31.0), Pt(31.46, 30.4), Pt(32.4, 29.9)];
+class _JourneyPageState extends State<JourneyPage> with SingleTickerProviderStateMixin {
+  late final AnimationController ac = AnimationController(vsync: this, duration: const Duration(seconds: 9));
+  List<LatLng> arc = [];
+  List<List<Object>> passed = [];
+  late List<Object> a, b;
+  bool known = true;
 
-double _rad(double d) => d * math.pi / 180;
-
-class GlobePainter extends CustomPainter {
-  final double t; // 0..1 trip progress
-  final double spin; // slow idle spin 0..1
-  GlobePainter(this.t, this.spin);
-
-  static Pt _lerp(Pt a, Pt b, double u) => Pt(a.lat + (b.lat - a.lat) * u, a.lon + (b.lon - a.lon) * u);
-  static Pt _along(List<Pt> l, double u) {
-    final f = u.clamp(0.0, 1.0) * (l.length - 1);
-    final i = f.floor().clamp(0, l.length - 2);
-    return _lerp(l[i], l[i + 1], f - i);
+  @override
+  void initState() {
+    super.initState();
+    known = widget.fromCc.isNotEmpty;
+    a = countryOf(widget.fromCc.isEmpty ? 'EG' : widget.fromCc);
+    b = widget.toCc.isEmpty ? a : countryOf(widget.toCc);
+    _build();
+    ac.addListener(() => setState(() {}));
+    ac.forward();
   }
 
   @override
-  void paint(Canvas canvas, Size s) {
-    final e = Curves.easeInOutCubic;
-    // stages: 0-0.45 Nile, 0.45-0.8 pull back, 0.8-1 drifting at sea
-    final nileU = e.transform((t / 0.45).clamp(0.0, 1.0));
-    final pull = e.transform(((t - 0.35) / 0.45).clamp(0.0, 1.0));
-    final drift = e.transform(((t - 0.45) / 0.55).clamp(0.0, 1.0));
-    const sea = [Pt(32.4, 29.9), Pt(34.5, 24.0), Pt(36.0, 10.0), Pt(36.5, -8.0), Pt(30.0, -30.0)];
-    final papyrus = t < 0.45 ? _along(kNile, nileU) : _along(sea, drift);
-    // camera: on the Nile near Cairo, then follows the papyrus while zooming out
-    final nileCam = _lerp(const Pt(26.5, 31.5), const Pt(30.2, 31.2), nileU);
-    final cam0 = t < 0.45 ? nileCam : _lerp(nileCam, papyrus, pull);
-    final cam = Pt(cam0.lat, cam0.lon + (t > 0.8 ? (spin * 0 ) : 0));
-    final base = math.min(s.width, s.height) * 0.46;
-    final R = base * (1 + 9.0 * (1 - pull) * (1 - pull)) ; // zoomed in at start
-    final c = Offset(s.width / 2, s.height / 2);
+  void dispose() { ac.dispose(); super.dispose(); }
 
-    // space
-    canvas.drawRect(Offset.zero & s, Paint()..color = const Color(0xFF050E1C));
-    final rnd = math.Random(7);
-    final star = Paint()..color = Colors.white54;
-    for (var i = 0; i < 70; i++) { canvas.drawCircle(Offset(rnd.nextDouble() * s.width, rnd.nextDouble() * s.height), rnd.nextDouble() * 1.2 + .3, star); }
-
-    final phi0 = _rad(cam.lat), lam0 = _rad(cam.lon);
-    Offset? proj(double lat, double lon, [bool clampBack = true]) {
-      final p = _rad(lat), l = _rad(lon) - lam0;
-      final cosc = math.sin(phi0) * math.sin(p) + math.cos(phi0) * math.cos(p) * math.cos(l);
-      var x = math.cos(p) * math.sin(l);
-      var y = math.cos(phi0) * math.sin(p) - math.sin(phi0) * math.cos(p) * math.cos(l);
-      if (cosc < 0) {
-        if (!clampBack) return null;
-        final n = math.sqrt(x * x + y * y);
-        if (n == 0) { x = 1; y = 0; } else { x /= n; y /= n; }
-      }
-      return Offset(c.dx + x * R, c.dy - y * R);
-    }
-
-    // atmosphere + ocean
-    final globe = Rect.fromCircle(center: c, radius: R);
-    canvas.drawCircle(c, R * 1.04, Paint()..color = const Color(0xFF3FA7D6).withOpacity(.18)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18));
-    canvas.save();
-    canvas.clipPath(Path()..addOval(globe));
-    canvas.drawRect(globe, Paint()..shader = const RadialGradient(center: Alignment(-.3, -.4), radius: 1.1, colors: [Color(0xFF1C6A9A), Color(0xFF0C3B63), Color(0xFF07213F)]).createShader(globe));
-    // graticule
-    final grat = Paint()..color = Colors.white.withOpacity(.07)..style = PaintingStyle.stroke..strokeWidth = 1;
-    for (var lat = -60; lat <= 60; lat += 30) {
-      final path = Path(); var started = false;
-      for (var lon = -180; lon <= 180; lon += 5) { final o = proj(lat.toDouble(), lon.toDouble(), false); if (o == null) { started = false; continue; } if (!started) { path.moveTo(o.dx, o.dy); started = true; } else { path.lineTo(o.dx, o.dy); } }
-      canvas.drawPath(path, grat);
-    }
-    for (var lon = -180; lon < 180; lon += 30) {
-      final path = Path(); var started = false;
-      for (var lat = -85; lat <= 85; lat += 5) { final o = proj(lat.toDouble(), lon.toDouble(), false); if (o == null) { started = false; continue; } if (!started) { path.moveTo(o.dx, o.dy); started = true; } else { path.lineTo(o.dx, o.dy); } }
-      canvas.drawPath(path, grat);
-    }
-    // land
-    final fill = Paint()..color = const Color(0xFFD9B66A);
-    final edge = Paint()..color = const Color(0xFF8A6B2F)..style = PaintingStyle.stroke..strokeWidth = 1;
-    for (final poly in kLand) {
-      final path = Path();
-      var any = false;
-      for (var i = 0; i < poly.length; i += 2) {
-        final o = proj(poly[i + 1], poly[i]);
-        if (o == null) continue;
-        any = true;
-        if (i == 0) { path.moveTo(o.dx, o.dy); } else { path.lineTo(o.dx, o.dy); }
-      }
-      if (!any) continue;
-      path.close();
-      canvas.drawPath(path, fill);
-      canvas.drawPath(path, edge);
-    }
-    // night shade on the limb
-    canvas.drawRect(globe, Paint()..shader = RadialGradient(colors: [Colors.transparent, Colors.black.withOpacity(.45)], stops: const [.65, 1]).createShader(globe));
-    // Nile line
-    final nile = Path(); var ns = false;
-    for (final p in kNile) { final o = proj(p.lat, p.lon, false); if (o == null) continue; if (!ns) { nile.moveTo(o.dx, o.dy); ns = true; } else { nile.lineTo(o.dx, o.dy); } }
-    canvas.drawPath(nile, Paint()..color = const Color(0xFF39A0D6)..style = PaintingStyle.stroke..strokeWidth = math.max(2.0, R / 120)..strokeCap = StrokeCap.round);
-    // trail
-    final trail = Path(); var ts = false;
-    void addTrail(Pt p) { final o = proj(p.lat, p.lon, false); if (o == null) return; if (!ts) { trail.moveTo(o.dx, o.dy); ts = true; } else { trail.lineTo(o.dx, o.dy); } }
-    if (t < 0.45) { for (var i = 0; i <= 30; i++) { addTrail(_along(kNile, nileU * i / 30)); } }
-    else { for (var i = 0; i <= 30; i++) { addTrail(_along(kNile, 1.0 * i / 30)); } for (var i = 0; i <= 40; i++) { addTrail(_along(sea, drift * i / 40)); } }
-    canvas.drawPath(trail, Paint()..color = const Color(0xFFFFE08A)..style = PaintingStyle.stroke..strokeWidth = 2.5..strokeCap = StrokeCap.round..maskFilter = const MaskFilter.blur(BlurStyle.solid, 1.5));
-    canvas.restore();
-    canvas.drawCircle(c, R, Paint()..color = const Color(0xFF7CC8F0).withOpacity(.5)..style = PaintingStyle.stroke..strokeWidth = 1.5);
-
-    // papyrus marker
-    final pm = proj(papyrus.lat, papyrus.lon, false);
-    if (pm != null) {
-      final pulse = 1 + 0.25 * math.sin(spin * 2 * math.pi * 6);
-      canvas.drawCircle(pm, 16 * pulse, Paint()..color = const Color(0xFFFFE08A).withOpacity(.25));
-      final tp = TextPainter(text: const TextSpan(text: '📜', style: TextStyle(fontSize: 28)), textDirection: TextDirection.ltr)..layout();
-      tp.paint(canvas, pm - Offset(tp.width / 2, tp.height / 2));
-    }
-    // Cairo label while on the Nile
-    if (t < 0.5) {
-      final o = proj(30.04, 31.24, false);
-      if (o != null) {
-        final tp = TextPainter(text: const TextSpan(text: 'القاهرة • Cairo', style: TextStyle(fontSize: 13, color: Colors.white, shadows: [Shadow(color: Colors.black, blurRadius: 4)])), textDirection: TextDirection.ltr)..layout();
-        tp.paint(canvas, o + const Offset(12, -8));
-      }
-    }
+  List<double> _vec(double la, double lo) {
+    final p = la * math.pi / 180, l = lo * math.pi / 180;
+    return [math.cos(p) * math.cos(l), math.cos(p) * math.sin(l), math.sin(p)];
   }
 
+  void _build() {
+    final la1 = (a[4] as num).toDouble(), lo1 = (a[5] as num).toDouble(), la2 = (b[4] as num).toDouble(), lo2 = (b[5] as num).toDouble();
+    if (widget.toCc.isEmpty || widget.toCc == widget.fromCc) { arc = [LatLng(la1, lo1)]; return; }
+    final v1 = _vec(la1, lo1), v2 = _vec(la2, lo2);
+    final dot = (v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]).clamp(-1.0, 1.0);
+    final om = math.acos(dot), so = math.sin(om);
+    double? prev;
+    for (var i = 0; i <= 90; i++) {
+      final t = i / 90, k1 = so.abs() < 1e-6 ? 1 - t : math.sin((1 - t) * om) / so, k2 = so.abs() < 1e-6 ? t : math.sin(t * om) / so;
+      final x = k1 * v1[0] + k2 * v2[0], y = k1 * v1[1] + k2 * v2[1], z = k1 * v1[2] + k2 * v2[2];
+      var lo = math.atan2(y, x) * 180 / math.pi;
+      final la = math.atan2(z, math.sqrt(x * x + y * y)) * 180 / math.pi;
+      if (prev != null) { while (lo - prev > 180) { lo -= 360; } while (lo - prev < -180) { lo += 360; } }
+      prev = lo;
+      arc.add(LatLng(la, lo));
+    }
+    // countries near the line (reference points within about 700 km), in order along the path
+    final d = const Distance();
+    final hits = <List<Object>>[];
+    for (final c in kWorld) {
+      if (c[0] == a[0] || c[0] == b[0]) continue;
+      final p = LatLng((c[4] as num).toDouble(), (c[5] as num).toDouble());
+      var best = 1e12, bi = 0;
+      for (var i = 0; i < arc.length; i++) {
+        final q = LatLng(arc[i].latitude, ((arc[i].longitude + 540) % 360) - 180);
+        final m = d.as(LengthUnit.Kilometer, p, q);
+        if (m < best) { best = m; bi = i; }
+      }
+      if (best < 700) hits.add([c, bi]);
+    }
+    hits.sort((x, y) => (x[1] as int).compareTo(y[1] as int));
+    passed = hits.take(6).map((h) => h[0] as List<Object>).toList();
+  }
+
+  LatLng get _plane {
+    if (arc.length < 2) return arc.isEmpty ? const LatLng(0, 0) : arc.first;
+    final f = Curves.easeInOut.transform(ac.value) * (arc.length - 1);
+    final i = f.floor().clamp(0, arc.length - 2), t = f - i;
+    return LatLng(arc[i].latitude + (arc[i + 1].latitude - arc[i].latitude) * t, arc[i].longitude + (arc[i + 1].longitude - arc[i].longitude) * t);
+  }
+
+  List<LatLng> _done() {
+    if (arc.length < 2) return [];
+    final f = Curves.easeInOut.transform(ac.value) * (arc.length - 1);
+    final i = f.floor().clamp(0, arc.length - 1);
+    return [...arc.sublist(0, i + 1), _plane];
+  }
+
+  String _name(List<Object> c) => Ui.rtl ? c[2] as String : c[1] as String;
+
   @override
-  bool shouldRepaint(GlobePainter o) => o.t != t || o.spin != spin;
+  Widget build(BuildContext context) {
+    final landed = widget.toCc.isNotEmpty && ac.value > 0.98;
+    final places = kVrByCountry[widget.toCc] ?? [];
+    final center = arc.isEmpty ? const LatLng(25, 25) : LatLng((arc.first.latitude + arc.last.latitude) / 2, (arc.first.longitude + arc.last.longitude) / 2);
+    return Scaffold(
+      appBar: AppBar(title: Text(L('Papyrus journey • رحلة البردية')), backgroundColor: kBg),
+      body: Column(children: [
+        Expanded(
+          child: FlutterMap(
+            options: MapOptions(
+              initialCenter: center,
+              initialZoom: 2.2,
+              initialCameraFit: arc.length > 1 ? CameraFit.coordinates(coordinates: [arc.first, arc.last], padding: const EdgeInsets.all(70), maxZoom: 5) : null,
+              minZoom: 1.5, maxZoom: 7,
+              backgroundColor: const Color(0xFF050E1A),
+              interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+            ),
+            children: [
+              TileLayer(urlTemplate: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg', maxNativeZoom: 8, userAgentPackageName: 'app.nilo.nilo_app'),
+              if (arc.length > 1) PolylineLayer(polylines: [
+                Polyline(points: arc, strokeWidth: 2, color: Colors.white54, pattern: StrokePattern.dashed(segments: const [6, 6])),
+                Polyline(points: _done(), strokeWidth: 4, color: const Color(0xFFFFD166)),
+              ]),
+              MarkerLayer(markers: [
+                for (final c in passed) Marker(point: LatLng((c[4] as num).toDouble(), (c[5] as num).toDouble()), width: 80, height: 44, child: Column(children: [Text(c[3] as String, style: const TextStyle(fontSize: 18)), Text(_name(c), style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.w700, shadows: [Shadow(blurRadius: 4, color: Colors.black)]), maxLines: 1)])),
+                Marker(point: LatLng((a[4] as num).toDouble(), (a[5] as num).toDouble()), width: 90, height: 54, child: Column(children: [Text(known ? a[3] as String : '📜', style: const TextStyle(fontSize: 24)), Text(known ? _name(a) : '', style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w800, shadows: [Shadow(blurRadius: 4, color: Colors.black)]))])),
+                if (arc.length > 1) Marker(point: arc.last, width: 90, height: 54, child: Column(children: [Text(b[3] as String, style: const TextStyle(fontSize: 24)), Text(_name(b), style: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w800, shadows: [Shadow(blurRadius: 4, color: Colors.black)]))])),
+                if (arc.length > 1) Marker(point: _plane, width: 40, height: 40, child: const Text('📜', style: TextStyle(fontSize: 28))),
+              ]),
+            ],
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          color: kBg,
+          padding: const EdgeInsets.all(14),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            if (!known) Text(L('The sender country is not known for this papyrus.'), style: const TextStyle(color: Colors.amberAccent))
+            else if (widget.toCc.isEmpty) Text('${a[3]} ${_name(a)} → ${L('Still floating: nobody caught it yet')}', style: const TextStyle(fontWeight: FontWeight.w800))
+            else Text('${a[3]} ${_name(a)}  →  ${b[3]} ${_name(b)}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16)),
+            if (passed.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 4), child: Text('${L('Flew near')}: ${passed.map((c) => '${c[3]} ${_name(c)}').join('  ')}', style: const TextStyle(color: Colors.white70, fontSize: 12))),
+            if (landed) ...[
+              const SizedBox(height: 8),
+              Text('${L('Landed in')} ${b[3]} ${_name(b)}', style: const TextStyle(color: kGreen, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              Wrap(spacing: 8, runSpacing: 4, children: [
+                for (final p in places) ActionChip(
+                  avatar: const Icon(Icons.view_in_ar, size: 16),
+                  label: Text(Ui.rtl ? p[2] : p[1]),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PlacePage(title: Ui.rtl ? p[2] : p[1], url: 'https://en.wikipedia.org/wiki/${p[0]}'))),
+                ),
+                ActionChip(avatar: const Icon(Icons.place, size: 16), label: Text(L('More places')), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PlacesOfPage()))),
+              ]),
+            ],
+            const SizedBox(height: 6),
+            Text(L('The line is an illustration between the two countries, not a tracked flight. Only country codes are used, never locations. Map: NASA GIBS.'), style: const TextStyle(color: Colors.white38, fontSize: 10)),
+          ]),
+        ),
+      ]),
+    );
+  }
 }

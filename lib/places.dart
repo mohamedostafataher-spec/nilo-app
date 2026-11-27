@@ -112,6 +112,7 @@ class _PlacePageState extends State<PlacePage> {
   bool busy = true;
   String text = '', img = '', err = '', wikiUrl = '', srcNote = '';
   List<_Pic> pics = [];
+  String vrScene = '', bio = 'green', vrCol = 'd8c9a8';
   _Pic? pano;
   static const _ua = {'User-Agent': 'Nilo/1.5 (mohamedostafataher@gmail.com)'};
 
@@ -137,6 +138,7 @@ class _PlacePageState extends State<PlacePage> {
 
   Future<void> _load() async {
     final t = Uri.parse(widget.url).pathSegments.last;
+    _vrPick();
     // 1) text: Arabic Wikipedia when the app is Arabic and an Arabic article exists, else English
     try {
       final r = await _j(Uri.https('en.wikipedia.org', '/api/rest_v1/page/summary/$t'));
@@ -198,6 +200,31 @@ class _PlacePageState extends State<PlacePage> {
     } catch (_) {}
   }
 
+  Future<void> _vrPick() async {
+    final key = Uri.parse(widget.url).pathSegments.last;
+    final known = kVrScenes[key];
+    String types = '', cc = '';
+    try {
+      final q = 'SELECT ?tl ?cc WHERE { VALUES ?art { <https://en.wikipedia.org/wiki/$key> } ?art schema:about ?s. '
+          'OPTIONAL{ ?s wdt:P31 ?t. ?t rdfs:label ?tl FILTER(LANG(?tl)="en") } OPTIONAL{ ?s wdt:P17 ?c. ?c wdt:P297 ?cc } } LIMIT 20';
+      final r = await _j(Uri.https('query.wikidata.org', '/sparql', {'query': q, 'format': 'json'}));
+      final rows = (r['results']['bindings'] as List);
+      final ts = <String>{};
+      for (final b in rows) {
+        final tl = (b['tl']?['value'] ?? '').toString();
+        if (tl.isNotEmpty) ts.add(tl);
+        if (cc.isEmpty) cc = (b['cc']?['value'] ?? '').toString();
+      }
+      types = ts.join(' ');
+    } catch (_) {}
+    if (cc.isEmpty) cc = Passport.country.toUpperCase();
+    vrScene = known ?? vrTemplate(types, Uri.decodeComponent(key).replaceAll('_', ' '), cc);
+    const desertK = ['taj', 'giza', 'petra', 'abusimbel', 'burj', 'karnak'];
+    bio = desertK.contains(known) ? 'desert' : (known == 'christ' || known == 'steppyr') ? 'tropical' : vrBiome(cc, types);
+    vrCol = vrColor(cc);
+    if (mounted) setState(() {});
+  }
+
   void _open(_Pic p) => Navigator.push(context, MaterialPageRoute(builder: (_) => Scaffold(
         backgroundColor: Colors.black,
         appBar: AppBar(backgroundColor: Colors.black, title: Text(widget.title, maxLines: 1)),
@@ -216,14 +243,14 @@ class _PlacePageState extends State<PlacePage> {
                 if (img.isNotEmpty) ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.network(img, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
                 const SizedBox(height: 12),
                 if (err.isNotEmpty) Text(err, style: const TextStyle(color: Colors.orangeAccent)),
-                if (kVrScenes.containsKey(Uri.parse(widget.url).pathSegments.last)) ...[
+                if (vrScene.isNotEmpty) ...[
                   FilledButton.icon(
                     style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD9A441), foregroundColor: const Color(0xFF3B2A12), minimumSize: const Size.fromHeight(54)),
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VrPage(scene: kVrScenes[Uri.parse(widget.url).pathSegments.last]!, title: widget.title))),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VrPage(scene: vrScene, title: widget.title, biome: bio, color: vrCol))),
                     icon: const Icon(Icons.view_in_ar),
                     label: Text(L('Walk inside in 3D • تمشّى جواها 3D')),
                   ),
-                  Padding(padding: const EdgeInsets.only(top: 4, bottom: 10), child: Text(L('A stylized 3D scene drawn by Nilo, not real photography. Real photos are below.'), style: const TextStyle(fontSize: 11, color: Colors.white54))),
+                  Padding(padding: const EdgeInsets.only(top: 4, bottom: 10), child: Text(kVrScenes.containsKey(Uri.parse(widget.url).pathSegments.last) ? L('A stylized 3D scene drawn by Nilo, not real photography. Real photos are below.') : L('A generated 3D scene matched to this kind of place (not its real shape), in the colours of its country. Real photos are below.'), style: const TextStyle(fontSize: 11, color: Colors.white54))),
                 ],
                 if (pano != null) FilledButton.icon(
                   style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2A7FBA), minimumSize: const Size.fromHeight(50)),
