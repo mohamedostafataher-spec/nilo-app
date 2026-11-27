@@ -16,6 +16,17 @@ import 'store.dart';
 import 'invite.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+const kCredits = '''Credits • الشكر والتراخيص
+
+3D characters: Quaternius, Universal Base Characters (CC0).
+Textures: Poly Haven (CC0) and ambientCG (CC0).
+Photos used as reference: Wikimedia Commons, each under CC0 / CC BY / public domain, with author credit kept in the app files.
+Map data: © OpenStreetMap contributors (ODbL).
+3D engine: three.js (MIT).
+Place scenes are approximate stylized renders, not real photography.
+
+تطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa''';
+
 const kPrivacy = '''Privacy Policy • سياسة الخصوصية
 
 Nilo is a free tourist and translation app made by Mohamed Mostafa Taher (Egypt).
@@ -162,6 +173,7 @@ class _SettingsPageState extends State<SettingsPage> {
         const Divider(),
         ListTile(leading: Icon(Icons.shield), title: Text(L('Papyrus & Stories safety')), subtitle: Text(L('18+ only (self-declared). No links or phone numbers. Report or block anyone. Content hides after reports. Meet only in public places.'))),
         ListTile(leading: Icon(Icons.lock), title: Text(L('Privacy policy • الخصوصية')), onTap: () => _go(TextDocPage('Privacy Policy', kPrivacy))),
+        ListTile(leading: Icon(Icons.favorite), title: Text(L('Credits • الشكر والتراخيص')), onTap: () => _go(TextDocPage('Credits', kCredits))),
         ListTile(leading: Icon(Icons.gavel), title: Text(L('Terms of use • الشروط')), onTap: () => _go(TextDocPage('Terms of Use', kTerms))),
         const Divider(),
         ListTile(leading: Icon(Icons.share), title: Text(L('Invite friends • ادعُ صديق')), subtitle: Text(L('Your code, link and Reeds perks')), onTap: () => _go(InvitePage())),
