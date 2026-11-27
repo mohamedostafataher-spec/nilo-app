@@ -11,6 +11,7 @@ import 'dart:ui' show PlatformDispatcher;
 import 'main.dart';
 import 'settings.dart';
 import 'journey.dart';
+import 'papyrus_globe.dart';
 import 'screens.dart' show toast, ToolsPage;
 
 /// code, English name, Arabic name, flag, lat, lon, symbol emoji, symbol name, hello, thanks

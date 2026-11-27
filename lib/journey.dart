@@ -116,7 +116,7 @@ class _JourneyPageState extends State<JourneyPage> with SingleTickerProviderStat
             children: [
               TileLayer(urlTemplate: 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg', maxNativeZoom: 8, userAgentPackageName: 'app.nilo.nilo_app'),
               if (arc.length > 1) PolylineLayer(polylines: [
-                Polyline(points: arc, strokeWidth: 2, color: Colors.white54, isDotted: true),
+                Polyline(points: arc, strokeWidth: 2, color: Colors.white54),
                 Polyline(points: _done(), strokeWidth: 4, color: const Color(0xFFFFD166)),
               ]),
               MarkerLayer(markers: [
