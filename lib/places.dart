@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'i18n.dart';
+import 'vr.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -215,6 +216,15 @@ class _PlacePageState extends State<PlacePage> {
                 if (img.isNotEmpty) ClipRRect(borderRadius: BorderRadius.circular(14), child: Image.network(img, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink())),
                 const SizedBox(height: 12),
                 if (err.isNotEmpty) Text(err, style: const TextStyle(color: Colors.orangeAccent)),
+                if (kVrScenes.containsKey(Uri.parse(widget.url).pathSegments.last)) ...[
+                  FilledButton.icon(
+                    style: FilledButton.styleFrom(backgroundColor: const Color(0xFFD9A441), foregroundColor: const Color(0xFF3B2A12), minimumSize: const Size.fromHeight(54)),
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => VrPage(scene: kVrScenes[Uri.parse(widget.url).pathSegments.last]!, title: widget.title))),
+                    icon: const Icon(Icons.view_in_ar),
+                    label: Text(L('Walk inside in 3D • تمشّى جواها 3D')),
+                  ),
+                  Padding(padding: const EdgeInsets.only(top: 4, bottom: 10), child: Text(L('A stylized 3D scene drawn by Nilo, not real photography. Real photos are below.'), style: const TextStyle(fontSize: 11, color: Colors.white54))),
+                ],
                 if (pano != null) FilledButton.icon(
                   style: FilledButton.styleFrom(backgroundColor: const Color(0xFF2A7FBA), minimumSize: const Size.fromHeight(50)),
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PanoPage(title: widget.title, pic: pano!))),

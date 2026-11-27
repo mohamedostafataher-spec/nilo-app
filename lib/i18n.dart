@@ -450,6 +450,8 @@ Some apps block recording, and calls are not recorded. Try first; if it comes ou
   [r'''Camera translate''', r'''ترجمة بالكاميرا'''],
   [r'''Globe''', r'''الكوكب'''],
   [r'''Friends''', r'''الأصحاب'''],
+  [r'''A stylized 3D scene drawn by Nilo, not real photography. Real photos are below.''', r'''مشهد 3D مرسوم من نيلو، مش تصوير حقيقي. الصور الحقيقية تحت.'''],
+  [r'''Virtual visit: look around • زيارة افتراضية''', r'''زيارة افتراضية: بصّ حواليك (صورة حقيقية)'''],
   [r'''Photo''', r'''صورة'''],
   [r'''Photo expired''', r'''الصورة انتهت'''],
   [r'''Photos and clips are paused today (storage is full). Text stories still work.''', r'''الصور والفيديوهات واقفة النهارده (المساحة مليانة). حكايات النص شغالة.'''],
