@@ -1,3 +1,4 @@
+import 'earth.dart';
 import 'i18n.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -139,6 +140,9 @@ class ToolsPage extends StatelessWidget {
         ['Emergency & medical', 'طوارئ وكارت طبي', Icons.local_hospital, () => const EmergencyPage()],
         ['Places & weather', 'أماكن وطقس', Icons.place, () => const PlacesPage()],
         ['Official services', 'خدمات رسمية', Icons.account_balance, () => const OfficialPage()],
+      ]],
+      ['Earth today', 'الأرض النهاردة', Icons.public, [
+        ['Earth today', 'الأرض النهاردة', Icons.public, () => const EarthPage()],
       ]],
       ['Daily puzzle', 'لغز اليوم وكلمة اليوم', Icons.extension, [
         ['Daily puzzle', 'لغز اليوم وكلمة اليوم', Icons.extension, () => const PuzzlePage()],
