@@ -49,15 +49,18 @@ class Health {
   /// Build commit, set by CI with --dart-define=NILO_COMMIT. Empty in local builds.
   static const commit = String.fromEnvironment('NILO_COMMIT');
 
-  /// Compares the build with the public version.json. Returns the download URL when a newer build exists.
+  /// Monotonic build number set by CI (--dart-define=NILO_BUILD=run number). 0 in local builds.
+  static const build = int.fromEnvironment('NILO_BUILD');
+
+  /// Returns the download URL only when version.json lists a higher build number than this installed build.
   static Future<String?> updateUrl() async {
-    if (commit.isEmpty) return null;
+    if (build <= 0) return null;
     try {
       final r = await http.get(Uri.parse('https://mohamedostafataher-spec.github.io/nilo-dl/version.json')).timeout(const Duration(seconds: 8));
       if (r.statusCode != 200) return null;
       final j = jsonDecode(utf8.decode(r.bodyBytes)) as Map;
-      final c = (j['commit'] ?? '').toString();
-      if (c.isNotEmpty && !c.startsWith(commit) && !commit.startsWith(c)) return 'https://mohamedostafataher-spec.github.io/nilo-dl';
+      final n = int.tryParse((j['build'] ?? '').toString()) ?? 0;
+      if (n > build) return 'https://mohamedostafataher-spec.github.io/nilo-dl';
     } catch (_) {}
     return null;
   }

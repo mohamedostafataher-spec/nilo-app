@@ -27,12 +27,12 @@ jobs:
           echo "$JKS" | base64 -d > android/app/nilo-release.jks
           printf 'storePassword=%s\nkeyPassword=%s\nkeyAlias=nilo\nstoreFile=nilo-release.jks\n' "$PW" "$PW" > android/app/key.properties
       - run: flutter pub get
-      - run: flutter build apk --release --dart-define=NILO_COMMIT=${GITHUB_SHA::7} --no-tree-shake-icons --target-platform android-arm,android-arm64 --split-debug-info=build/dbg1 --obfuscate
+      - run: flutter build apk --release --dart-define=NILO_COMMIT=${GITHUB_SHA::7} --dart-define=NILO_BUILD=${{ github.run_number }} --no-tree-shake-icons --target-platform android-arm,android-arm64 --split-debug-info=build/dbg1 --obfuscate
       - uses: actions/upload-artifact@v4
         with:
           name: nilo-apk
           path: build/app/outputs/flutter-apk/app-release.apk
-      - run: flutter build apk --release --dart-define=NILO_COMMIT=${GITHUB_SHA::7} --no-tree-shake-icons --split-per-abi --target-platform android-arm64 --split-debug-info=build/dbg2 --obfuscate
+      - run: flutter build apk --release --dart-define=NILO_COMMIT=${GITHUB_SHA::7} --dart-define=NILO_BUILD=${{ github.run_number }} --no-tree-shake-icons --split-per-abi --target-platform android-arm64 --split-debug-info=build/dbg2 --obfuscate
       - uses: actions/upload-artifact@v4
         with:
           name: nilo-apk-arm64
@@ -52,12 +52,12 @@ jobs:
           v = re.search(r'versionName "([^"]+)"', open('android/app/build.gradle').read()).group(1)
           c = re.search(r'versionCode (\d+)', open('android/app/build.gradle').read()).group(1)
           sz = lambda f: os.path.getsize('pub/' + f)
-          site = 'https://nilo-dl.vercel.app'
+          site = 'https://mohamedostafataher-spec.github.io/nilo-dl'
           d = {'version': v + ' (' + c + ')', 'date': datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC'),
                'arm64_bytes': sz('Nilo.apk'), 'universal_bytes': sz('Nilo-universal.apk'),
                'arm64_url': site + '/Nilo.apk', 'universal_url': site + '/Nilo-universal.apk',
                'changelog': [l.strip() for l in open('CHANGELOG.txt') if l.strip()],
-               'commit': os.environ.get('GITHUB_SHA', '')[:7]}
+               'commit': os.environ.get('GITHUB_SHA', '')[:7], 'build': int(os.environ.get('GITHUB_RUN_NUMBER', '0'))}
           json.dump(d, open('pub/version.json', 'w'), ensure_ascii=False)
           segno.make(site, error='m').save('pub/qr.svg', scale=8, border=2)
           PY
