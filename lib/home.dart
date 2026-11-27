@@ -245,6 +245,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
               GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const TodayPage())), child: _chip('🌍')),
               GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const ToolsPage())), child: _chip('🧰 ${L('Tools')}')),
               GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const GlobePage())), child: _chip('🌐 ${L('Globe')}')),
+              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const PlayHubPage())), child: _chip('🎲 ${L('Play')}')),
               if (_wx.isNotEmpty)
                 GestureDetector(
                   onTap: () { setState(() => _city = (_city + 1) % _cities.length); _weather(); },
@@ -283,6 +284,14 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
           ),
         ]),
       ),
+      if (Passport.streak >= 2)
+        Positioned(
+          left: 0, right: 0, bottom: 96,
+          child: IgnorePointer(child: Column(children: [
+            Text('⛵' * math.min(Passport.streak, 10), style: const TextStyle(fontSize: 18)),
+            Text('${L('Your fleet')}: ${Passport.streak} ${L('days')}', style: const TextStyle(fontSize: 10, color: Colors.white70)),
+          ])),
+        ),
       Positioned(
         left: 0, right: 0, bottom: 4,
         child: Text(_real > 0 ? 'Tap a papyrus to catch it' : '', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.white70)),

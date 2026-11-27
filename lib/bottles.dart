@@ -15,6 +15,7 @@ import 'net.dart';
 import 'screens.dart';
 import 'sendfx.dart';
 import 'profile.dart' show AvatarView;
+import 'games.dart' show saveWord;
 
 const _sbUrl = 'https://fbfvjihrbzsqlwmoejiq.supabase.co';
 const _sbKey = 'sb_publishable_3Gw07lMxemop4QhYpgUszw_8jlkb5JP';
@@ -469,6 +470,27 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
       )).then((_) { if (mounted) focus.requestFocus(); });
 
   final friend = TextEditingController();
+
+  /// Writes a "two truths and a lie" papyrus into the text box. Format: first line = lie number, then three lines.
+  Future<void> _twoTruths() async {
+    final f = [TextEditingController(), TextEditingController(), TextEditingController()];
+    var lie = 3;
+    final ok = await showDialog<bool>(context: context, builder: (c) => StatefulBuilder(builder: (c, set) => AlertDialog(
+      title: Text(L('Two truths and a lie • حقيقتين وكذبة')),
+      content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        for (var i = 0; i < 3; i++) Row(children: [
+          Radio<int>(value: i + 1, groupValue: lie, onChanged: (v) => set(() => lie = v ?? lie)),
+          Expanded(child: TextField(controller: f[i], maxLength: 90, decoration: InputDecoration(counterText: '', hintText: '${i + 1}'))),
+        ]),
+        Text(L('Select the circle next to your LIE. The reader guesses.'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
+      ])),
+      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text(L('Cancel'))), TextButton(onPressed: () => Navigator.pop(c, true), child: Text(L('Use')))],
+    )));
+    if (ok != true) return;
+    final lines = f.map((e) => e.text.trim().replaceAll('\n', ' ')).toList();
+    if (lines.any((e) => e.length < 3)) { if (mounted) toast(context, 'Write all three lines.'); return; }
+    setState(() => c.text = '🎭$lie\n${lines.join('\n')}');
+  }
   Future<void> _send() async {
     if (await Sb.needAccount(context)) return;
     final t = c.text.trim();
@@ -535,6 +557,10 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
                   for (final k in [['free', 'Hello • أهلا'], ['place', 'About a place • مكان'], ['phrase', 'Phrase • جملة']])
                     Padding(padding: const EdgeInsets.only(right: 8), child: ChoiceChip(label: Text(k[1]), selected: kind == k[0], onSelected: (_) => setState(() => kind = k[0]))),
                 ]),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 4, 18, 0),
+                child: Align(alignment: AlignmentDirectional.centerStart, child: ActionChip(avatar: const Text('🎭'), label: Text(L('Two truths and a lie • حقيقتين وكذبة')), onPressed: _twoTruths)),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(18, 6, 18, 0),
@@ -789,6 +815,22 @@ class _ThreadPageState extends State<ThreadPage> {
     } finally { _autoBusy = false; }
   }
 
+  Future<void> _wordSwap() async {
+    final w = TextEditingController(), m = TextEditingController();
+    final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+      title: Text(L('Word swap • تبادل كلمة')),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        TextField(controller: w, maxLength: 30, decoration: InputDecoration(counterText: '', hintText: L('A word from your language'))),
+        TextField(controller: m, maxLength: 60, decoration: InputDecoration(counterText: '', hintText: L('What it means'))),
+      ]),
+      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: Text(L('Cancel'))), TextButton(onPressed: () => Navigator.pop(c, true), child: Text(L('Use')))],
+    ));
+    if (ok != true) return;
+    final a = w.text.trim().replaceAll('=', ' '), b = m.text.trim();
+    if (a.isEmpty || b.isEmpty) return;
+    setState(() => c.text = '🔤 $a = $b');
+  }
+
   Future<void> _toggleAuto() async {
     final p = await SharedPreferences.getInstance();
     setState(() => auto = !auto);
@@ -842,6 +884,30 @@ class _ThreadPageState extends State<ThreadPage> {
     }
   }
 
+  final Map<String, int> _guess = {};
+
+  Widget _truthCard(String key, String text, bool mine) {
+    final ls = text.split('\n');
+    final lie = int.tryParse(ls[0].substring(2).trim()) ?? 0;
+    final g = _guess[key];
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(L('🎭 Two truths and a lie • حقيقتين وكذبة'), style: const TextStyle(fontWeight: FontWeight.w800, color: kGreen)),
+      for (var i = 1; i <= 3; i++) Padding(
+        padding: const EdgeInsets.only(top: 6),
+        child: InkWell(
+          onTap: (mine || g != null) ? null : () => setState(() => _guess[key] = i),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(borderRadius: BorderRadius.circular(10), border: Border.all(color: (g != null || mine) && i == lie ? Colors.redAccent : Colors.white24)),
+            child: Text('$i. ${ls[i]}${(g != null || mine) && i == lie ? '   ❌ ${L('the lie')}' : ''}'),
+          ),
+        ),
+      ),
+      if (g != null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(g == lie ? L('You got it! • صح!') : L('Not this time. • مش المرة دي.'), style: const TextStyle(fontWeight: FontWeight.w700))),
+      if (!mine && g == null) Padding(padding: const EdgeInsets.only(top: 6), child: Text(L('Tap the line you think is the lie.'), style: const TextStyle(fontSize: 11, color: Colors.white54))),
+    ]);
+  }
+
   Widget _msg(String key, String text, bool mine) => Align(
         alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
@@ -850,7 +916,10 @@ class _ThreadPageState extends State<ThreadPage> {
           constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8),
           decoration: BoxDecoration(color: mine ? const Color(0xFF1C4A6E) : const Color(0xFF12304D), borderRadius: BorderRadius.circular(14)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(text),
+            if (text.startsWith('🎭') && text.split('\n').length == 4) _truthCard(key, text, mine) else Text(text),
+            if (text.startsWith('🔤 ') && text.contains(' = ') && !mine) Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(
+              onPressed: () async { final i = text.indexOf(' = '); await saveWord(text.substring(3, i), text.substring(i + 3)); if (mounted) toast(context, L('Saved to your word book.')); },
+              icon: const Icon(Icons.bookmark_add_outlined, size: 16), label: Text(L('Save to my word book')))),
             if (tr[key] != null) Text(tr[key]!, style: const TextStyle(color: kGreen)),
             if (!mine && tr[key] == null) InkWell(onTap: () => _translate(key, text), child: Padding(padding: EdgeInsets.only(top: 6), child: Text(L('Translate (machine, may be wrong)'), style: TextStyle(fontSize: 12, color: Colors.white54)))),
           ]),
@@ -885,6 +954,7 @@ class _ThreadPageState extends State<ThreadPage> {
             padding: const EdgeInsets.all(8),
             child: Row(children: [
               Expanded(child: TextField(controller: c, maxLength: 400, decoration: InputDecoration(hintText: L('Write a reply (text only, no links or numbers)'), counterText: '', border: OutlineInputBorder()))),
+              IconButton(icon: const Text('🔤', style: TextStyle(fontSize: 22)), tooltip: L('Word swap'), onPressed: _wordSwap),
               IconButton(icon: const Icon(Icons.send, color: kGreen), onPressed: _send),
             ]),
           )
@@ -894,3 +964,6 @@ class _ThreadPageState extends State<ThreadPage> {
     );
   }
 }
+
+/// Public wrapper so other screens use the same no-links / no-phone-number check as papyri.
+String niloBad(String s) => _bad(s);
