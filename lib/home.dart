@@ -21,6 +21,7 @@ import 'letters.dart';
 import 'globe.dart';
 import 'games.dart';
 import 'friends.dart';
+import 'notice.dart';
 import 'places.dart';
 
 /// Main shell: one living Nile scene + simple bottom nav.
@@ -243,6 +244,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
               ]))),
             ]),
             const SizedBox(height: 8),
+            const NoticeBar(),
             Wrap(spacing: 8, runSpacing: 8, children: [
               _chip(flagFor),
               _chip('📜 ${Passport.ink}/10'),

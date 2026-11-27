@@ -1,4 +1,5 @@
 import 'i18n.dart';
+import 'notice.dart';
 import 'places.dart';
 import 'profile.dart';
 import 'package:flutter/material.dart';
@@ -174,7 +175,7 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         ListTile(
           title: Text(L('Version 1.5'), style: TextStyle(color: Colors.white38, fontSize: 12)),
-          onTap: () { _taps++; if (_taps >= 7) { _taps = 0; toast(context, 'Founder area is not built yet'); } },
+          onTap: () { _taps++; if (_taps >= 7) { _taps = 0; Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FounderPage())); } },
         ),
       ]),
     );
