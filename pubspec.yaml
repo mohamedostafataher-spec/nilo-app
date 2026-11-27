@@ -78,6 +78,9 @@ flutter:
   assets:
     - assets/vr/scene.html
     - assets/vr/three.min.js
+    - assets/vr/tex/sand.jpg
+    - assets/vr/tex/grass.jpg
+    - assets/vr/tex/stone.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

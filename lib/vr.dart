@@ -102,7 +102,11 @@ class _VrPageState extends State<VrPage> {
       final av = sp.getString('vr_avatar') ?? '{}';
       final facePath = sp.getString('p_avatar_path') ?? '';
       final mp = await _mpConfig(sp, facePath);
-      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>$three</script>');
+      final texd = <String, String>{};
+      for (final k in ['sand', 'grass', 'stone']) {
+        try { texd[k] = 'data:image/jpeg;base64,${base64Encode((await rootBundle.load('assets/vr/tex/$k.jpg')).buffer.asUint8List())}'; } catch (_) {}
+      }
+      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)}</script><script>$three</script>');
       html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}&mp=${Uri.encodeQueryComponent(mp)}')");
       await wc.loadHtmlString(html, baseUrl: 'https://nilo-dl.vercel.app/');
       _face(facePath);
