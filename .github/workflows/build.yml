@@ -38,7 +38,7 @@ jobs:
           name: nilo-apk-arm64
           path: build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
       - name: Publish download page (Vercel)
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[publish]')
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
