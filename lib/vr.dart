@@ -19,7 +19,7 @@ import 'main.dart';
 
 /// Landmarks that have an own 3D scene. Key = Wikipedia article name.
 const kVrScenes = <String, String>{
-  'Giza_pyramid_complex': 'giza', 'Karnak': 'karnak', 'Abu_Simbel_temples': 'abusimbel', 'Abu_Simbel': 'abusimbel',
+  'Giza_pyramid_complex': 'giza', 'Citadel_of_Qaitbay': 'qaitbay', 'Qaitbay_Citadel': 'qaitbay', 'Bibliotheca_Alexandrina': 'library', 'Library_of_Alexandria': 'library', 'Karnak': 'karnak', 'Abu_Simbel_temples': 'abusimbel', 'Abu_Simbel': 'abusimbel',
   'Eiffel_Tower': 'eiffel', 'Leaning_Tower_of_Pisa': 'pisa', 'Big_Ben': 'bigben', 'Elizabeth_Tower': 'bigben', 'Taj_Mahal': 'taj',
   'Hagia_Sophia': 'hagia', 'Colosseum': 'colosseum', 'Statue_of_Liberty': 'liberty', 'Christ_the_Redeemer_(statue)': 'christ',
   'Great_Wall_of_China': 'greatwall', 'Petra': 'petra', 'Sydney_Opera_House': 'opera', 'Mount_Fuji': 'fuji', 'Burj_Khalifa': 'burj', 'Chichen_Itza': 'steppyr',
@@ -110,7 +110,16 @@ class _VrPageState extends State<VrPage> {
       for (final k in ['ram']) {
         try { modd[k] = base64Encode((await rootBundle.load('assets/vr/models/$k.bin')).buffer.asUint8List()); } catch (_) {}
       }
-      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)};window.MODD=${jsonEncode(modd)}</script><script>$three</script>');
+      final gald = <Map<String, String>>[];
+      try {
+        final gj = jsonDecode(await rootBundle.loadString('assets/vr/gallery.json')) as Map;
+        for (final g in (gj[widget.scene] as List? ?? [])) {
+          final m = g as Map;
+          final d = base64Encode((await rootBundle.load('assets/vr/gal/${m['f']}.jpg')).buffer.asUint8List());
+          gald.add({'d': 'data:image/jpeg;base64,$d', 'en': '${m['en']}', 'ar': '${m['ar']}', 'by': '${m['by']}', 'lic': '${m['lic']}'});
+        }
+      } catch (_) {}
+      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)};window.MODD=${jsonEncode(modd)};window.GALD=${jsonEncode(gald)};window.GAL_ON=false</script><script>$three</script>');
       html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}&mp=${Uri.encodeQueryComponent(mp)}')");
       await wc.loadHtmlString(html, baseUrl: 'https://nilo-dl.vercel.app/');
       _face(facePath);

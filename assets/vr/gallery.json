@@ -1,0 +1,116 @@
+{
+ "giza": [
+  {
+   "f": "giza_0",
+   "en": "Pyramids, aerial (1904)",
+   "ar": "الأهرامات من الجو (1904)",
+   "by": "Eduard Spelterini",
+   "lic": "Public domain",
+   "u": "https://commons.wikimedia.org/wiki/File:Spelterini_Pyramids.jpg"
+  },
+  {
+   "f": "giza_1",
+   "en": "Giza pyramid complex",
+   "ar": "مجمع أهرامات الجيزة",
+   "by": "someone10x",
+   "lic": "CC BY 2.0",
+   "u": "https://commons.wikimedia.org/wiki/File:Giza_pyramid_complex_(9200944628).jpg"
+  },
+  {
+   "f": "giza_2",
+   "en": "Pyramids in Giza",
+   "ar": "الأهرامات في الجيزة",
+   "by": "Walkerssk",
+   "lic": "CC0",
+   "u": "https://commons.wikimedia.org/wiki/File:Pyramids_in_Giza_-_Egypt.jpg"
+  },
+  {
+   "f": "sphinx_0",
+   "en": "The Great Sphinx (1839)",
+   "ar": "أبو الهول (1839)",
+   "by": "David Roberts",
+   "lic": "Public domain",
+   "u": "https://commons.wikimedia.org/wiki/File:The_Great_Sphinx,_Pyramids_of_Gizeh-1839)_by_David_Roberts,_RA.jpg"
+  },
+  {
+   "f": "sphinx_1",
+   "en": "Sphinx partly excavated",
+   "ar": "أبو الهول أثناء الحفر",
+   "by": "Maison Bonfils",
+   "lic": "Public domain",
+   "u": "https://commons.wikimedia.org/wiki/File:Sphinx_partially_excavated2.jpg"
+  }
+ ],
+ "qaitbay": [
+  {
+   "f": "qaitbay_0",
+   "en": "Citadel of Qaitbay",
+   "ar": "قلعة قايتباي",
+   "by": "Sohilaali869",
+   "lic": "Public domain",
+   "u": "https://commons.wikimedia.org/wiki/File:EWUG_visit_to_the_Citadel_of_Qaitbay_-_by_Sohila_05.jpg"
+  },
+  {
+   "f": "qaitbay_1",
+   "en": "Citadel of Qaitbay",
+   "ar": "قلعة قايتباي",
+   "by": "Sohilaali869",
+   "lic": "Public domain",
+   "u": "https://commons.wikimedia.org/wiki/File:EWUG_visit_to_the_Citadel_of_Qaitbay_-_by_Sohila_02.jpg"
+  },
+  {
+   "f": "qaitbay_2",
+   "en": "Citadel of Qaitbay",
+   "ar": "قلعة قايتباي",
+   "by": "Sohilaali869",
+   "lic": "Public domain",
+   "u": "https://commons.wikimedia.org/wiki/File:EWUG_visit_to_the_Citadel_of_Qaitbay_-_by_Sohila_07.jpg"
+  }
+ ],
+ "library": [
+  {
+   "f": "library_0",
+   "en": "Bibliotheca Alexandrina",
+   "ar": "مكتبة الإسكندرية",
+   "by": "Vyacheslav Argenberg",
+   "lic": "CC BY 4.0",
+   "u": "https://commons.wikimedia.org/wiki/File:Egypt,_Alexandria,_Bibliotheca_Alexandrina_2.jpg"
+  },
+  {
+   "f": "library_1",
+   "en": "Bibliotheca Alexandrina",
+   "ar": "مكتبة الإسكندرية",
+   "by": "Hassan Hamdy wahidy",
+   "lic": "Public domain",
+   "u": "https://commons.wikimedia.org/wiki/File:Bibliotheca_Alexandrina_GLAM_EGY_05.jpg"
+  }
+ ],
+ "cairotower": [
+  {
+   "f": "cairotower_0",
+   "en": "Cairo Tower",
+   "ar": "برج القاهرة",
+   "by": "David Berkowitz",
+   "lic": "CC BY 2.0",
+   "u": "https://commons.wikimedia.org/wiki/File:Gezira_Tower_-_Cairo,_Egypt.jpg"
+  },
+  {
+   "f": "cairotower_1",
+   "en": "View from Cairo Tower",
+   "ar": "المنظر من برج القاهرة",
+   "by": "Raduasandei (en Wikipedia)",
+   "lic": "Public domain",
+   "u": "https://commons.wikimedia.org/wiki/File:View_from_Cairo_Tower_31march2007.jpg"
+  }
+ ],
+ "hagia": [
+  {
+   "f": "hagia_1",
+   "en": "Hagia Sophia",
+   "ar": "آيا صوفيا",
+   "by": "Julien Maury",
+   "lic": "Public domain",
+   "u": "https://commons.wikimedia.org/wiki/File:Hagia_Sophia_(48985978757).jpg"
+  }
+ ]
+}
