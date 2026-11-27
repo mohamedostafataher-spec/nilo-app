@@ -40,7 +40,22 @@ class _TouristHomeState extends State<TouristHome> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { Health.offerUpdate(context); Health.refreshUnread(); Gender.ensure(context); } });
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { _askLang(); Health.offerUpdate(context); Health.refreshUnread(); Gender.ensure(context); } });
+  }
+
+  Future<void> _askLang() async {
+    final p = await SharedPreferences.getInstance();
+    if (p.getBool('lang_asked') ?? false) return;
+    await p.setBool('lang_asked', true);
+    if (!mounted) return;
+    await showDialog(context: context, builder: (c) => AlertDialog(
+      title: const Text('Language • اللغة'),
+      content: const Text('Choose the app language. You can change it later in Settings.\nاختار لغة التطبيق. تقدر تغيّرها بعدين من الإعدادات.'),
+      actions: [
+        TextButton(onPressed: () { Ui.set('en'); Navigator.pop(c); }, child: const Text('English')),
+        TextButton(onPressed: () { Ui.set('ar'); Navigator.pop(c); }, child: const Text('العربية')),
+      ],
+    ));
   }
 
   Future<void> _send() async {
