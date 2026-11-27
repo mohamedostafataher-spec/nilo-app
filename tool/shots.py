@@ -60,6 +60,7 @@ def hide_kb():
     if kb_shown():
         adb('shell', 'input', 'keyevent', '4'); time.sleep(1.5)
 
+time.sleep(40)
 adb('shell', 'pm', 'grant', 'eg.nilo.nilo_app', 'android.permission.RECORD_AUDIO')
 adb('shell', 'monkey', '-p', 'eg.nilo.nilo_app', '-c', 'android.intent.category.LAUNCHER', '1')
 time.sleep(4); shot('splash')
@@ -68,6 +69,15 @@ shot('auth_signin')
 tap_text('Create an account'); time.sleep(1); shot('auth_signup'); tap_text('Back to sign in'); time.sleep(1)
 tap_text('Forgot password'); time.sleep(1); shot('auth_forgot'); tap_text('Back to sign in'); time.sleep(1)
 tap_text('Continue as guest'); time.sleep(3)
+for _i in range(25):
+    ns = nodes()
+    if any('Wait' == t.strip() for t, c, q in ns):
+        tap_text('Wait'); continue
+    if not any('continue as guest' in t.lower() for t, c, q in ns):
+        break
+    if _i % 6 == 5: tap_text('Continue as guest')
+    time.sleep(3)
+print('past auth', flush=True)
 time.sleep(4); tap_text('Skip'); time.sleep(3); tap_text('Skip'); time.sleep(8); shot('first_run')
 import subprocess
 def dump(tag):
