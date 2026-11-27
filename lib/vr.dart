@@ -103,7 +103,7 @@ class _VrPageState extends State<VrPage> {
       final facePath = sp.getString('p_avatar_path') ?? '';
       final mp = await _mpConfig(sp, facePath);
       final texd = <String, String>{};
-      for (final k in ['sand', 'grass', 'stone', 'stoneg', 'rock']) {
+      for (final k in ['sand', 'grass', 'stone', 'stoneg', 'rock', 'abu1']) {
         try { texd[k] = 'data:image/jpeg;base64,${base64Encode((await rootBundle.load('assets/vr/tex/$k.jpg')).buffer.asUint8List())}'; } catch (_) {}
       }
       html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)}</script><script>$three</script>');

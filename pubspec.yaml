@@ -84,6 +84,7 @@ flutter:
     - assets/vr/tex/stone.jpg
     - assets/vr/tex/stoneg.jpg
     - assets/vr/tex/rock.jpg
+    - assets/vr/tex/abu1.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
