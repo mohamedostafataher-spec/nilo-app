@@ -1007,6 +1007,8 @@ class PeerProfilePage extends StatefulWidget {
 class _PeerProfilePageState extends State<PeerProfilePage> {
   String cc = '';
   bool? friend;
+  List<dynamic> stories = [];
+  bool storiesDone = false;
 
   @override
   void initState() {
@@ -1019,6 +1021,11 @@ class _PeerProfilePageState extends State<PeerProfilePage> {
       final r = await Sb.rpc('bottle_journey', {'p_id': widget.bid}) as List;
       if (r.isNotEmpty && mounted) setState(() => cc = (r.first[widget.otherIsAuthor ? 'from_cc' : 'to_cc'] ?? '').toString());
     } catch (_) {}
+    try {
+      final since = DateTime.now().toUtc().subtract(const Duration(hours: 24)).toIso8601String();
+      final r = await Sb.get('stories?select=id,body,mood,media_path,media_type,created_at&author=eq.${widget.uid}&created_at=gte.$since&order=created_at.desc&limit=20');
+      if (mounted) setState(() { stories = r as List; storiesDone = true; });
+    } catch (_) { if (mounted) setState(() => storiesDone = true); }
     try {
       final ids = ((await Sb.rpc('friend_ids')) as List?)?.map((e) => e.toString()).toList() ?? [];
       if (mounted) setState(() => friend = ids.contains(widget.uid));
@@ -1049,6 +1056,15 @@ class _PeerProfilePageState extends State<PeerProfilePage> {
         Card(color: Colors.white10, child: Padding(padding: const EdgeInsets.all(14), child: Text(bio.isEmpty ? L('No bio yet.') : bio, style: TextStyle(height: 1.5, color: bio.isEmpty ? Colors.white54 : Colors.white)))),
         const SizedBox(height: 8),
         Text(L('Country is the papyrus route only. No city, no exact location, no contact details are stored or shown.'), style: const TextStyle(fontSize: 11, color: Colors.white38)),
+        const SizedBox(height: 16),
+        Text(L('Stories (last 24 hours)'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+        const SizedBox(height: 8),
+        if (storiesDone && stories.isEmpty) Text(L('No public stories right now.'), style: const TextStyle(color: Colors.white54)),
+        for (final st in stories) Card(color: Colors.white10, child: Padding(padding: const EdgeInsets.all(12), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (st['media_path'] != null && st['media_type'] != 'video') Padding(padding: const EdgeInsets.only(bottom: 8), child: ClipRRect(borderRadius: BorderRadius.circular(10), child: Image.network(Sb.publicUrl(st['media_path'].toString()), fit: BoxFit.cover, errorBuilder: (_, __, ___) => const SizedBox.shrink()))),
+          if (st['media_path'] != null && st['media_type'] == 'video') Padding(padding: const EdgeInsets.only(bottom: 6), child: Text(L('Video clip, open it in Stories.'), style: const TextStyle(color: Colors.white54, fontSize: 12))),
+          Text(((st['mood'] ?? '').toString().isEmpty ? '' : '${st['mood']} ') + (st['body'] ?? '').toString(), style: const TextStyle(height: 1.4)),
+        ]))),
         const SizedBox(height: 16),
         if (friend == true) FilledButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DmPage(uid: widget.uid, nick: nick))), icon: const Icon(Icons.chat_bubble_outline), label: Text(L('Message')))
         else if (friend == false) Text(L('To become friends, swap invite codes in Friends. Both sides must accept.'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
