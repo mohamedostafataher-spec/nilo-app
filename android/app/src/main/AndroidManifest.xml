@@ -17,6 +17,7 @@
         android:label="نيلو Nilo"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-4446395628942302~2233404251"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -1,5 +1,6 @@
 import 'i18n.dart';
 import 'package:flutter/material.dart';
+import 'ads.dart';
 import 'main.dart';
 import 'world.dart' show Passport;
 
@@ -27,6 +28,14 @@ class StorePage extends StatefulWidget {
 }
 
 class _StorePageState extends State<StorePage> {
+  Future<void> _watch() async {
+    final r = await Ads.watchRewarded();
+    if (!mounted) return;
+    final m = r == 'ok' ? 'Thanks! +${Ads.rewardReeds} Reeds. • شكرا' : r == 'cap' ? 'That is today\'s limit. Come back tomorrow. • خلص حد النهاردة' : r == 'skipped' ? 'No reward, the ad was closed early. • اتقفل بدري' : 'No ad available right now. Try later. • مفيش إعلان دلوقتي';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(m)));
+    setState(() {});
+  }
+
   void _tap(_Item it) {
     final owned = Passport.owned.contains(it.id);
     if (!owned) {
@@ -57,6 +66,17 @@ class _StorePageState extends State<StorePage> {
           ]),
         ),
         const SizedBox(height: 12),
+        Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(14)),
+          child: ListTile(
+            leading: const Icon(Icons.play_circle_outline),
+            title: Text(L('Watch a short ad: +${Ads.rewardReeds} Reeds • شاهد إعلان قصير')),
+            subtitle: Text(L('Optional. Up to ${Ads.dailyCap} a day. It helps keep Nilo free. • اختياري، وبيساعد نيلو تفضل مجانية')),
+            trailing: FilledButton(onPressed: _watch, child: Text(L('Watch • شاهد'))),
+          ),
+        ),
+        const NativeAdTile(),
         for (final it in _items)
           Container(
             margin: const EdgeInsets.only(bottom: 8),
