@@ -196,7 +196,11 @@ class _VrPageState extends State<VrPage> {
       final share = (sp.getBool('vr_face') ?? false) && facePath.isNotEmpty;
       return jsonEncode({
         'url': Sb.baseUrl, 'key': Sb.anonKey, 'uid': Sb.uid, 'nick': sp.getString('b_nick') ?? '', 'cc': Passport.country,
-        'room': widget.scene == 'osm' ? 'osm-${widget.lat!.toStringAsFixed(3)}_${widget.lon!.toStringAsFixed(3)}' : '',
+        'room': () {
+          final pc = (sp.getString('vr_room') ?? '').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+          final base = widget.scene == 'osm' ? 'osm-${widget.lat!.toStringAsFixed(3)}_${widget.lon!.toStringAsFixed(3)}' : widget.scene;
+          return pc.length >= 4 ? 'pr$pc-$base' : (widget.scene == 'osm' ? base : '');
+        }(),
         'face': share ? Sb.publicUrl(facePath) : '', 'fp': Sb.publicUrl(''), 'blocked': blocked,
       });
     } catch (_) { return ''; }
@@ -224,11 +228,17 @@ class _VrPageState extends State<VrPage> {
     final sp = await SharedPreferences.getInstance();
     if (!mounted) return;
     bool on = sp.getBool('vr_online') ?? false, face = sp.getBool('vr_face') ?? false;
+    final rc = TextEditingController(text: sp.getString('vr_room') ?? '');
     await showDialog(context: context, builder: (c) => StatefulBuilder(builder: (c, setS) => AlertDialog(
       title: Text(L('Meeting others • مقابلة الناس')),
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         SwitchListTile(contentPadding: EdgeInsets.zero, value: on, onChanged: (v) { setS(() => on = v); sp.setBool('vr_online', v); }, title: Text(L('Meet other travellers here • قابل مسافرين هنا'), style: const TextStyle(fontSize: 13))),
         SwitchListTile(contentPadding: EdgeInsets.zero, value: face, onChanged: (v) { setS(() => face = v); sp.setBool('vr_face', v); }, title: Text(L('Show my profile photo as my avatar face'), style: const TextStyle(fontSize: 13))),
+        TextField(controller: rc, maxLength: 12, onChanged: (v) => sp.setString('vr_room', v.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '')), decoration: InputDecoration(labelText: L('Private room code (friends only) • كود غرفة خاصة'), helperText: L('Empty = public. Only people with the same code in the same place meet you. • فاضي = عام'), helperMaxLines: 2)),
+        Row(children: [
+          TextButton(onPressed: () { const a = 'abcdefghjkmnpqrstuvwxyz23456789'; final r = math.Random.secure(); final c2 = List.generate(6, (_) => a[r.nextInt(a.length)]).join(); rc.text = c2; sp.setString('vr_room', c2); setS(() {}); }, child: Text(L('New code • كود جديد'))),
+          TextButton(onPressed: () { final c2 = rc.text.trim(); if (c2.length < 4) return; Share.share('Join me in a private room on Nilo. Open the 3D place, tap the groups icon and enter code: $c2\nhttps://nilo-dl.vercel.app'); }, child: Text(L('Share invite • ابعت دعوة'))),
+        ]),
         Text(L('Changes apply the next time you open a place. • التغييرات بتتطبق لما تفتح مكان تاني.'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
       ]),
       actions: [TextButton(onPressed: () => Navigator.pop(c), child: Text(L('OK')))],
