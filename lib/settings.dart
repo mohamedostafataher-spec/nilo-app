@@ -8,6 +8,7 @@ import 'screens.dart' show toast, openUrl;
 import 'world.dart' show Passport;
 import 'bottles.dart' show Sb;
 import 'auth.dart';
+import 'health.dart';
 import 'extras.dart' show niloRoute;
 import 'home.dart' show TouristHome;
 import 'store.dart';
@@ -101,6 +102,16 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           );
         }),
+        FutureBuilder<bool>(future: Sb.loadGuest(), builder: (c, snap) => snap.data == false ? ListTile(
+          leading: const Icon(Icons.download_for_offline),
+          title: Text(L('Export my data')),
+          subtitle: Text(L('Copies your sent papyri and the replies to them as text.')),
+          onTap: () async {
+            final e = await Health.exportMine();
+            if (!c.mounted) return;
+            toast(c, e ?? L('Copied. Paste it into a note to keep it.'));
+          },
+        ) : const SizedBox.shrink()),
         FutureBuilder<bool>(future: Sb.loadGuest(), builder: (c, snap) => snap.data == false ? ListTile(
           leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
           title: Text(L('Delete my account')),

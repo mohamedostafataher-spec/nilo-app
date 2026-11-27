@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'main.dart';
 import 'sfx.dart';
+import 'health.dart';
 
 /// Hand-drawn Egyptian-style icons (no asset files, so no size cost).
 enum NiloIcon { nile, messages, send, stories, passport }
@@ -88,7 +89,13 @@ class NiloNavBar extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                   decoration: BoxDecoration(color: kGreen.withOpacity(0.20 * v), borderRadius: BorderRadius.circular(18)),
-                  child: SizedBox(width: 26 + 2 * v, height: 26 + 2 * v, child: CustomPaint(painter: NiloIconPainter(items[i][0] as NiloIcon, Color.lerp(Colors.white54, kGreen, v)!, v))),
+                  child: Stack(clipBehavior: Clip.none, children: [
+                    SizedBox(width: 26 + 2 * v, height: 26 + 2 * v, child: CustomPaint(painter: NiloIconPainter(items[i][0] as NiloIcon, Color.lerp(Colors.white54, kGreen, v)!, v))),
+                    if (i == 1) Positioned(right: -8, top: -4, child: ValueListenableBuilder<int>(valueListenable: Health.unread, builder: (_, n, __) => n <= 0 ? const SizedBox.shrink() : Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(color: Colors.redAccent, borderRadius: BorderRadius.circular(10)),
+                      child: Text(n > 9 ? '9+' : '$n', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: Colors.white))))),
+                  ]),
                 ),
               ),
               Text(L(items[i][1] as String), style: TextStyle(fontSize: 11, fontWeight: sel ? FontWeight.w700 : FontWeight.w400, color: Color.lerp(Colors.white54, kGreen, v))),

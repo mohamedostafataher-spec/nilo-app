@@ -33,7 +33,7 @@ class _TouristHomeState extends State<TouristHome> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) Health.offerUpdate(context); });
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { Health.offerUpdate(context); Health.refreshUnread(); } });
   }
 
   Future<void> _send() async {
@@ -92,7 +92,7 @@ class _TouristHomeState extends State<TouristHome> {
         duration: const Duration(milliseconds: 260),
         child: KeyedSubtree(key: ValueKey(tab), child: pages[tab]),
       ),
-      bottomNavigationBar: NiloNavBar(index: tab, onTab: (i) => setState(() => tab = i), onSend: _send),
+      bottomNavigationBar: NiloNavBar(index: tab, onTab: (i) { setState(() => tab = i); if (i != 1) Health.refreshUnread(); }, onSend: _send),
     );
   }
 }

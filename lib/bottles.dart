@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'dart:async';
 import 'auth.dart' show AuthPage;
 import 'home.dart' show TouristHome;
@@ -647,6 +648,7 @@ class _InboxPageState extends State<InboxPage> {
     try {
       final r = await Sb.get('bottles?select=*,replies(id,author)&order=created_at.desc&limit=50');
       if (mounted) setState(() { l = r as List; busy = false; });
+      Health.markSeen(r as List);
     } catch (e) {
       if (mounted) setState(() { busy = false; err = '$e'; });
     }

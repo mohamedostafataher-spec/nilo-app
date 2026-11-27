@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter/services.dart';
+import 'bottles.dart' show Sb;
 
 /// Local crash log: the last 20 errors are kept on the phone only. Nothing is sent anywhere.
 class Health {
@@ -48,5 +50,49 @@ class Health {
       duration: const Duration(seconds: 10),
       action: SnackBarAction(label: 'Download • تحميل', onPressed: () => launchUrl(Uri.parse(u), mode: LaunchMode.externalApplication)),
     ));
+  }
+
+  /// Unread replies on my papyri, shown as a badge on the Messages tab.
+  static final unread = ValueNotifier<int>(0);
+
+  static Future<Map<String, int>> _seen() async {
+    final p = await SharedPreferences.getInstance();
+    try { return (jsonDecode(p.getString('seen_replies') ?? '{}') as Map).map((k, v) => MapEntry(k.toString(), (v as num).toInt())); } catch (_) { return {}; }
+  }
+
+  static Future<void> markSeen(List<dynamic> bottles) async {
+    final m = await _seen();
+    for (final b in bottles) {
+      final reps = ((b as Map)['replies'] ?? []) as List;
+      m[b['id'].toString()] = reps.where((r) => (r as Map)['author'] != Sb.uid).length;
+    }
+    (await SharedPreferences.getInstance()).setString('seen_replies', jsonEncode(m));
+    unread.value = 0;
+  }
+
+  static Future<void> refreshUnread() async {
+    try {
+      if (await Sb.loadGuest()) { unread.value = 0; return; }
+      if (!await Sb.signIn()) return;
+      final r = await Sb.get('bottles?select=id,author,replies(id,author)&order=created_at.desc&limit=50') as List;
+      final seen = await _seen();
+      var n = 0;
+      for (final b in r) {
+        final theirs = (((b as Map)['replies'] ?? []) as List).where((x) => (x as Map)['author'] != Sb.uid).length;
+        if (theirs > (seen[b['id'].toString()] ?? 0)) n++;
+      }
+      unread.value = n;
+    } catch (_) {}
+  }
+
+  /// Copies the user's own papyri (and replies they wrote) to the clipboard as text. Nothing leaves the phone otherwise.
+  static Future<String?> exportMine() async {
+    try {
+      if (!await Sb.signIn()) return 'No connection. Try again.';
+      final r = await Sb.get('bottles?select=body,kind,place,lang,created_at,status,replies(body,author,created_at)&author=eq.${Sb.uid}&order=created_at.desc&limit=200');
+      final out = {'exported_at': DateTime.now().toUtc().toIso8601String(), 'papyri_sent': r};
+      await Clipboard.setData(ClipboardData(text: const JsonEncoder.withIndent('  ').convert(out)));
+      return null;
+    } catch (e) { return 'Could not export. Try again.'; }
   }
 }
