@@ -8,6 +8,7 @@ import 'bottles.dart';
 import 'challenge.dart';
 import 'chain.dart';
 import 'calm.dart';
+import 'tips.dart';
 import 'circles.dart' show niloJoined, niloJoinGate;
 import 'extras.dart' show niloRoute;
 import 'globe.dart' show GlobePage;
@@ -92,6 +93,13 @@ class PlayHubPage extends StatelessWidget {
           _tile(context, '🛂', L('Stamp book • كتاب الأختام'), L('Countries you opened on the Globe.'), const StampBookPage()),
           _tile(context, '🔠', L('Your name in the world • اسمك في العالم'), L('See your name in other scripts.'), const NameScriptsPage()),
           _tile(context, '🌅', L('Sky card • كارت السما'), L('Is the sun up in your country right now?'), const SunCardPage()),
+          FutureBuilder<dynamic>(
+            future: Sb.rpc('nilo_stats'),
+            builder: (_, snap) {
+              final n = (snap.data is Map) ? ((snap.data as Map)['people'] as num?)?.toInt() ?? 0 : 0;
+              return n >= 10 ? _tile(context, '💡', L('Local tips • نصايح محلية'), L('Short tips about a country from real people.'), const TipBoardPage()) : const SizedBox.shrink();
+            },
+          ),
           _tile(context, '📖', L('My word book • كتاب كلماتي'), L('Words people taught you in papyri.'), const WordBookPage()),
           const SizedBox(height: 10),
           Text(L('In a papyrus: tap 🔤 to swap a word, or 🎭 for Two truths and a lie.\nجوه البردية: دوس 🔤 لتبادل كلمة، أو 🎭 لحقيقتين وكذبة.'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white54, fontSize: 12, height: 1.5)),
