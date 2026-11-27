@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'i18n.dart';
 import 'main.dart';
+import 'bottles.dart' show Sb;
 import 'screens.dart' show toast;
 import 'world.dart' show Passport;
 
@@ -27,6 +28,8 @@ const List<List<String>> kChallenges = [
   ['🤝', 'phrase', 'Write how people greet each other where you are, and one thing a visitor should not do.', 'اكتب الناس بتسلّم إزاي عندك، وحاجة الزائر ميعملهاش.'],
 ];
 
+String _flagOf(String cc) => cc.length == 2 ? String.fromCharCodes(cc.toUpperCase().codeUnits.map((c) => 0x1F1E6 + c - 65)) : '';
+
 int _week() => DateTime.now().toUtc().millisecondsSinceEpoch ~/ (86400000 * 7);
 
 class WeeklyChallengePage extends StatefulWidget {
@@ -38,6 +41,9 @@ class WeeklyChallengePage extends StatefulWidget {
 class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
   final c = TextEditingController();
   Map<String, dynamic> done = {};
+  bool countMe = false;
+  List board = [];
+  int total = 0;
 
   List<String> get ch => kChallenges[_week() % kChallenges.length];
 
@@ -47,9 +53,25 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
     try { done = Map<String, dynamic>.from(jsonDecode(p.getString('weekly_done') ?? '{}')); } catch (_) {}
+    countMe = p.getBool('ch_count') ?? false;
+    _board();
     final mine = done['${_week()}'];
     if (mine != null) c.text = (mine['t'] ?? '').toString();
     if (mounted) setState(() {});
+  }
+
+  Future<void> _board() async {
+    try {
+      final r = await Sb.rpc('challenge_board', {'p_week': _week()}) as List;
+      board = r; total = r.fold<int>(0, (a, x) => a + ((x['n'] as num?)?.toInt() ?? 0));
+    } catch (_) {}
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _tick() async {
+    if (!countMe) return;
+    try { await Sb.rpc('challenge_tick', {'p_week': _week()}); } catch (_) {}
+    _board();
   }
 
   Future<void> _save() async {
@@ -60,6 +82,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
     final p = await SharedPreferences.getInstance();
     await p.setString('weekly_done', jsonEncode(done));
     Quests.mark('challenge');
+    _tick();
     if (first) Passport.addReeds(5);
     if (mounted) { toast(context, first ? 'Saved. +5 Reeds. • اتحفظت' : 'Saved. • اتحفظت'); setState(() {}); }
   }
@@ -89,6 +112,13 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
         ]),
         const SizedBox(height: 6),
         Text(L('Nothing is sent anywhere. Share only opens your phone\'s share sheet.'), style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        const SizedBox(height: 12),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: countMe, onChanged: (v) async { (await SharedPreferences.getInstance()).setBool('ch_count', v); setState(() => countMe = v); },
+          title: Text(L('Count me in the countries board • احسبني في لوحة الدول'), style: const TextStyle(fontSize: 13)),
+          subtitle: Text(L('Optional, off by default. Sends only that you finished this week plus your country code, never your answer. Delete account removes it. • اختياري'), style: const TextStyle(fontSize: 11))),
+        Text(L('Countries this week • الدول الأسبوع ده'), style: const TextStyle(fontWeight: FontWeight.w800)),
+        if (board.isEmpty) Padding(padding: const EdgeInsets.all(8), child: Text(L('Hidden until at least 10 people have joined this week, so nobody is singled out. Real counts only. • مخفية لحد ما يبقى ١٠ مشاركين'), style: const TextStyle(color: Colors.white60, fontSize: 12)))
+        else for (final b in board) Card(color: Colors.white10, child: ListTile(dense: true, title: Text('${_flagOf(b['cc'].toString())} ${b['cc']}'), trailing: Text('${b['n']}', style: const TextStyle(fontWeight: FontWeight.w800)))),
         const SizedBox(height: 18),
         Text('${L('Done so far • خلصت')}: $kept', style: const TextStyle(fontWeight: FontWeight.w800)),
         const SizedBox(height: 14),
