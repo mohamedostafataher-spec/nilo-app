@@ -203,7 +203,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
             for (var i = 0; i < math.min(_real, 3); i++) {
               final ph = (_c.value + i / 3) % 1.0;
               final x = w * (0.08 + 0.55 * ((i * 0.37) % 1.0)) + math.sin((ph + i) * 2 * math.pi) * 10;
-              final y = hh * (0.58 + 0.07 * i) + math.sin(ph * 2 * math.pi * 2) * 6;
+              final y = hh * (0.76 + 0.04 * i) + math.sin(ph * 2 * math.pi * 2) * 6;
               kids.add(Positioned(
                 left: x, top: y,
                 child: GestureDetector(
@@ -222,7 +222,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
             }
             if (_checked && _real == 0) {
               kids.add(Positioned(
-                left: 24, right: 24, top: hh * 0.62,
+                left: 24, right: 24, top: hh * 0.74,
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(14)),
@@ -247,19 +247,26 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
             ]),
             const SizedBox(height: 8),
             const NoticeBar(),
-            Wrap(spacing: 8, runSpacing: 8, children: [
-              _chip(flagFor),
-              _chip('📜 ${Passport.ink}/10'),
-              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const TodayPage())), child: _chip('🌍')),
-              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const ToolsPage())), child: _chip('🧰 ${L('Tools')}')),
-              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const GlobePage())), child: _chip('🌐 ${L('Globe')}')),
-              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const PlayHubPage())), child: _chip('🎲 ${L('Play')}')),
-              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const FriendsPage())), child: _chip('👥 ${L('Friends')}')),
-              if (_wx.isNotEmpty)
-                GestureDetector(
-                  onTap: () { setState(() => _city = (_city + 1) % _cities.length); _weather(); },
-                  child: _chip(_wx),
-                ),
+            Row(children: [
+              _cell(Icons.build_circle_outlined, L('Tools'), () => Navigator.of(context).push(niloRoute(const ToolsPage()))),
+              const SizedBox(width: 8),
+              _cell(Icons.public, L('Globe'), () => Navigator.of(context).push(niloRoute(const GlobePage()))),
+              const SizedBox(width: 8),
+              _cell(Icons.casino_outlined, L('Play'), () => Navigator.of(context).push(niloRoute(const PlayHubPage()))),
+              const SizedBox(width: 8),
+              _cell(Icons.people_alt_outlined, L('Friends'), () => Navigator.of(context).push(niloRoute(const FriendsPage()))),
+            ]),
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: _chip(flagFor)),
+              const SizedBox(width: 8),
+              Expanded(child: _chip('📜 ${Passport.ink}/10')),
+              const SizedBox(width: 8),
+              Expanded(child: GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const TodayPage())), child: _chip('🌍 ${L('Today')}'))),
+              if (_wx.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Expanded(flex: 2, child: GestureDetector(onTap: () { setState(() => _city = (_city + 1) % _cities.length); _weather(); }, child: _chip(_wx))),
+              ],
             ]),
             const SizedBox(height: 8),
             const LandmarkStrip(),
@@ -272,20 +279,20 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
           GestureDetector(
             onTap: () => _open(false),
             child: Container(
-              width: 58, height: 58,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.25), border: Border.all(color: Colors.white54)),
+              width: 60, height: 60,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withOpacity(0.25), border: Border.all(color: Colors.white54)),
               alignment: Alignment.center,
               child: Text(L('🪶'), style: TextStyle(fontSize: 26)),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           GestureDetector(
             onTap: () => _open(true),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 34, vertical: 18),
+              height: 60, width: 230, alignment: Alignment.center,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(colors: [Color(0xFFFFE08A), Color(0xFFD9A441)]),
-                borderRadius: BorderRadius.circular(34),
+                borderRadius: BorderRadius.circular(30),
                 boxShadow: const [BoxShadow(color: Color(0xFF8A5A12), offset: Offset(0, 5)), BoxShadow(color: Colors.black38, blurRadius: 14, offset: Offset(0, 8))],
               ),
               child: Text(L('Send papyrus • ارسل بردية'), style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF3B2A12))),
@@ -309,9 +316,26 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
   }
 
   Widget _chip(String t) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(color: Colors.white.withOpacity(0.22), borderRadius: BorderRadius.circular(18), border: Border.all(color: Colors.white30)),
-        child: Text(t, style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 15)),
+        height: 38,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(color: Colors.black.withOpacity(0.22), borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.white24)),
+        child: FittedBox(fit: BoxFit.scaleDown, child: Text(t, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 14))),
+      );
+
+  Widget _cell(IconData ic, String label, VoidCallback onTap) => Expanded(
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            height: 58,
+            decoration: BoxDecoration(color: Colors.black.withOpacity(0.28), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white24)),
+            child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(ic, color: Colors.white, size: 22),
+              const SizedBox(height: 2),
+              FittedBox(fit: BoxFit.scaleDown, child: Text(label, maxLines: 1, style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 12))),
+            ]),
+          ),
+        ),
       );
 }
 
@@ -376,9 +400,10 @@ class _ScenePainter extends CustomPainter {
     }
     // felucca with avatar
     final bob = math.sin(t * 2 * math.pi * 2) * 4;
-    final cx = w * 0.5, cy = h * 0.47 + bob;
+    final cx = w * 0.5, cy = h * 0.66 + bob;
     canvas.save();
     canvas.translate(cx, cy);
+    canvas.scale(0.82);
     canvas.rotate(math.sin(t * 2 * math.pi * 2 + 1) * 0.03);
     // reflection
     canvas.drawOval(Rect.fromCenter(center: const Offset(0, 40), width: 190, height: 14), Paint()..color = Colors.black.withOpacity(0.18));

@@ -448,6 +448,8 @@ Some apps block recording, and calls are not recorded. Try first; if it comes ou
   [r'''Drag to look around.''', r'''اسحب بصابعك تبص حواليك.'''],
   [r'''A real panorama photo, not a walk-through.''', r'''صورة بانوراما حقيقية، مش مشي حر جوه المكان.'''],
   [r'''Camera translate''', r'''ترجمة بالكاميرا'''],
+  [r'''Globe''', r'''الكوكب'''],
+  [r'''Friends''', r'''الأصحاب'''],
   [r'''Photo''', r'''صورة'''],
   [r'''Photo expired''', r'''الصورة انتهت'''],
   [r'''Photos and clips are paused today (storage is full). Text stories still work.''', r'''الصور والفيديوهات واقفة النهارده (المساحة مليانة). حكايات النص شغالة.'''],
