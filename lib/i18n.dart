@@ -173,6 +173,7 @@ const kPairs = <List<String>>[
   [r'''Official ENR site for train info and booking.''', r'''موقع السكك الحديدية الرسمي لمعلومات القطارات والحجز.'''],
   [r'''Egypt tourism board site: entry visa rules, useful information.''', r'''موقع هيئة السياحة المصرية: قواعد التأشيرة ومعلومات مفيدة.'''],
   [r'''No connection. Try again.''', r'''مفيش اتصال. حاول تاني.'''],
+  [r'''Retry''', r'''حاول تاني'''],
   [r'''Tap a papyrus to catch it''', r'''دوس على بردية عشان تمسكها'''],
   [r'''That code did not work, or you already used one.''', r'''الكود ده مشتغلش، أو إنت استخدمت كود قبل كده.'''],
   [r'''Location is off. Allow approximate location to open letters here.''', r'''الموقع مقفول. اسمح بالموقع التقريبي عشان تفتح خطابات هنا.'''],

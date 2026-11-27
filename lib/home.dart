@@ -400,8 +400,15 @@ class _MessagesTabState extends State<MessagesTab> {
     final joined = (p.getBool('b_age') ?? false) && (p.getString('b_nick') ?? '').isNotEmpty;
     Widget w = const BottlesPage();
     if (joined) {
-      final ok = await Sb.signIn();
-      if (ok) w = InboxPage(lang: p.getString('b_lang') ?? 'en');
+      final ok = await Sb.signIn().timeout(const Duration(seconds: 12), onTimeout: () => false);
+      if (ok) { w = InboxPage(lang: p.getString('b_lang') ?? 'en'); }
+      else {
+        w = Scaffold(body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(L('No connection. Try again.'), textAlign: TextAlign.center),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: () { setState(() => page = null); _go(); }, child: Text(L('Retry'))),
+        ]))));
+      }
     }
     if (mounted) setState(() => page = w);
   }
