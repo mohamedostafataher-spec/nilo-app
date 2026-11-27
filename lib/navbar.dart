@@ -64,8 +64,7 @@ class NiloIconPainter extends CustomPainter {
   bool shouldRepaint(covariant NiloIconPainter o) => o.icon != icon || o.color != color || o.t != t;
 }
 
-/// Floating rounded bottom bar with a raised centre "send papyrus" button.
-/// Slots: 0 Nile, 1 Messages, centre = send, 2 Stories hub, 3 Passport.
+/// Floating rounded bottom bar. Slots: 0 Nile, 1 Messages, 2 Stories, 3 Home, 4 Passport. Sending a papyrus is the big button on the Nile tab.
 class NiloNavBar extends StatelessWidget {
   final int index; final ValueChanged<int> onTab; final VoidCallback onSend;
   const NiloNavBar({super.key, required this.index, required this.onTab, required this.onSend});
@@ -104,7 +103,7 @@ class NiloNavBar extends StatelessWidget {
                   ]),
                 ),
               ),
-              SizedBox(width: 48, child: FittedBox(fit: BoxFit.scaleDown, child: Text(L(items[i][1] as String), maxLines: 1, softWrap: false, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: sel ? FontWeight.w700 : FontWeight.w400, color: Color.lerp(Colors.white54, kGreen, v))))),
+              SizedBox(width: 62, child: FittedBox(fit: BoxFit.scaleDown, child: Text(L(items[i][1] as String), maxLines: 1, softWrap: false, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: sel ? FontWeight.w700 : FontWeight.w400, color: Color.lerp(Colors.white54, kGreen, v))))),
             ]),
           ),
         ),
@@ -116,7 +115,7 @@ class NiloNavBar extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
         child: SizedBox(
-          height: 86,
+          height: 66,
           child: Stack(clipBehavior: Clip.none, alignment: Alignment.bottomCenter, children: [
             Container(
               height: 64,
@@ -126,30 +125,7 @@ class NiloNavBar extends StatelessWidget {
                 border: Border.all(color: const Color(0x44D9A441)),
                 boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 16, offset: Offset(0, 6))],
               ),
-              child: Row(children: [slot(0), slot(1), const SizedBox(width: 74), slot(2), slot(3), slot(4)]),
-            ),
-            Positioned(
-              top: 0,
-              child: GestureDetector(
-                onTap: () { HapticFeedback.mediumImpact(); onSend(); },
-                child: Container(
-                  width: 54, height: 54,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFF2C66B), kGreen]),
-                    border: Border.all(color: kBg, width: 4),
-                    boxShadow: const [BoxShadow(color: Color(0x88D9A441), blurRadius: 14)],
-                  ),
-                  child: Padding(padding: const EdgeInsets.all(13), child: CustomPaint(painter: NiloIconPainter(NiloIcon.send, kBg, 1))),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 9,
-              child: GestureDetector(
-                onTap: () { HapticFeedback.mediumImpact(); onSend(); },
-                child: SizedBox(width: 70, child: FittedBox(fit: BoxFit.scaleDown, child: Text(L('ابعت بردية'), maxLines: 1, softWrap: false, style: const TextStyle(fontSize: 11, color: kGreen, fontWeight: FontWeight.w700)))),
-              ),
+              child: Row(children: [slot(0), slot(1), slot(2), slot(3), slot(4)]),
             ),
           ]),
         ),

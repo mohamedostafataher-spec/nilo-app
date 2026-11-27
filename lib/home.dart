@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
+import 'profile.dart' show AvatarView, ProfileEditPage;
 import 'extras.dart';
 import 'world.dart';
 import 'net.dart';
@@ -260,6 +261,8 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
                 const SizedBox(width: 8),
                 Text('نيلو', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: kGreen)),
               ]))),
+              const Spacer(),
+              const _MyProfileButton(),
             ]),
             const SizedBox(height: 8),
             const NoticeBar(),
@@ -476,4 +479,32 @@ class _MessagesTabState extends State<MessagesTab> {
   }
   @override
   Widget build(BuildContext context) => page ?? const Scaffold(body: Center(child: CircularProgressIndicator()));
+}
+
+
+/// Small round avatar at the top corner that opens your own profile editor.
+class _MyProfileButton extends StatefulWidget {
+  const _MyProfileButton();
+  @override
+  State<_MyProfileButton> createState() => _MyProfileButtonState();
+}
+
+class _MyProfileButtonState extends State<_MyProfileButton> {
+  String avatar = '', path = '';
+  @override
+  void initState() { super.initState(); _load(); }
+  Future<void> _load() async {
+    final p = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() { avatar = p.getString('p_avatar') ?? ''; path = p.getString('p_avatar_path') ?? ''; });
+  }
+  @override
+  Widget build(BuildContext context) => Semantics(
+        button: true,
+        label: 'My profile',
+        child: GestureDetector(
+          onTap: () async { await Navigator.of(context).push(niloRoute(const ProfileEditPage())); _load(); },
+          child: AvatarView(avatar: avatar, path: path, size: 40),
+        ),
+      );
 }
