@@ -343,7 +343,7 @@ if(SC==='giza'){
   (d.b||[]).forEach((b,i)=>{try{const sh=new THREE.Shape(b.p.map(q=>new THREE.Vector2(q[0],-q[1])));const g=new THREE.ExtrudeGeometry(sh,{depth:b.h,bevelEnabled:false});g.rotateX(-Math.PI/2);const c=wallC[(i*7)%6];const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:c}));S.add(m);nb++}catch(e){}});
   const n=document.getElementById('note');n.textContent=(AR?'بيانات الخريطة © مساهمو OpenStreetMap (ODbL). أشكال بس من غير خامات، وارتفاعات كتير من المباني تقديرية. ':'Map data © OpenStreetMap contributors (ODbL). Shapes only, no textures; many building heights are guessed. ')+nb+(AR?' مبنى':' buildings');
   window.OSM_NOTE=n.textContent}
-} else if(SC==='qaitbay'||SC==='library'){
+} else if(SC==='qaitbay'||SC==='library'||SC==='cairo'){
  // EGYPT rollout scenes: Citadel of Qaitbay / Bibliotheca Alexandrina (procedural, approximate)
  groundH=()=>0;S.fog=new THREE.Fog(0xe6e0cf,500,2600);
  (function(){const S=new THREE.Group();S0.add(S);const Q=SC;let seed=11;const r2=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
@@ -374,6 +374,31 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  for(let i=0;i<60;i++)palm(-1300+i*44,-1530,3);
  // fishing boats
  [[110,60],[-140,90],[190,-30]].forEach(([x,z],i)=>{B(16,2.4,5,new THREE.MeshLambertMaterial({color:[0x2a5d8a,0xb5382f,0xf0eee6][i]}),x,.6,z);B(5,3,3.4,new THREE.MeshLambertMaterial({color:0xf2f2ee}),x-2,3,z)});
+ }
+ if(Q=='cairo'){S.position.set(520,0,-20);LIMIT=230;
+ sea('#3a6a78',0,0,0,9000);
+ // land banks
+ const land=new THREE.MeshLambertMaterial({color:0x9a9171});const L=B(3000,2,1400,land,0,0,-760);const Lr=B(3000,2,1400,land,0,0,900);
+ const isl=B(900,2,320,new THREE.MeshLambertMaterial({color:0x6f8a52}),-520,.5,-160);
+ // cairo tower: 187m
+ const tm=new THREE.MeshLambertMaterial({color:0xcfc4ad});const T=new THREE.Group();
+ for(let i=0;i<24;i++){const a=i/24*Math.PI*2;const bar=new THREE.Mesh(new THREE.BoxGeometry(1.6,150,1.6),tm);const rr=(y)=>9+9*Math.pow(Math.abs(y-75)/75,1.6);bar.position.set(Math.cos(a)*12,75,Math.sin(a)*12);bar.rotation.z=0;T.add(bar)}
+ T.children.forEach(b=>{b.castShadow=true});
+ const prof=[];for(let i=0;i<=20;i++){const y=i/20*130;prof.push(new THREE.Vector2(8+9*Math.pow(Math.abs(y-65)/65,1.8),y))}
+ const lat=new THREE.Mesh(new THREE.LatheGeometry(prof,16),new THREE.MeshLambertMaterial({color:0xd8cfbb,wireframe:true}));lat.position.y=8;
+ const sh=new THREE.Mesh(new THREE.CylinderGeometry(9,9,140,16,1,true),new THREE.MeshLambertMaterial({color:0xcbbfa6,side:THREE.DoubleSide,transparent:true,opacity:.55}));sh.position.y=78;
+ const base=new THREE.Mesh(new THREE.CylinderGeometry(20,24,10,24),tm);base.position.y=5;
+ const top=new THREE.Mesh(new THREE.CylinderGeometry(15,10,14,24),new THREE.MeshLambertMaterial({color:0xbfb49c}));top.position.y=146;
+ const disc=new THREE.Mesh(new THREE.CylinderGeometry(18,18,5,24),tm);disc.position.y=158;
+ const sp=new THREE.Mesh(new THREE.CylinderGeometry(.5,2.2,32,8),tm);sp.position.y=177;
+ [base,lat,sh,top,disc,sp].forEach(m=>{m.castShadow=true;T.add(m)});T.children=T.children.filter(c=>!(c.geometry.type=='BoxGeometry'));T.position.set(-520,2,-160);T.scale.set(1.4,1.4,1.4);S.add(T);
+ for(let i=0;i<70;i++)palm(-900+r2()*800,-300+r2()*280,1);
+ // Qasr el-Nil bridge
+ const bm=new THREE.MeshLambertMaterial({color:0xd5c9ae});B(520,5,16,bm,-140,3,-20).rotation.y=0;
+ for(const x of [-340,-240,-140,-40,60])B(8,12,12,bm,x,-3,-20);
+ [[-390,-12],[-390,-28],[-250,-12],[-250,-28]].forEach(([x,z])=>B(8,9,5,new THREE.MeshLambertMaterial({color:0xb89a5c}),x+250,8,z+0));
+ city(-1400,1200,-1250,-500,120,30,90);city(-1400,1200,300,1000,110,24,70);
+ for(let i=0;i<40;i++)palm(-1300+r2()*2400,150+r2()*80,1);
  }
  if(Q=='library'){S.position.z=300;LIMIT=230;
  sea('#1d6f95',-2);
@@ -408,7 +433,7 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  city(-700,700,60,260,60,25,60);
  }
  })();
- var camelsTick=()=>{};var START=[0,0,SC==='qaitbay'?110:170],YAW=0;
+ var camelsTick=()=>{};var START=[SC==='cairo'?0:0,0,SC==='qaitbay'?110:SC==='cairo'?-70:170],YAW=0;
  var introPath=(u)=>{const a=-1.2+u*1.2,r=380-u*210;return [Math.sin(a)*r,70-u*55,Math.cos(a)*r,0,25,0]};
 } else { buildGeneric(); }
 

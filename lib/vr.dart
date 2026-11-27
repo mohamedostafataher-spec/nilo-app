@@ -19,7 +19,7 @@ import 'main.dart';
 
 /// Landmarks that have an own 3D scene. Key = Wikipedia article name.
 const kVrScenes = <String, String>{
-  'Giza_pyramid_complex': 'giza', 'Citadel_of_Qaitbay': 'qaitbay', 'Qaitbay_Citadel': 'qaitbay', 'Bibliotheca_Alexandrina': 'library', 'Library_of_Alexandria': 'library', 'Karnak': 'karnak', 'Abu_Simbel_temples': 'abusimbel', 'Abu_Simbel': 'abusimbel',
+  'Giza_pyramid_complex': 'giza', 'Cairo_Tower': 'cairo', 'Citadel_of_Qaitbay': 'qaitbay', 'Qaitbay_Citadel': 'qaitbay', 'Bibliotheca_Alexandrina': 'library', 'Library_of_Alexandria': 'library', 'Karnak': 'karnak', 'Abu_Simbel_temples': 'abusimbel', 'Abu_Simbel': 'abusimbel',
   'Eiffel_Tower': 'eiffel', 'Leaning_Tower_of_Pisa': 'pisa', 'Big_Ben': 'bigben', 'Elizabeth_Tower': 'bigben', 'Taj_Mahal': 'taj',
   'Hagia_Sophia': 'hagia', 'Colosseum': 'colosseum', 'Statue_of_Liberty': 'liberty', 'Christ_the_Redeemer_(statue)': 'christ',
   'Great_Wall_of_China': 'greatwall', 'Petra': 'petra', 'Sydney_Opera_House': 'opera', 'Mount_Fuji': 'fuji', 'Burj_Khalifa': 'burj', 'Chichen_Itza': 'steppyr',
