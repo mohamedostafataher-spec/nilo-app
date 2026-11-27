@@ -22,6 +22,7 @@ import 'globe.dart';
 import 'games.dart';
 import 'friends.dart';
 import 'notice.dart';
+import 'myhome.dart';
 import 'places.dart';
 
 /// Main shell: one living Nile scene + simple bottom nav.
@@ -88,6 +89,7 @@ class _TouristHomeState extends State<TouristHome> {
       const NileScene(),
       const MessagesTab(),
       _hub(),
+      const MyHomePage(),
       const PassportPage(),
     ];
     return Scaffold(

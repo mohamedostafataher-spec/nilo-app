@@ -6,7 +6,7 @@ import 'sfx.dart';
 import 'health.dart';
 
 /// Hand-drawn Egyptian-style icons (no asset files, so no size cost).
-enum NiloIcon { nile, messages, send, stories, passport }
+enum NiloIcon { nile, messages, send, stories, passport, house }
 
 class NiloIconPainter extends CustomPainter {
   final NiloIcon icon; final Color color; final double t;
@@ -45,6 +45,11 @@ class NiloIconPainter extends CustomPainter {
         final r2 = Path()..moveTo(w * .5, h * .25)..quadraticBezierTo(w * .72, h * .12, w * .92, h * .22)..lineTo(w * .92, h * .78)..quadraticBezierTo(w * .72, h * .68, w * .5, h * .80)..close();
         c.drawPath(l, f); c.drawPath(r2, f); c.drawPath(l, p); c.drawPath(r2, p);
         break;
+      case NiloIcon.house: // small house
+        final hs = Path()..moveTo(w * .12, h * .50)..lineTo(w * .50, h * .14)..lineTo(w * .88, h * .50)..lineTo(w * .78, h * .50)..lineTo(w * .78, h * .86)..lineTo(w * .22, h * .86)..lineTo(w * .22, h * .50)..close();
+        c.drawPath(hs, f); c.drawPath(hs, p);
+        c.drawLine(Offset(w * .50, h * .86), Offset(w * .50, h * .62), p);
+        break;
       case NiloIcon.passport: // passport with a round stamp
         final b = RRect.fromRectAndRadius(Rect.fromLTWH(w * .20, h * .08, w * .60, h * .84), const Radius.circular(6));
         c.drawRRect(b, f); c.drawRRect(b, p);
@@ -71,6 +76,7 @@ class NiloNavBar extends StatelessWidget {
       [NiloIcon.nile, 'Nile • النيل'],
       [NiloIcon.messages, 'Messages • رسايل'],
       [NiloIcon.stories, 'My stories • حكاياتي'],
+      [NiloIcon.house, 'Home • بيتي'],
       [NiloIcon.passport, 'Passport • جواز'],
     ];
     Widget slot(int i) {
@@ -120,7 +126,7 @@ class NiloNavBar extends StatelessWidget {
                 border: Border.all(color: const Color(0x44D9A441)),
                 boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 16, offset: Offset(0, 6))],
               ),
-              child: Row(children: [slot(0), slot(1), const SizedBox(width: 76), slot(2), slot(3)]),
+              child: Row(children: [slot(0), slot(1), const SizedBox(width: 70), slot(2), slot(3), slot(4)]),
             ),
             Positioned(
               top: 0,
