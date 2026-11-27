@@ -174,6 +174,8 @@ const kPairs = <List<String>>[
   [r'''Egypt tourism board site: entry visa rules, useful information.''', r'''موقع هيئة السياحة المصرية: قواعد التأشيرة ومعلومات مفيدة.'''],
   [r'''No connection. Try again.''', r'''مفيش اتصال. حاول تاني.'''],
   [r'''Retry''', r'''حاول تاني'''],
+  [r'''Language bridge''', r'''جسر اللغة'''],
+  [r'''Language bridge on: messages are translated for you.''', r'''جسر اللغة شغال: الرسايل بتتترجم ليك.'''],
   [r'''Read the full article on Wikipedia''', r'''اقرا المقال كامل على ويكيبيديا'''],
   [r'''Text: Wikipedia (CC BY-SA 4.0), in English. Image: Wikimedia Commons; the author and licence are on the article page.''', r'''النص: ويكيبيديا (CC BY-SA 4.0) بالإنجليزي. الصورة: ويكيميديا كومنز؛ المصور والترخيص في صفحة المقال.'''],
   [r'''Nilo people''', r'''ناس نيلو'''],

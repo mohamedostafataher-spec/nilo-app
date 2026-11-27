@@ -715,6 +715,7 @@ class _ThreadPageState extends State<ThreadPage> {
   final c = TextEditingController();
   String err = '';
   final Map<String, String> tr = {};
+  bool auto = false, _autoBusy = false;
 
   String get bid => widget.bottle['id'].toString();
   String get other => (widget.bottle['author'] == Sb.uid ? widget.bottle['catcher'] : widget.bottle['author'])?.toString() ?? '';
@@ -723,7 +724,7 @@ class _ThreadPageState extends State<ThreadPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    SharedPreferences.getInstance().then((p) { auto = p.getBool('auto_tr') ?? false; _load(); });
     _poll = Timer.periodic(const Duration(seconds: 10), (_) => _load());
   }
 
@@ -734,9 +735,35 @@ class _ThreadPageState extends State<ThreadPage> {
     try {
       final r = await Sb.get('replies?bottle_id=eq.$bid&order=created_at.asc');
       if (mounted) setState(() => replies = r as List);
+      if (auto) _autoTranslate();
     } catch (e) {
       if (mounted) setState(() => err = '$e');
     }
+  }
+
+  /// Language bridge: translates what the other person wrote into the reader's language, newest 12 messages, one at a time.
+  Future<void> _autoTranslate() async {
+    if (_autoBusy) return;
+    _autoBusy = true;
+    try {
+      final items = <List<String>>[];
+      if (widget.bottle['author'] != Sb.uid) items.add(['b', (widget.bottle['body'] ?? '').toString()]);
+      for (final r in replies.reversed.take(12).toList().reversed) { if ((r as Map)['author'] != Sb.uid) items.add([r['id'].toString(), (r['body'] ?? '').toString()]); }
+      for (final it in items) {
+        if (!mounted || !auto) break;
+        if (tr[it[0]] != null || it[1].trim().isEmpty) continue;
+        final r = await trText(it[1], 'auto', widget.lang);
+        if (!mounted) break;
+        if (r.ok) { setState(() => tr[it[0]] = r.translation); } else { break; }
+      }
+    } finally { _autoBusy = false; }
+  }
+
+  Future<void> _toggleAuto() async {
+    final p = await SharedPreferences.getInstance();
+    setState(() => auto = !auto);
+    await p.setBool('auto_tr', auto);
+    if (auto) { _autoTranslate(); toast(context, L('Language bridge on: messages are translated for you.')); }
   }
 
   Future<void> _send() async {
@@ -807,6 +834,7 @@ class _ThreadPageState extends State<ThreadPage> {
     final waiting = b['catcher'] == null && b['author'] == Sb.uid;
     return Scaffold(
       appBar: AppBar(title: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus'), backgroundColor: kBg, actions: [
+        IconButton(icon: Icon(Icons.translate, color: auto ? kGreen : Colors.white54), tooltip: L('Language bridge'), onPressed: _toggleAuto),
         IconButton(icon: Icon(Icons.flag_outlined), tooltip: L('Report'), onPressed: _report),
         IconButton(icon: Icon(Icons.block), tooltip: L('Block'), onPressed: _block),
       ]),
