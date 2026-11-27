@@ -225,7 +225,7 @@ class _VrPageState extends State<VrPage> {
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         SwitchListTile(contentPadding: EdgeInsets.zero, value: on, onChanged: (v) { setS(() => on = v); sp.setBool('vr_online', v); }, title: Text(L('Meet other travellers here • قابل مسافرين هنا'), style: const TextStyle(fontSize: 13))),
         SwitchListTile(contentPadding: EdgeInsets.zero, value: face, onChanged: (v) { setS(() => face = v); sp.setBool('vr_face', v); }, title: Text(L('Show my profile photo as my avatar face'), style: const TextStyle(fontSize: 13))),
-        Text(L('Changes apply the next time you open a place. • التغييرات بتتطبق لما تفتح مكان تاني.'), style: const TextStyle(fontSize: 11, color: Colors.black54)),
+        Text(L('Changes apply the next time you open a place. • التغييرات بتتطبق لما تفتح مكان تاني.'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
       ]),
       actions: [TextButton(onPressed: () => Navigator.pop(c), child: Text(L('OK')))],
     )));
