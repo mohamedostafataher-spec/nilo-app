@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
+import 'dart:async';
 import 'bottles.dart';
+import 'net.dart';
 import 'circles.dart' show niloJoined, niloJoinGate;
 import 'i18n.dart';
 import 'main.dart';
@@ -124,6 +126,7 @@ class _FriendsPageState extends State<FriendsPage> {
                     Text('${L('Friends • الأصحاب')} (${ok.length})', style: const TextStyle(fontWeight: FontWeight.w800)),
                     if (ok.isEmpty) Padding(padding: const EdgeInsets.all(8), child: Text(L('No friends yet. Share your code, or type a friend\'s code above.'), style: const TextStyle(color: Colors.white60))),
                     for (final f in ok) _row(f, [
+                      IconButton(icon: const Icon(Icons.chat_bubble_outline), onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => DmPage(uid: f['uid'].toString(), nick: (f['nick'] ?? '').toString())))),
                       PopupMenuButton<String>(onSelected: (v) { if (v == 'rm') _remove(f['uid'].toString()); },
                         itemBuilder: (_) => [PopupMenuItem(value: 'rm', child: Text(L('Remove friend')))]),
                     ]),
@@ -147,5 +150,120 @@ class _FriendsPageState extends State<FriendsPage> {
         leading: AvatarView(avatar: (f['avatar'] ?? '').toString(), size: 40),
         title: Text('${_fl((f['cc'] ?? '').toString())} ${f['nick'] ?? ''}'),
         trailing: Row(mainAxisSize: MainAxisSize.min, children: actions),
+      );
+}
+
+
+/// Direct messages between accepted friends only. Text only, no links or phone numbers (checked on the server too),
+/// 500 characters, 300 messages a day. Report the other person's message, delete your own, or remove the friend.
+/// Messages refresh every 6 seconds while the page is open. Tap a message to translate it.
+class DmPage extends StatefulWidget {
+  final String uid, nick;
+  const DmPage({super.key, required this.uid, required this.nick});
+  @override
+  State<DmPage> createState() => _DmPageState();
+}
+
+class _DmPageState extends State<DmPage> {
+  List msgs = [];
+  final c = TextEditingController();
+  final tr = <String, String>{};
+  Timer? t;
+  bool sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+    t = Timer.periodic(const Duration(seconds: 6), (_) => _load());
+  }
+
+  @override
+  void dispose() { t?.cancel(); c.dispose(); super.dispose(); }
+
+  Future<void> _load() async {
+    try {
+      final me = Sb.uid;
+      final o = widget.uid;
+      final r = await Sb.get('dms?select=id,sender,recipient,body,created_at&or=(and(sender.eq.$me,recipient.eq.$o),and(sender.eq.$o,recipient.eq.$me))&order=created_at.desc&limit=100') as List;
+      if (mounted) setState(() => msgs = r.reversed.toList());
+    } catch (_) {}
+  }
+
+  Future<void> _send() async {
+    final x = c.text.trim();
+    if (x.isEmpty || sending) return;
+    final b = niloBad(x);
+    if (b.isNotEmpty) { toast(context, b); return; }
+    setState(() => sending = true);
+    try {
+      final ok = await Sb.rpc('send_dm', {'p_uid': widget.uid, 'p_body': x});
+      if (ok == true) { c.clear(); await _load(); } else if (mounted) { toast(context, 'Could not send. You must be friends, and not blocked.'); }
+    } catch (_) { if (mounted) toast(context, 'No links or phone numbers, please. • من غير روابط أو أرقام'); }
+    if (mounted) setState(() => sending = false);
+  }
+
+  Future<void> _translate(String id, String text) async {
+    final r = await trText(text, 'auto', Ui.lang == 'ar' ? 'ar' : 'en');
+    if (!mounted) return;
+    if (r.ok) { setState(() => tr[id] = r.translation); } else { toast(context, r.error.isEmpty ? 'Translation failed' : r.error); }
+  }
+
+  Future<void> _menu(Map m, bool mine) async {
+    final v = await showModalBottomSheet<String>(context: context, builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      ListTile(leading: const Icon(Icons.translate), title: Text(L('Translate • ترجم')), onTap: () => Navigator.pop(context, 'tr')),
+      if (mine) ListTile(leading: const Icon(Icons.delete_outline), title: Text(L('Delete • احذف')), onTap: () => Navigator.pop(context, 'del')),
+      if (!mine) ListTile(leading: const Icon(Icons.flag_outlined), title: Text(L('Report • أبلغ')), onTap: () => Navigator.pop(context, 'rep')),
+    ])));
+    final id = m['id'].toString();
+    if (v == 'tr') { _translate(id, m['body'].toString()); }
+    if (v == 'del') { try { await Sb.delete('dms?id=eq.$id'); } catch (_) {} _load(); }
+    if (v == 'rep') { try { await Sb.rpc('report_dm', {'p_id': id}); } catch (_) {} if (mounted) toast(context, 'Reported. Thank you.'); _load(); }
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        backgroundColor: kBg,
+        appBar: AppBar(title: Text(widget.nick.isEmpty ? L('Chat') : widget.nick), backgroundColor: kBg),
+        body: Column(children: [
+          Expanded(
+            child: msgs.isEmpty
+                ? Center(child: Text(L('Say hello. • قول أهلا'), style: const TextStyle(color: Colors.white60)))
+                : ListView.builder(
+                    padding: const EdgeInsets.all(12),
+                    itemCount: msgs.length,
+                    itemBuilder: (_, i) {
+                      final m = msgs[i] as Map;
+                      final mine = m['sender'] == Sb.uid;
+                      final id = m['id'].toString();
+                      return Align(
+                        alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+                        child: GestureDetector(
+                          onLongPress: () => _menu(m, mine),
+                          onTap: () => _menu(m, mine),
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(vertical: 3),
+                            padding: const EdgeInsets.all(10),
+                            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
+                            decoration: BoxDecoration(color: mine ? const Color(0xFF1B5E4B) : const Color(0xFF12304D), borderRadius: BorderRadius.circular(12)),
+                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              Text(m['body'].toString()),
+                              if (tr[id] != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(tr[id]!, style: const TextStyle(color: Colors.white70, fontSize: 13))),
+                            ]),
+                          ),
+                        ),
+                      );
+                    }),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
+              child: Row(children: [
+                Expanded(child: TextField(controller: c, maxLength: 500, minLines: 1, maxLines: 4, decoration: InputDecoration(counterText: '', hintText: L('Message • رسالة'), border: const OutlineInputBorder()))),
+                IconButton(icon: const Icon(Icons.send), onPressed: sending ? null : _send),
+              ]),
+            ),
+          ),
+        ]),
       );
 }
