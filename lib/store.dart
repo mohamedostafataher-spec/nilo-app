@@ -1,6 +1,7 @@
 import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
 import 'world.dart' show Passport;
 
@@ -28,6 +29,13 @@ class StorePage extends StatefulWidget {
 }
 
 class _StorePageState extends State<StorePage> {
+  bool _adsOff = false;
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((p) { if (mounted) setState(() => _adsOff = p.getBool('ads_off') ?? false); });
+  }
+
   Future<void> _watch() async {
     final r = await Ads.watchRewarded();
     if (!mounted) return;
@@ -69,14 +77,22 @@ class _StorePageState extends State<StorePage> {
         Container(
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(14)),
-          child: ListTile(
-            leading: const Icon(Icons.play_circle_outline),
-            title: Text(L('Watch a short ad: +${Ads.rewardReeds} Reeds • شاهد إعلان قصير')),
-            subtitle: Text(L('Optional. Up to ${Ads.dailyCap} a day. It helps keep Nilo free. • اختياري، وبيساعد نيلو تفضل مجانية')),
-            trailing: FilledButton(onPressed: _watch, child: Text(L('Watch • شاهد'))),
-          ),
+          child: Column(children: [
+            SwitchListTile(
+              value: !_adsOff,
+              onChanged: (v) async { (await SharedPreferences.getInstance()).setBool('ads_off', !v); setState(() => _adsOff = !v); },
+              title: Text(L('Ads in the Store • الإعلانات في المتجر')),
+              subtitle: Text(L('Ads (Google AdMob) show only on this page, never on open or while you play. Non-personalised, nothing about you is sent by Nilo. Turn off to hide them completely. • الإعلانات هنا بس، ومتقفلة بالكامل لو طفيتها')),
+            ),
+            if (!_adsOff) ListTile(
+              leading: const Icon(Icons.play_circle_outline),
+              title: Text(L('Watch a short ad: +${Ads.rewardReeds} Reeds • شاهد إعلان قصير')),
+              subtitle: Text(L('Optional. Up to ${Ads.dailyCap} a day. It helps keep Nilo free. • اختياري، وبيساعد نيلو تفضل مجانية')),
+              trailing: FilledButton(onPressed: _watch, child: Text(L('Watch • شاهد'))),
+            ),
+          ]),
         ),
-        const NativeAdTile(),
+        if (!_adsOff) const NativeAdTile(),
         for (final it in _items)
           Container(
             margin: const EdgeInsets.only(bottom: 8),
