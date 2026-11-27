@@ -28,6 +28,19 @@ const int _nLat = 24, _nLon = 48;
 class _GlobePageState extends State<GlobePage> with SingleTickerProviderStateMixin {
   static const _texUrl = 'https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&LAYERS=BlueMarble_ShadedRelief_Bathymetry&CRS=EPSG:4326&BBOX=-90,-180,90,180&WIDTH=1024&HEIGHT=512&FORMAT=image/jpeg&STYLES=';
   static final Map<String, Future<List<Map<String, String>>>> _lm = {};
+  static final Map<String, Future<String>> _wx = {};
+  /// Real current weather at the country's point from Open-Meteo (free, no key). Empty if it can't be fetched.
+  Future<String> _weather(List<Object> w) => _wx.putIfAbsent(w[0] as String, () async {
+        try {
+          final r = await http.get(Uri.parse('https://api.open-meteo.com/v1/forecast?latitude=${w[4]}&longitude=${w[5]}&current=temperature_2m,wind_speed_10m,weather_code,is_day&timezone=auto')).timeout(const Duration(seconds: 10));
+          if (r.statusCode != 200) return '';
+          final cur = (jsonDecode(r.body) as Map)['current'] as Map;
+          final code = (cur['weather_code'] as num).toInt();
+          final day = (cur['is_day'] as num).toInt() == 1;
+          final ic = code == 0 ? (day ? '☀️' : '🌙') : code <= 3 ? '⛅' : code <= 48 ? '🌫️' : code <= 67 ? '🌧️' : code <= 77 ? '❄️' : code <= 82 ? '🌦️' : '⛈️';
+          return '$ic ${(cur['temperature_2m'] as num).round()}°C  💨 ${(cur['wind_speed_10m'] as num).round()} km/h  ${day ? '🌞' : '🌜'}';
+        } catch (_) { return ''; }
+      });
 
   ui.Image? tex;
   String err = '';
@@ -212,7 +225,7 @@ class _GlobePageState extends State<GlobePage> with SingleTickerProviderStateMix
           )
         else
           Container(
-            height: 214,
+            height: 236,
             width: double.infinity,
             color: const Color(0xFF0E2A45),
             padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
@@ -222,6 +235,10 @@ class _GlobePageState extends State<GlobePage> with SingleTickerProviderStateMix
                 Expanded(child: Text('${Ui.rtl ? w[2] : w[1]}   👋 ${w[8]}  🙏 ${w[9]}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800))),
                 IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => sel = null)),
               ]),
+              FutureBuilder<String>(
+                future: _weather(w),
+                builder: (_, ws) => (ws.data ?? '').isEmpty ? const SizedBox(height: 4) : Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('${L('Right now • دلوقتي')}: ${ws.data}  (Open-Meteo)', style: const TextStyle(fontSize: 12, color: Colors.white70))),
+              ),
               Expanded(
                 child: FutureBuilder<List<Map<String, String>>>(
                   future: _landmarks(w[0] as String),
