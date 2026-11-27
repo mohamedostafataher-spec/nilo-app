@@ -20,6 +20,7 @@ import 'circles.dart';
 import 'letters.dart';
 import 'globe.dart';
 import 'games.dart';
+import 'friends.dart';
 import 'places.dart';
 
 /// Main shell: one living Nile scene + simple bottom nav.
@@ -249,6 +250,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
               GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const ToolsPage())), child: _chip('🧰 ${L('Tools')}')),
               GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const GlobePage())), child: _chip('🌐 ${L('Globe')}')),
               GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const PlayHubPage())), child: _chip('🎲 ${L('Play')}')),
+              GestureDetector(onTap: () => Navigator.of(context).push(niloRoute(const FriendsPage())), child: _chip('👥 ${L('Friends')}')),
               if (_wx.isNotEmpty)
                 GestureDetector(
                   onTap: () { setState(() => _city = (_city + 1) % _cities.length); _weather(); },
