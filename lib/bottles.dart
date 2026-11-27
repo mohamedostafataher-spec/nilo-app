@@ -25,6 +25,8 @@ const _sbKey = 'sb_publishable_3Gw07lMxemop4QhYpgUszw_8jlkb5JP';
 class Sb {
   static String? _token;
   static String? uid;
+  static String get baseUrl => _sbUrl;
+  static String get anonKey => _sbKey;
 
   static Map<String, String> _h([bool auth = true]) => {
         'apikey': _sbKey,

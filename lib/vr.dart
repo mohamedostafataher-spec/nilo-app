@@ -8,6 +8,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:flutter/foundation.dart' show consolidateHttpClientResponseBytes;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'bottles.dart' show Sb;
+import 'circles.dart' show niloJoined;
+import 'world.dart' show Passport;
+import 'screens.dart' show toast;
 import 'i18n.dart';
 import 'main.dart';
 
@@ -80,6 +83,7 @@ class _VrPageState extends State<VrPage> {
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
       ..addJavaScriptChannel('NiloPhoto', onMessageReceived: (m) => _photo(m.message))
+      ..addJavaScriptChannel('NiloReport', onMessageReceived: (m) => _report(m.message))
       ..addJavaScriptChannel('NiloAvatar', onMessageReceived: (m) async { try { (await SharedPreferences.getInstance()).setString('vr_avatar', m.message); } catch (_) {} });
     _load();
   }
@@ -92,14 +96,74 @@ class _VrPageState extends State<VrPage> {
       final sp = await SharedPreferences.getInstance();
       final av = sp.getString('vr_avatar') ?? '{}';
       final facePath = sp.getString('p_avatar_path') ?? '';
+      final mp = await _mpConfig(sp, facePath);
       html = html.replaceFirst('<script src="three.min.js"></script>', '<script>$three</script>');
-      html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}')");
+      html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}&mp=${Uri.encodeQueryComponent(mp)}')");
       await wc.loadHtmlString(html);
       _face(facePath);
       if (mounted) setState(() => ready = true);
     } catch (e) {
       if (mounted) setState(() => err = 'Could not start the 3D scene on this phone.');
     }
+  }
+
+  static final _uuid = RegExp(r'^[0-9a-fA-F-]{36}$');
+
+  /// Online presence config. Empty (solo) unless the user joined (18+), is signed in, and switched "meet others" on.
+  Future<String> _mpConfig(SharedPreferences sp, String facePath) async {
+    try {
+      if (!await niloJoined()) return '';
+      if (sp.getBool('vr_online') == null && mounted) {
+        final ok = await _consent();
+        await sp.setBool('vr_online', ok);
+      }
+      if (sp.getBool('vr_online') != true) return '';
+      if (Sb.uid == null) await Sb.signIn();
+      if (Sb.uid == null) return '';
+      var blocked = <String>[];
+      try {
+        final r = await Sb.get('blocks?blocker=eq.${Sb.uid}&select=blocked');
+        blocked = [for (final x in (r as List)) x['blocked'].toString()];
+      } catch (_) {}
+      final share = (sp.getBool('vr_face') ?? false) && facePath.isNotEmpty;
+      return jsonEncode({
+        'url': Sb.baseUrl, 'key': Sb.anonKey, 'uid': Sb.uid, 'nick': sp.getString('b_nick') ?? '', 'cc': Passport.country,
+        'face': share ? Sb.publicUrl(facePath) : '', 'fp': Sb.publicUrl(''), 'blocked': blocked,
+      });
+    } catch (_) { return ''; }
+  }
+
+  Future<bool> _consent() async {
+    bool face = false;
+    final r = await showDialog<bool>(context: context, barrierDismissible: false, builder: (c) => StatefulBuilder(builder: (c, setS) => AlertDialog(
+      title: Text(L('Meet other travellers here? • قابل مسافرين هنا؟')),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(L('Other adults (18+) in the same place see your avatar, nickname, country flag and what you type in the chat bubble. No location, no voice, nothing is saved. Up to 6 people per room. Tap a name to report or block. Meet only in public places; never share contact details.'), style: const TextStyle(fontSize: 13, height: 1.4)),
+        const SizedBox(height: 8),
+        SwitchListTile(contentPadding: EdgeInsets.zero, value: face, onChanged: (v) => setS(() => face = v), title: Text(L('Show my profile photo as my avatar face'), style: const TextStyle(fontSize: 13))),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text(L('Stay solo'))),
+        FilledButton(onPressed: () => Navigator.pop(c, true), child: Text(L('Meet others'))),
+      ],
+    )));
+    (await SharedPreferences.getInstance()).setBool('vr_face', face && r == true);
+    return r == true;
+  }
+
+  Future<void> _report(String msg) async {
+    try {
+      final m = jsonDecode(msg) as Map;
+      final u = (m['u'] ?? '').toString();
+      if (!_uuid.hasMatch(u)) return;
+      if (m['a'] == 'block') {
+        await Sb.post('blocks', {'blocker': Sb.uid, 'blocked': u}, upsert: true);
+        if (mounted) toast(context, L('Blocked.'));
+      } else {
+        await Sb.rpc('report_place_user', {'p_user': u, 'p_place': (m['p'] ?? '').toString()});
+        if (mounted) toast(context, L('Reported. Thank you.'));
+      }
+    } catch (_) {}
   }
 
   /// Own profile photo as the avatar's face. Loaded from the user's own photo, shown only on this phone here.
