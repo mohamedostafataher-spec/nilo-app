@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'bottles.dart';
 import 'challenge.dart';
 import 'chain.dart';
+import 'calm.dart';
 import 'circles.dart' show niloJoined, niloJoinGate;
 import 'extras.dart' show niloRoute;
 import 'globe.dart' show GlobePage;
@@ -82,6 +83,8 @@ class PlayHubPage extends StatelessWidget {
         appBar: AppBar(title: Text(L('Play • العب')), backgroundColor: kBg),
         body: ListView(padding: const EdgeInsets.all(12), children: [
           _tile(context, '❓', L('Question of the day • سؤال اليوم'), L('One question for the whole world. Answer in one line.'), const DailyQuestionPage()),
+          _tile(context, '🌴', L('Focus garden • حديقة التركيز'), L('Focus 10 or 25 minutes, a palm grows.'), const FocusPage()),
+          _tile(context, '🌤️', L('Mood sky • سما المزاج'), L('How does today feel? A private journal.'), const MoodSkyPage()),
           _tile(context, '🧵', L('Pass it on • مرّرها'), L('A story written by 6 strangers, one line each.'), const PassItOnPage()),
           _tile(context, '🗓️', L('Weekly challenge • تحدي الأسبوع'), L('One real-life task a week, plus your own recipe corner.'), const WeeklyChallengePage()),
           _tile(context, '🌐', L('Nilo Globe • كورة نيلو'), L('Turn the Earth, fly a papyrus, see landmarks.'), const GlobePage()),
