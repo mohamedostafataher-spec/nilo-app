@@ -219,7 +219,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(color: Colors.black38, borderRadius: BorderRadius.circular(14)),
-                  child: Text(L('مفيش برديات لسه. كن أول واحد يبعت بردية!\nNo papyri yet. Be the first to send one.') + (_people > 0 ? '\n$_people ${L('travelers joined')} • $_real ${L('papyri floating')}' : ''), textAlign: TextAlign.center, style: TextStyle(height: 1.5)),
+                  child: Text(L('مفيش برديات لسه. كن أول واحد يبعت بردية!\nNo papyri yet. Be the first to send one.') + (_people >= 10 ? '\n$_people ${L('travelers joined')} • $_real ${L('papyri floating')}' : ''), textAlign: TextAlign.center, style: TextStyle(height: 1.5)),
                 ),
               ));
             }
