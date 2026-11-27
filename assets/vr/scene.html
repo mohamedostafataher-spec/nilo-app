@@ -77,8 +77,8 @@ const sph=(r,x,y,z,m,sq)=>{const o=ADD(new THREE.SphereGeometry(r,18,14),m,x,y,z
 const cone=(r,h,x,y,z,m,seg)=>ADD(new THREE.ConeGeometry(r,h,seg||16),m,x,y+h/2,z);
 function beam(a,b,r,m){const d=new THREE.Vector3().subVectors(b,a);const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,d.length(),6),m);o.position.copy(a).addScaledVector(d,.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.clone().normalize());S.add(o);return o}
 const V=(x,y,z)=>new THREE.Vector3(x,y,z);
-function wallTex(col,rows,cols){const hx='#'+('000000'+col.toString(16)).slice(-6);return canvasTex(128,128,(g,w,h)=>{g.fillStyle=hx;g.fillRect(0,0,w,h);for(let y=0;y<rows;y++){for(let x=0;x<cols;x++){const v=rnd(x*5+y*11+col%97);g.fillStyle='rgba('+(v>0?'255,255,255':'0,0,0')+','+Math.abs(v)*.1+')';g.fillRect(x*w/cols+(y%2)*3,y*h/rows,w/cols,h/rows)}g.fillStyle='rgba(0,0,0,.18)';g.fillRect(0,y*h/rows,w,1.5)}},[3,3])}
-const WALL=()=>MT(KC,{map:TEXD.stone?ext('stone',[3,2]):wallTex(KC,8,5)}); // wall colour of the country
+function wallTex(col,rows,cols){if(TEXD.stoneg)return ext('stoneg',[Math.max(1,cols/3),Math.max(1,rows/3)]);const hx='#'+('000000'+col.toString(16)).slice(-6);return canvasTex(128,128,(g,w,h)=>{g.fillStyle=hx;g.fillRect(0,0,w,h);for(let y=0;y<rows;y++){for(let x=0;x<cols;x++){const v=rnd(x*5+y*11+col%97);g.fillStyle='rgba('+(v>0?'255,255,255':'0,0,0')+','+Math.abs(v)*.1+')';g.fillRect(x*w/cols+(y%2)*3,y*h/rows,w/cols,h/rows)}g.fillStyle='rgba(0,0,0,.18)';g.fillRect(0,y*h/rows,w,1.5)}},[3,3])}
+const WALL=()=>MT(KC,{map:wallTex(KC,8,5)}); // wall colour of the country
 function tree(x,z,k){const B=BI[BIOME]||BI.green,t=k||B.tree,gh=groundH(x,z);const tr=MT(0x6b4a2b);
  if(t==='pine'){cyl(.6,.5,5,x,gh,z,tr,6);for(let i=0;i<3;i++)cone(4.2-i*1.1,5,x,gh+3+i*3,z,MT(0x2f6b45),8)}
  else if(t==='palm'){cyl(.8,.5,11,x,gh,z,tr,6);for(let i=0;i<7;i++){const l=new THREE.Mesh(new THREE.ConeGeometry(.9,8,4),MT(0x2f8a3f));l.position.set(x+Math.cos(i*.9)*3.2,gh+11.2,z-Math.sin(i*.9)*3.2);l.lookAt(x,gh+12,z);l.rotateX(Math.PI/2);S.add(l)}}
