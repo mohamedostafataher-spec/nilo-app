@@ -106,7 +106,11 @@ class _VrPageState extends State<VrPage> {
       for (final k in ['sand', 'grass', 'stone', 'stoneg', 'rock', 'abu1']) {
         try { texd[k] = 'data:image/jpeg;base64,${base64Encode((await rootBundle.load('assets/vr/tex/$k.jpg')).buffer.asUint8List())}'; } catch (_) {}
       }
-      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)}</script><script>$three</script>');
+      final modd = <String, String>{};
+      for (final k in ['ram']) {
+        try { modd[k] = base64Encode((await rootBundle.load('assets/vr/models/$k.bin')).buffer.asUint8List()); } catch (_) {}
+      }
+      html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)};window.MODD=${jsonEncode(modd)}</script><script>$three</script>');
       html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}&mp=${Uri.encodeQueryComponent(mp)}')");
       await wc.loadHtmlString(html, baseUrl: 'https://nilo-dl.vercel.app/');
       _face(facePath);
