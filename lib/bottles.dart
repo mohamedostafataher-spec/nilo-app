@@ -1,4 +1,5 @@
 import 'gender.dart';
+import 'friends.dart' show DmPage;
 import 'journey.dart';
 import 'health.dart';
 import 'dart:async';
@@ -778,15 +779,7 @@ class _ThreadPageState extends State<ThreadPage> {
   }
 
   void _openProf() {
-    final a = other;
-    showModalBottomSheet(context: context, backgroundColor: const Color(0xFF0E2A45), builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
-      AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 84),
-      const SizedBox(height: 8),
-      Text((_prof['nick'] ?? '').toString().isEmpty ? L('Papyrus friend') : _prof['nick'].toString(), style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
-      if ((_prof['gender'] ?? '').toString().isNotEmpty) Text(Gender.label(_prof['gender'].toString()), style: const TextStyle(color: Colors.white70, fontSize: 13)),
-      if ((_prof['bio'] ?? '').toString().isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(_prof['bio'].toString(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, height: 1.4))),
-      TextButton(onPressed: () async { try { await Sb.rpc('report_profile', {'p_uid': a}); if (mounted) toast(context, L('Reported. Thank you.')); } catch (_) { if (mounted) toast(context, L('Did not work. Try again.')); } }, child: Text(L('Report this profile'), style: const TextStyle(fontSize: 12))),
-    ]))));
+    Navigator.push(context, MaterialPageRoute(builder: (_) => PeerProfilePage(uid: other, prof: _prof, bid: bid, otherIsAuthor: widget.bottle['author'] != Sb.uid)));
   }
 
   Future<void> _deleteMine() async {
@@ -999,3 +992,69 @@ class _ThreadPageState extends State<ThreadPage> {
 
 /// Public wrapper so other screens use the same no-links / no-phone-number check as papyri.
 String niloBad(String s) => _bad(s);
+
+
+/// Full profile of the person on the other side of a papyrus. Only fields the server already returns (nick, bio, avatar, gender) plus the country from the papyrus route.
+class PeerProfilePage extends StatefulWidget {
+  final String uid, bid;
+  final Map<String, dynamic> prof;
+  final bool otherIsAuthor;
+  const PeerProfilePage({super.key, required this.uid, required this.prof, required this.bid, required this.otherIsAuthor});
+  @override
+  State<PeerProfilePage> createState() => _PeerProfilePageState();
+}
+
+class _PeerProfilePageState extends State<PeerProfilePage> {
+  String cc = '';
+  bool? friend;
+
+  @override
+  void initState() {
+    super.initState();
+    _go();
+  }
+
+  Future<void> _go() async {
+    try {
+      final r = await Sb.rpc('bottle_journey', {'p_id': widget.bid}) as List;
+      if (r.isNotEmpty && mounted) setState(() => cc = (r.first[widget.otherIsAuthor ? 'from_cc' : 'to_cc'] ?? '').toString());
+    } catch (_) {}
+    try {
+      final ids = ((await Sb.rpc('friend_ids')) as List?)?.map((e) => e.toString()).toList() ?? [];
+      if (mounted) setState(() => friend = ids.contains(widget.uid));
+    } catch (_) {}
+  }
+
+  String _flag(String c) => c.length == 2 ? String.fromCharCodes(c.toUpperCase().codeUnits.map((x) => 0x1F1E6 + x - 65)) : '';
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.prof;
+    final nick = (p['nick'] ?? '').toString().isEmpty ? L('Papyrus friend') : p['nick'].toString();
+    final bio = (p['bio'] ?? '').toString();
+    final g = (p['gender'] ?? '').toString();
+    return Scaffold(
+      appBar: AppBar(title: Text(L('Profile')), backgroundColor: kBg),
+      body: ListView(padding: const EdgeInsets.all(20), children: [
+        Center(child: AvatarView(avatar: (p['avatar'] ?? '').toString(), path: (p['avatar_path'] ?? '').toString(), size: 120)),
+        const SizedBox(height: 12),
+        Center(child: Text(nick, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800))),
+        const SizedBox(height: 8),
+        Wrap(alignment: WrapAlignment.center, spacing: 10, children: [
+          if (cc.length == 2) Chip(label: Text('${_flag(cc)}  ${cc.toUpperCase()}')),
+          if (g.isNotEmpty) Chip(label: Text('${Gender.icon(g)}  ${Gender.label(g)}')),
+          if (friend == true) Chip(label: Text(L('Friend'))),
+        ]),
+        const SizedBox(height: 16),
+        Card(color: Colors.white10, child: Padding(padding: const EdgeInsets.all(14), child: Text(bio.isEmpty ? L('No bio yet.') : bio, style: TextStyle(height: 1.5, color: bio.isEmpty ? Colors.white54 : Colors.white)))),
+        const SizedBox(height: 8),
+        Text(L('Country is the papyrus route only. No city, no exact location, no contact details are stored or shown.'), style: const TextStyle(fontSize: 11, color: Colors.white38)),
+        const SizedBox(height: 16),
+        if (friend == true) FilledButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DmPage(uid: widget.uid, nick: nick))), icon: const Icon(Icons.chat_bubble_outline), label: Text(L('Message')))
+        else if (friend == false) Text(L('To become friends, swap invite codes in Friends. Both sides must accept.'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+        const SizedBox(height: 10),
+        Center(child: TextButton(onPressed: () async { try { await Sb.rpc('report_profile', {'p_uid': widget.uid}); if (mounted) toast(context, L('Reported. Thank you.')); } catch (_) { if (mounted) toast(context, L('Did not work. Try again.')); } }, child: Text(L('Report this profile'), style: const TextStyle(fontSize: 12)))),
+      ]),
+    );
+  }
+}
