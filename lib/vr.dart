@@ -5,6 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:flutter/foundation.dart' show consolidateHttpClientResponseBytes;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'bottles.dart' show Sb;
 import 'i18n.dart';
 import 'main.dart';
 
@@ -76,7 +79,8 @@ class _VrPageState extends State<VrPage> {
     wc = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
-      ..addJavaScriptChannel('NiloPhoto', onMessageReceived: (m) => _photo(m.message));
+      ..addJavaScriptChannel('NiloPhoto', onMessageReceived: (m) => _photo(m.message))
+      ..addJavaScriptChannel('NiloAvatar', onMessageReceived: (m) async { try { (await SharedPreferences.getInstance()).setString('vr_avatar', m.message); } catch (_) {} });
     _load();
   }
 
@@ -85,13 +89,32 @@ class _VrPageState extends State<VrPage> {
       var html = await rootBundle.loadString('assets/vr/scene.html');
       final three = await rootBundle.loadString('assets/vr/three.min.js');
       final lang = Ui.rtl ? 'ar' : 'en';
+      final sp = await SharedPreferences.getInstance();
+      final av = sp.getString('vr_avatar') ?? '{}';
+      final facePath = sp.getString('p_avatar_path') ?? '';
       html = html.replaceFirst('<script src="three.min.js"></script>', '<script>$three</script>');
-      html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}')");
+      html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}')");
       await wc.loadHtmlString(html);
+      _face(facePath);
       if (mounted) setState(() => ready = true);
     } catch (e) {
       if (mounted) setState(() => err = 'Could not start the 3D scene on this phone.');
     }
+  }
+
+  /// Own profile photo as the avatar's face. Loaded from the user's own photo, shown only on this phone here.
+  Future<void> _face(String path) async {
+    if (path.isEmpty) return;
+    try {
+      final c = HttpClient();
+      final rq = await c.getUrl(Uri.parse(Sb.publicUrl(path))).timeout(const Duration(seconds: 10));
+      final rs = await rq.close().timeout(const Duration(seconds: 10));
+      if (rs.statusCode != 200) return;
+      final b = await consolidateHttpClientResponseBytes(rs);
+      if (b.length > 3000000) return;
+      await Future.delayed(const Duration(milliseconds: 800));
+      await wc.runJavaScript("window.nilo_setFace('data:image/jpeg;base64,${base64Encode(b)}')");
+    } catch (_) {}
   }
 
   Future<void> _photo(String dataUrl) async {
