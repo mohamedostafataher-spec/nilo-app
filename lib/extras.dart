@@ -112,8 +112,8 @@ class _SplashGateState extends State<SplashGate> with SingleTickerProviderStateM
     await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
     final Widget target = seen ? (Passport.country.isEmpty ? const FirstRunPage(next: TouristHome()) : const TouristHome()) : const OnboardingPage();
-    final authDone = p.getBool('auth_done') ?? false;
-    Navigator.of(context).pushReplacement(niloRoute(authDone ? target : AuthPage(next: target)));
+    // No sign-in wall: guests can try Nilo first; the account prompt appears when they post or send.
+    Navigator.of(context).pushReplacement(niloRoute(target));
   }
 
   @override

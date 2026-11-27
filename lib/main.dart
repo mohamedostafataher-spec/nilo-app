@@ -26,6 +26,7 @@ void main() {
   runZonedGuarded(() async {
     await Ui.load();
     runApp(const NiloApp());
+    Health.watchPerf();
   }, (e, s) { Health.log(e, s); debugPrint('nilo error: $e'); });
 }
 

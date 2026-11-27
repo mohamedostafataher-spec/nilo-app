@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -8,6 +9,29 @@ import 'bottles.dart' show Sb;
 
 /// Local crash log: the last 20 errors are kept on the phone only. Nothing is sent anywhere.
 class Health {
+  static int _n = 0, _slow = 0;
+  static bool _perfDone = false;
+
+  /// Slow-phone safeguard: if more than 40% of the first 240 frames take over 40 ms, turn on Reduce motion once.
+  /// The setting stays visible in Settings, so the user can switch it off. Nothing leaves the phone.
+  static void watchPerf() {
+    SchedulerBinding.instance.addTimingsCallback((ts) async {
+      if (_perfDone) return;
+      for (final t in ts) {
+        _n++;
+        if (t.totalSpan.inMilliseconds > 40) _slow++;
+      }
+      if (_n >= 240) {
+        _perfDone = true;
+        final p = await SharedPreferences.getInstance();
+        if (!(p.getBool('perf_checked') ?? false)) {
+          await p.setBool('perf_checked', true);
+          if (_slow / _n > 0.4) await p.setBool('f_reduce_motion', true);
+        }
+      }
+    });
+  }
+
   static Future<void> log(Object e, [StackTrace? s]) async {
     try {
       final p = await SharedPreferences.getInstance();
