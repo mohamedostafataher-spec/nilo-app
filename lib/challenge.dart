@@ -1,3 +1,4 @@
+import 'quests.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -58,6 +59,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
     done['${_week()}'] = {'t': t, 'k': ch[1], 'e': ch[0], 'q': ch[2]};
     final p = await SharedPreferences.getInstance();
     await p.setString('weekly_done', jsonEncode(done));
+    Quests.mark('challenge');
     if (first) Passport.addReeds(5);
     if (mounted) { toast(context, first ? 'Saved. +5 Reeds. • اتحفظت' : 'Saved. • اتحفظت'); setState(() {}); }
   }

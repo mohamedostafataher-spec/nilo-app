@@ -1,3 +1,4 @@
+import 'quests.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -133,6 +134,7 @@ class _GlobePageState extends State<GlobePage> with SingleTickerProviderStateMix
   }
 
   void _select(List<Object> w) {
+    Quests.mark('globe');
     _stamp(w[0] as String);
     final a = [(home[4] as num).toDouble(), (home[5] as num).toDouble()];
     final b = [(w[4] as num).toDouble(), (w[5] as num).toDouble()];

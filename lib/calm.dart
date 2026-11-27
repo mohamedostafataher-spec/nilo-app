@@ -1,3 +1,4 @@
+import 'quests.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -44,6 +45,7 @@ class _FocusPageState extends State<FocusPage> {
       await p.remove('focus_end');
       endMs = 0;
       Passport.addReeds(3);
+      Quests.mark('focus');
       if (mounted) toast(context, 'Done. A palm grew. +3 Reeds. • نخلة جديدة');
     }
     if (mounted) setState(() {});
@@ -124,6 +126,7 @@ class _MoodSkyPageState extends State<MoodSkyPage> {
     log.insert(0, {'d': _today(), 'm': sel, 'n': c.text.trim()});
     if (log.length > 90) log = log.sublist(0, 90);
     await p.setString('mood_log', jsonEncode(log));
+    Quests.mark('mood');
     c.clear();
     if (mounted) { toast(context, 'Saved on your phone only. • اتحفظت'); setState(() {}); }
   }

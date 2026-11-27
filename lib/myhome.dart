@@ -1,3 +1,4 @@
+import 'quests.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -150,6 +151,8 @@ class _MyHomePageState extends State<MyHomePage> {
             }),
           ),
         ),
+        const SizedBox(height: 12),
+        const QuestsCard(),
         const SizedBox(height: 12),
         Text(L('Tap a + to place something. Items cost Reeds. Your look follows your home country.\nدوس على + لتحط حاجة. الحاجات بالقرشة (Reeds). شكل البيت حسب بلدك.'), style: const TextStyle(color: Colors.white60, height: 1.5)),
         const SizedBox(height: 12),

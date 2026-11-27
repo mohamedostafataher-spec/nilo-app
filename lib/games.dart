@@ -1,3 +1,4 @@
+import 'quests.dart';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -144,6 +145,7 @@ class _DailyQuestionPageState extends State<DailyQuestionPage> {
     final p = await SharedPreferences.getInstance();
     try {
       await Sb.post('daily_answers', {'author': Sb.uid, 'nick': p.getString('b_nick') ?? 'Traveler', 'country': Passport.country, 'body': t});
+      Quests.mark('question');
       c.clear();
       FocusScope.of(context).unfocus();
       _load();
@@ -262,6 +264,7 @@ Future<List<Map<String, String>>> loadWordBook() async {
 }
 
 Future<void> saveWord(String word, String meaning) async {
+  Quests.mark('word');
   final p = await SharedPreferences.getInstance();
   final l = await loadWordBook();
   if (l.any((e) => e['w'] == word)) return;
