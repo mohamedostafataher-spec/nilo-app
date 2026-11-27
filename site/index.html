@@ -12,6 +12,7 @@ img.qr{width:170px;height:170px;background:#fff;border-radius:12px;padding:8px}
 small{opacity:.7}ul{padding-inline-start:20px}
 </style></head><body><main>
 <h1>نيلو • Nilo</h1><p class="sub">تطبيق مصري خالص • Made in Egypt</p>
+<div class="card" id="inv" style="display:none;text-align:center"><b>صاحبك دعاك • A friend invited you</b><p>كودك • Your code: <b id="invc" style="font-size:24px;letter-spacing:3px;color:#D9A441"></b></p><a class="btn alt" id="invb" href="#">نسخ الكود • Copy code</a><p class="meta">بعد التثبيت: ادعُ أصحابك > اكتب الكود • After install: Invite friends > enter the code (+20 Reeds)</p></div>
 <div class="card"><div class="meta" id="meta">…</div>
 <a class="btn" id="a64" href="#">تحميل (أغلب الموبايلات) • Download</a>
 <a class="btn alt" id="aun" href="#">نسخة شاملة • Universal (if "not compatible")</a></div>
@@ -29,4 +30,8 @@ document.getElementById('a64').href=v.arm64_url;document.getElementById('aun').h
 document.getElementById('log').innerHTML=v.changelog.map(x=>'<li></li>').join('');
 [...document.querySelectorAll('#log li')].forEach((li,i)=>li.textContent=v.changelog[i]);
 }).catch(()=>{document.getElementById('meta').textContent='تعذر تحميل بيانات النسخة • could not load version info'});
+
+(function(){var c=(new URLSearchParams(location.search).get('c')||'').replace(/[^A-Za-z0-9]/g,'').slice(0,12);if(!c)return;
+document.getElementById('inv').style.display='';document.getElementById('invc').textContent=c.toUpperCase();
+document.getElementById('invb').onclick=function(e){e.preventDefault();if(navigator.clipboard)navigator.clipboard.writeText(c.toUpperCase());this.textContent='✓ '+c.toUpperCase();};})();
 </script></body></html>

@@ -2,6 +2,7 @@ import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
 import 'main.dart';
 import 'world.dart';
 import 'bottles.dart';
@@ -52,7 +53,7 @@ class _InvitePageState extends State<InvitePage> {
 
   @override
   Widget build(BuildContext context) {
-    final msg = 'Nilo • https://nilo-dl.vercel.app  (my invite code: $code)';
+    final msg = 'Nilo • https://nilo-dl.vercel.app/?c=$code  (my invite code: $code)';
     return Scaffold(
       backgroundColor: kBg,
       appBar: AppBar(title: Text(L('Invite friends • ادعُ أصحابك')), backgroundColor: kBg),
@@ -70,6 +71,8 @@ class _InvitePageState extends State<InvitePage> {
                   Text(Ui.rtl ? 'انضم $count من أصحابك بكودك' : '$count friend${count == 1 ? '' : 's'} joined with your code', style: TextStyle(color: Colors.white70)),
                   if (gained > 0) Text(Ui.rtl ? 'اتضاف +$gained ريدز دلوقتي' : '+$gained Reeds added now', style: TextStyle(color: kGreen)),
                   const SizedBox(height: 10),
+                  FilledButton.icon(onPressed: code.isEmpty ? null : () { Share.share(msg); }, icon: const Icon(Icons.share), label: Text(L('Share'))),
+                  const SizedBox(height: 6),
                   FilledButton.icon(onPressed: code.isEmpty ? null : () { Clipboard.setData(ClipboardData(text: msg)); toast(context, 'Copied. Paste it to a friend. • اتنسخ'); }, icon: Icon(Icons.copy), label: Text(L('Copy link + code'))),
                 ]),
               ),
