@@ -470,10 +470,67 @@ function makeAvatar(cfg,tex,g){while(g.children.length)g.remove(g.children[0]);
  add(new THREE.SphereGeometry(.2565,24,18,Math.PI/2-.8,1.6,.75,1.5),fm,0,1.84,0);
  if(!tex){const e=new THREE.MeshBasicMaterial({color:0x222222});add(new THREE.SphereGeometry(.028,8,6),e,-.09,1.88,.235);add(new THREE.SphereGeometry(.028,8,6),e,.09,1.88,.235);add(new THREE.BoxGeometry(.1,.018,.01),e,0,1.77,.248)}
  return {legL,legR,armL,armR}}
-function buildAvatar(){avParts=makeAvatar(AV,faceTex,avG)}
+
+// ===== REALISTIC HUMAN (Quaternius Universal Base Characters, CC0) =====
+const HUMC={};
+function humDec(k,T){const bin=atob(k),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new T(u.buffer)}
+function humData(){if(HUMC.ok)return HUMC;const D=window.HUMD;HUMC.ok=1;HUMC.D=D;HUMC.ibm=humDec(D.ibm,Float32Array);HUMC.g={};
+ for(const k in D.meshes){const m=D.meshes[k],g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(humDec(m.pos,Float32Array),3));g.setAttribute('skinIndex',new THREE.BufferAttribute(Uint16Array.from(humDec(m.jnt,Uint8Array)),4));g.setAttribute('skinWeight',new THREE.BufferAttribute(humDec(m.wgt,Uint8Array),4,true));g.setIndex(new THREE.BufferAttribute(humDec(m.idx,Uint16Array),1));g.computeVertexNormals();HUMC.g[k]=g}
+ return HUMC}
+function makeHuman(cfg,tex,g){
+ while(g.children.length)g.remove(g.children[0]);
+ const H=humData(),D=H.D;const hex=c=>new THREE.Color(c);
+ const bones=D.bones.map(b=>{const o=new THREE.Bone();o.name=b.n;o.position.fromArray(b.t);o.quaternion.fromArray(b.r);o.scale.fromArray(b.s);return o});
+ D.bones.forEach((b,i)=>{if(b.p>=0)bones[b.p].add(bones[i])});
+ const root=bones.find((b,i)=>D.bones[i].p<0);g.add(root);
+ const inv=[];for(let i=0;i<bones.length;i++)inv.push(new THREE.Matrix4().fromArray(H.ibm,i*16));
+ const sk=new THREE.Skeleton(bones,inv);g.updateMatrixWorld(true);
+ const by={};bones.forEach(b=>by[b.name]=b);
+ // body colours by dominant bone group: skin / shirt / pants / shoes
+ const cols=[hex(SKINS[cfg.sk%5]),hex(SHIRTS[cfg.sh%7]),hex(PANTS[(cfg.pc||0)%6]),hex(0x2a2a2e)];
+ const cat=D.bones.map(b=>/head|neck|hand|index|middle|pinky|ring|thumb|lowerarm/i.test(b.n)?0:/pelvis|thigh|calf/i.test(b.n)?2:/foot|ball/i.test(b.n)?3:1);
+ const mkmat=(c,r)=>new THREE.MeshStandardMaterial({color:c,roughness:r,metalness:0});
+ const bg=H.g.body.clone();const n=bg.attributes.position.count,ci=bg.attributes.skinIndex.array,cw=bg.attributes.skinWeight.array,col=new Float32Array(n*3);
+ for(let v=0;v<n;v++){let r=0,gg=0,b=0,ws=0;for(let k=0;k<4;k++){const w=Math.pow(cw[v*4+k]/255,6);if(!w)continue;const c=cols[cat[ci[v*4+k]]];r+=c.r*w;gg+=c.g*w;b+=c.b*w;ws+=w}if(ws){r/=ws;gg/=ws;b/=ws}col[v*3]=r;col[v*3+1]=gg;col[v*3+2]=b}
+ bg.setAttribute('color',new THREE.BufferAttribute(col,3));
+ const bm=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.6,metalness:0});
+ const meshes=[[bg,bm],[H.g.eyes,mkmat(0x20150f,.2)],[H.g.brow,mkmat(HAIRS[cfg.hr%6],.9)]];
+ meshes.forEach(([geo,mat])=>{const m=new THREE.SkinnedMesh(geo,mat);m.frustumCulled=false;m.castShadow=true;g.add(m);m.bind(sk,new THREE.Matrix4())});
+ // pose helpers: rotate a bone about a WORLD axis from its rest pose
+ const rest={};['upperarm_l','upperarm_r','thigh_l','thigh_r','lowerarm_l','lowerarm_r','calf_l','calf_r'].forEach(nm=>{const b=by[nm];if(!b)return;const pq=new THREE.Quaternion();b.parent.getWorldQuaternion(pq);rest[nm]={b,q:b.quaternion.clone(),pq,pi:pq.clone().invert(),sx:Math.sign(b.getWorldPosition(new THREE.Vector3()).x)||1}});
+ const ax=new THREE.Vector3(),qq=new THREE.Quaternion();
+ const rot=(nm,axis,ang)=>{const r=rest[nm];if(!r)return;qq.setFromAxisAngle(ax.set(axis[0],axis[1],axis[2]),ang);r.b.quaternion.copy(r.pi).multiply(qq).multiply(r.pq).multiply(r.q)};
+ const pose=(t,mv)=>{const a=mv?Math.sin(t)*.65:0;
+  ['l','r'].forEach((sd,i)=>{const sg=i?-1:1;const A=rest['upperarm_'+sd],S=A?A.sx:1;
+   // arms down (about world Z), swing about world X
+   const th=sg>0?a:-a;
+   if(A){qq.setFromAxisAngle(ax.set(0,0,1),-S*1.2);const q1=qq.clone();qq.setFromAxisAngle(ax.set(1,0,0),-th*.8);A.b.quaternion.copy(A.pi).multiply(qq).multiply(q1).multiply(A.pq).multiply(A.q)}
+   const L=rest['lowerarm_'+sd];if(L){qq.setFromAxisAngle(ax.set(1,0,0),-.25-(mv?.2:0));L.b.quaternion.copy(L.pi).multiply(qq).multiply(L.pq).multiply(L.q)}
+   const T=rest['thigh_'+sd];if(T){qq.setFromAxisAngle(ax.set(1,0,0),-th);T.b.quaternion.copy(T.pi).multiply(qq).multiply(T.pq).multiply(T.q)}
+   const C=rest['calf_'+sd];if(C){const bend=mv?Math.max(0,Math.sin(t+(sg>0?1.5:-1.5)))*.7:0;qq.setFromAxisAngle(ax.set(1,0,0),bend);C.b.quaternion.copy(C.pi).multiply(qq).multiply(C.pq).multiply(C.q)}
+  });g.updateMatrixWorld(true)};
+ pose(0,false);
+ // accessories (hair, hats, glasses, backpack) reuse the old definitions scaled onto the human head
+ const acc=new THREE.Group();acc.scale.setScalar(.46);acc.position.set(0,1.69-1.84*.46,.02);g.add(acc);
+ const M=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85,metalness:0});const hair=M(HAIRS[cfg.hr%6]);
+ const add=(gm,m,x,y,z)=>{const o=new THREE.Mesh(gm,m);o.position.set(x,y,z);o.castShadow=true;acc.add(o);return o};
+ const hs=+cfg.hs||0;
+ if(hs===1){const h=add(new THREE.SphereGeometry(.262,24,14,0,Math.PI*2,0,Math.PI*.42),hair,0,1.87,-.03);h.rotation.x=-.5}
+ if(hs===2){const h=add(new THREE.SphereGeometry(.265,24,14,0,Math.PI*2,0,Math.PI*.5),hair,0,1.86,-.03);h.rotation.x=-.45;add(new THREE.BoxGeometry(.46,.5,.12),hair,0,1.62,-.2)}
+ if(hs===3){add(new THREE.SphereGeometry(.34,20,16),hair,0,1.95,-.05)}
+ if(hs===4){const h=add(new THREE.SphereGeometry(.262,24,14,0,Math.PI*2,0,Math.PI*.42),hair,0,1.87,-.03);h.rotation.x=-.5;add(new THREE.SphereGeometry(.11,12,10),hair,0,2.12,-.08)}
+ const ht=+cfg.ht||0,HC=M(SHIRTS[(cfg.sh+2)%7]);
+ if(ht===1){const c=add(new THREE.SphereGeometry(.27,24,12,0,Math.PI*2,0,Math.PI*.4),HC,0,1.9,0);c.rotation.x=-.2;add(new THREE.BoxGeometry(.3,.02,.2),HC,0,1.97,.3)}
+ if(ht===2){add(new THREE.CylinderGeometry(.42,.42,.02,24),M(0xe6d3a3),0,2.0,0);add(new THREE.SphereGeometry(.24,20,10,0,Math.PI*2,0,Math.PI*.5),M(0xe6d3a3),0,2.0,0)}
+ if(ht===3){add(new THREE.SphereGeometry(.275,24,16,0,Math.PI*2,0,Math.PI*.55),HC,0,1.88,0)}
+ if(+cfg.gl){const gm=new THREE.MeshBasicMaterial({color:0x111111});add(new THREE.TorusGeometry(.065,.012,6,14),gm,-.09,1.88,.245);add(new THREE.TorusGeometry(.065,.012,6,14),gm,.09,1.88,.245);add(new THREE.BoxGeometry(.06,.012,.012),gm,0,1.89,.25)}
+ if(+cfg.bp){const o=new THREE.Mesh(new THREE.BoxGeometry(.3,.4,.14),M(SHIRTS[(cfg.sh+3)%7]));o.position.set(0,1.28,-.17);g.add(o)}
+ return {human:true,pose}}
+function makeAV(cfg,tex,g){try{if(window.HUMD&&cfg.st!=='c')return makeHuman(cfg,tex,g)}catch(e){console.log('JSERR human '+e)}return makeAvatar(cfg,tex,g)}
+function buildAvatar(){avParts=makeAV(AV,faceTex,avG)}
 buildAvatar();S.add(avG);
 function texFromImg(im){const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');const m=Math.min(im.width,im.height);x.drawImage(im,(im.width-m)/2,(im.height-m)/2,m,m,0,0,256,256);return new THREE.CanvasTexture(c)}
-function walkPose(pr,t,moving){const a=moving?Math.sin(t)*.7:0;pr.legL.rotation.x=a;pr.legR.rotation.x=-a;pr.armL.rotation.x=-a*.8;pr.armR.rotation.x=a*.8}
+function walkPose(pr,t,moving){if(pr.human){pr.pose(t,moving);return}const a=moving?Math.sin(t)*.7:0;pr.legL.rotation.x=a;pr.legR.rotation.x=-a;pr.armL.rotation.x=-a*.8;pr.armR.rotation.x=a*.8}
 window.nilo_setFace=function(url){const im=new Image();im.onload=()=>{faceTex=texFromImg(im);buildAvatar()};im.src=url};
 let VIEW=Q.get('view')||'third';const VW=['third','first','selfie'];
 document.getElementById('vw').addEventListener('click',()=>{VIEW=VW[(VW.indexOf(VIEW)+1)%3]});
@@ -544,8 +601,8 @@ if(MP&&MP.url){
   ws.onclose=()=>{wsOk=false;clearInterval(hb);clearPeers();setCnt();setTimeout(connect,5000)}}
  function mkPeer(m){const g=new THREE.Group();S.add(g);const tag=document.createElement('div');tag.className='pn';const bub=document.createElement('div');bub.className='pb';document.body.appendChild(tag);document.body.appendChild(bub);
   const p={g,tag,bub,m,x:m.x,z:m.z,tx:m.x,tz:m.z,yaw:m.y,ty:m.y,seen:performance.now(),wt:0,pr:null,bt:0,lastChat:0};
-  const cfg={sk:+m.av.sk||0,sh:+m.av.sh||0,hr:+m.av.hr||0,hs:+m.av.hs||0,pc:+m.av.pc||0,ht:+m.av.ht||0,gl:+m.av.gl||0,ou:+m.av.ou||0,bp:+m.av.bp||0};p.cfg=cfg;p.pr=makeAvatar(cfg,null,g);
-  if(m.f&&MP.fp&&m.f.startsWith(MP.fp)&&m.f.length<300){const im=new Image();im.crossOrigin='anonymous';im.onload=()=>{p.pr=makeAvatar(cfg,texFromImg(im),g)};im.src=m.f}
+  const cfg={sk:+m.av.sk||0,sh:+m.av.sh||0,hr:+m.av.hr||0,hs:+m.av.hs||0,pc:+m.av.pc||0,ht:+m.av.ht||0,gl:+m.av.gl||0,ou:+m.av.ou||0,bp:+m.av.bp||0};p.cfg=cfg;p.pr=makeAV(cfg,null,g);
+  if(m.f&&MP.fp&&m.f.startsWith(MP.fp)&&m.f.length<300){const im=new Image();im.crossOrigin='anonymous';im.onload=()=>{p.pr=makeAV(cfg,texFromImg(im),g)};im.src=m.f}
   tag.textContent=flagOf(m.c)+' '+m.n;tag.onclick=ev=>{ev.stopPropagation();openMenu(p)};return p}
  function on(ev,m){if(!m||m.s===sid||typeof m.s!=='string')return;if(m.u&&blocked.has(m.u))return;
   if(ev==='hi'||ev==='pos'){let p=peers[m.s];if(!p){if(Object.keys(peers).length>=MAXP-1)return;m.n=BADTXT.test(String(m.n))?'Traveler':String(m.n||'Traveler').slice(0,20);m.av=m.av||{};m.x=+m.x||0;m.z=+m.z||0;m.y=+m.y||0;m.c=String(m.c||'').slice(0,2);m.f=String(m.f||'');m.u=String(m.u||'').slice(0,40);p=peers[m.s]=mkPeer(m);if(ev==='hi')setTimeout(()=>bc('pos',me()),300+Math.random()*400);setCnt()}

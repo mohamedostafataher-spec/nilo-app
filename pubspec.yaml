@@ -91,6 +91,7 @@ flutter:
     - assets/vr/tex/pstoneN.jpg
     - assets/vr/models/ram.bin
     - assets/vr/gallery.json
+    - assets/vr/human.json
     - assets/vr/gal/
 
   # To add assets to your application, add an assets section, like this:
