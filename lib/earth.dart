@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'i18n.dart';
+import 'world.dart' show kWorld;
+import 'bottles.dart' show Sb;
 
 /// Earth view. Free imagery only:
 ///  - NASA GIBS (MODIS Terra true colour, daily, about 250 m per pixel): open NASA data, no key.
@@ -17,7 +19,51 @@ class EarthPage extends StatefulWidget {
 class _EarthPageState extends State<EarthPage> {
   final _map = MapController();
   int layer = 0; // 0 NASA daily, 1 Sentinel-2 detail, 2 NASA Blue Marble
-  bool night = true;
+  bool night = true, people = false;
+  Map<String, List<int>> counts = {};
+  bool loadedCounts = false;
+
+  Future<void> _loadCounts() async {
+    if (loadedCounts) return;
+    loadedCounts = true;
+    try {
+      final r = await Sb.rpc('nilo_country_counts', {}) as List;
+      final m = <String, List<int>>{};
+      for (final x in r) { m[(x as Map)['cc'].toString()] = [(x['travelers'] as num).toInt(), (x['letters'] as num).toInt()]; }
+      if (mounted) setState(() => counts = m);
+    } catch (_) { loadedCounts = false; }
+  }
+
+  List<Marker> _markers() {
+    final out = <Marker>[];
+    for (final e in counts.entries) {
+      final c = kWorld.where((w) => w[0] == e.key);
+      if (c.isEmpty) continue;
+      final w = c.first;
+      out.add(Marker(
+        point: LatLng(w[4] as double, w[5] as double), width: 54, height: 54,
+        child: GestureDetector(
+          onTap: () => showModalBottomSheet(context: context, backgroundColor: const Color(0xFF12304D), builder: (_) => Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text('${w[3]} ${Ui.rtl ? w[2] : w[1]}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              Text('${e.value[0]} ${L('travelers joined')}'),
+              Text('${e.value[1]} ${L('letters waiting here')}'),
+              const SizedBox(height: 8),
+              Text(L('Counts only. No names, no places.'), style: const TextStyle(color: Colors.white54, fontSize: 12)),
+            ]),
+          )),
+          child: Container(
+            alignment: Alignment.center,
+            decoration: BoxDecoration(shape: BoxShape.circle, color: const Color(0xCCD9A441), border: Border.all(color: Colors.white, width: 1.5)),
+            child: Text('${e.value[0]}', style: const TextStyle(color: Color(0xFF0B1F33), fontWeight: FontWeight.w800)),
+          ),
+        ),
+      ));
+    }
+    return out;
+  }
 
   String get _date {
     final d = DateTime.now().toUtc().subtract(const Duration(days: 1));
@@ -86,6 +132,7 @@ class _EarthPageState extends State<EarthPage> {
               maxNativeZoom: 8, userAgentPackageName: 'app.nilo.nilo_app',
             ),
             _tiles(),
+            if (people) MarkerLayer(markers: _markers()),
             if (night) PolygonLayer(polygons: [Polygon(points: _nightPolygon(), color: const Color(0x99000820), borderStrokeWidth: 1.5, borderColor: const Color(0x88FFD27A))]),
           ],
         ),
@@ -95,6 +142,7 @@ class _EarthPageState extends State<EarthPage> {
             for (var i = 0; i < 3; i++)
               ChoiceChip(label: Text(names[i]), selected: layer == i, onSelected: (_) => setState(() => layer = i)),
             FilterChip(label: Text(L('Day and night')), selected: night, onSelected: (v) => setState(() => night = v)),
+            FilterChip(label: Text(L('Nilo people')), selected: people, onSelected: (v) { setState(() => people = v); if (v) _loadCounts(); }),
           ]),
         ),
         Positioned(
@@ -105,7 +153,7 @@ class _EarthPageState extends State<EarthPage> {
             child: SafeArea(top: false, child: Text(
               layer == 1
                   ? 'Imagery: EOX Sentinel-2 cloudless 2016, contains modified Copernicus Sentinel data 2016, CC BY 4.0 (cloudless.eox.at).'
-                  : 'Imagery: NASA GIBS / EOSDIS, ${layer == 0 ? 'MODIS Terra true colour, $_date (UTC)' : 'Blue Marble'}. Night shading is computed on your phone. Your location is not used.',
+                  : 'Imagery: NASA GIBS / EOSDIS, ${layer == 0 ? 'MODIS Terra true colour, $_date (UTC)' : 'Blue Marble'}. Night shading is computed on your phone. Your location is not used. Black strips are gaps where the satellite did not pass.',
               style: const TextStyle(fontSize: 11, color: Colors.white70), textAlign: TextAlign.center)),
           ),
         ),

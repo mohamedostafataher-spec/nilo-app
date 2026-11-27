@@ -29,10 +29,13 @@ class Sb {
         if (auth && _token != null) 'Authorization': 'Bearer $_token',
       };
 
-  static String? _healed;
+  static String? _healed, _ccSynced;
   /// Signs in and guarantees a profiles row exists (stories, reactions, comments, papyri all need it).
   static Future<bool> signIn() async {
     final ok = await _signIn0();
+    if (ok && uid != null && _ccSynced != uid && Passport.country.length == 2) {
+      try { await rpc('nilo_set_cc', {'c': Passport.country}); _ccSynced = uid; } catch (_) {}
+    }
     if (ok && uid != null && _healed != uid) {
       try {
         final p = await SharedPreferences.getInstance();
