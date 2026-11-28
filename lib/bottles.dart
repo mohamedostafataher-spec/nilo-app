@@ -1,3 +1,4 @@
+import 'gallery.dart';
 import 'gender.dart';
 import 'friends.dart' show DmPage;
 import 'journey.dart';
@@ -230,6 +231,31 @@ class Sb {
 
   static Future<void> removeFile(String path) async {
     try { await http.delete(Uri.parse('$_sbUrl/storage/v1/object/stories/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20)); } catch (_) {}
+  }
+
+  static Future<bool> galUpload(String path, List<int> bytes, String mime) async {
+    final r = await http.post(Uri.parse('$_sbUrl/storage/v1/object/gallery/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token', 'Content-Type': mime}, body: bytes).timeout(const Duration(seconds: 90));
+    return r.statusCode < 300;
+  }
+
+  static Future<void> galRemove(String path) async {
+    try { await http.delete(Uri.parse('$_sbUrl/storage/v1/object/gallery/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20)); } catch (_) {}
+  }
+
+  /// Short-lived signed URL for a photo in the private gallery bucket.
+  static Future<String?> galSigned(String path) async {
+    try {
+      final r = await http.post(Uri.parse('$_sbUrl/storage/v1/object/sign/gallery/$path'), headers: _h(), body: jsonEncode({'expiresIn': 3600})).timeout(const Duration(seconds: 20));
+      if (r.statusCode >= 300) return null;
+      final u = (jsonDecode(utf8.decode(r.bodyBytes)) as Map)['signedURL']?.toString();
+      if (u == null) return null;
+      return '$_sbUrl/storage/v1$u';
+    } catch (_) { return null; }
+  }
+
+  static Future<bool> patch(String path, Map<String, dynamic> body) async {
+    final r = await http.patch(Uri.parse('$_sbUrl/rest/v1/$path'), headers: _h(), body: jsonEncode(body)).timeout(const Duration(seconds: 20));
+    return r.statusCode < 300;
   }
 
   static Future<dynamic> rpc(String fn, [Map<String, dynamic>? args]) async {
@@ -1009,6 +1035,20 @@ class _PeerProfilePageState extends State<PeerProfilePage> {
   bool? friend;
   List<dynamic> stories = [];
   bool storiesDone = false;
+  bool addBusy = false;
+
+  Future<void> _addFriend() async {
+    setState(() => addBusy = true);
+    String m;
+    try {
+      final r = (await Sb.rpc('request_friend_uid', {'p_uid': widget.uid})).toString();
+      if (r == 'accepted') { m = L('You are now friends.'); if (mounted) setState(() => friend = true); }
+      else if (r == 'sent') m = L('Friend request sent.');
+      else if (r == 'age') m = L('Friend requests need the 18+ confirmation in your profile.');
+      else m = L('Could not send the request.');
+    } catch (_) { m = L('Could not send the request. Check your connection.'); }
+    if (mounted) { toast(context, m); setState(() => addBusy = false); }
+  }
 
   @override
   void initState() {
@@ -1057,6 +1097,8 @@ class _PeerProfilePageState extends State<PeerProfilePage> {
         const SizedBox(height: 8),
         Text(L('Country is the papyrus route only. No city, no exact location, no contact details are stored or shown.'), style: const TextStyle(fontSize: 11, color: Colors.white38)),
         const SizedBox(height: 16),
+        PeerGallery(uid: widget.uid),
+        const SizedBox(height: 16),
         Text(L('Stories (last 24 hours)'), style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
         const SizedBox(height: 8),
         if (storiesDone && stories.isEmpty) Text(L('No public stories right now.'), style: const TextStyle(color: Colors.white54)),
@@ -1067,7 +1109,11 @@ class _PeerProfilePageState extends State<PeerProfilePage> {
         ]))),
         const SizedBox(height: 16),
         if (friend == true) FilledButton.icon(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DmPage(uid: widget.uid, nick: nick))), icon: const Icon(Icons.chat_bubble_outline), label: Text(L('Message')))
-        else if (friend == false) Text(L('To become friends, swap invite codes in Friends. Both sides must accept.'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70)),
+        else if (friend == false) ...[
+          FilledButton.icon(onPressed: addBusy ? null : _addFriend, icon: const Icon(Icons.person_add_alt_1), label: Text(L('Add friend'))),
+          const SizedBox(height: 6),
+          Text(L('They get a request and must accept. Until then no chat.'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white54, fontSize: 12)),
+        ],
         const SizedBox(height: 10),
         Center(child: TextButton(onPressed: () async { try { await Sb.rpc('report_profile', {'p_uid': widget.uid}); if (mounted) toast(context, L('Reported. Thank you.')); } catch (_) { if (mounted) toast(context, L('Did not work. Try again.')); } }, child: Text(L('Report this profile'), style: const TextStyle(fontSize: 12)))),
       ]),

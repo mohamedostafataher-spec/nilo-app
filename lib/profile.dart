@@ -9,6 +9,7 @@ import 'world.dart' show Passport;
 import 'bottles.dart' show Sb;
 import 'screens.dart' show toast;
 import 'gender.dart';
+import 'gallery.dart';
 
 const kAvatars = ['🦊', '🐼', '🐯', '🦁', '🐸', '🐙', '🦉', '🐧', '🦄', '🐲', '🐨', '🐰', '🦋', '🐢', '🦒', '🐘', '🐬', '🦅', '🐝', '🐱', '🐶', '🐵', '🦜', '🐪'];
 const _bg = [Color(0xFFD9A441), Color(0xFF3FA796), Color(0xFF7B5EA7), Color(0xFFD1604D), Color(0xFF4B8BBE), Color(0xFF6BA368)];
@@ -125,6 +126,8 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
                 child: Opacity(opacity: (avatar == a && path.isEmpty) ? 1 : 0.55, child: AvatarView(avatar: a, size: 52)),
               ),
           ]),
+          const SizedBox(height: 18),
+          const GalleryEditor(),
           const SizedBox(height: 18),
           TextField(controller: nick, maxLength: 20, decoration: InputDecoration(labelText: L('Display name • الاسم'), hintText: L('No real name needed'), border: const OutlineInputBorder())),
           const SizedBox(height: 12),
