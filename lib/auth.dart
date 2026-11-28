@@ -5,7 +5,7 @@ import 'main.dart';
 import 'extras.dart' show niloRoute;
 import 'bottles.dart' show Sb;
 import 'settings.dart' show TextDocPage, kPrivacy, kTerms;
-import 'world.dart' show NileBackground;
+import 'world.dart' show NileBackground, Passport;
 
 enum _Mode { signIn, signUp, forgot, verify }
 
@@ -16,16 +16,20 @@ class AuthPage extends StatefulWidget {
   final bool startSignUp;
   /// Opened from the first screen: after success restore the nickname and country from the account and open Home as the root.
   final bool fromFirstRun;
+  /// Country chosen/detected on the first screen (used by the sign-up form).
+  final String cc;
   /// Shown on top (for example when the saved session expired).
   final String? notice;
-  const AuthPage({super.key, required this.next, this.startSignUp = false, this.fromFirstRun = false, this.notice});
+  const AuthPage({super.key, required this.next, this.startSignUp = false, this.fromFirstRun = false, this.cc = '', this.notice});
   @override
   State<AuthPage> createState() => _AuthPageState();
 }
 
 class _AuthPageState extends State<AuthPage> {
   late _Mode mode = widget.startSignUp ? _Mode.signUp : _Mode.signIn;
-  bool keep = true;
+  bool keep = true, adult = false;
+  final nick = TextEditingController();
+  bool get _askNick => widget.fromFirstRun && mode == _Mode.signUp;
   @override
   void initState() { super.initState(); if (widget.notice != null) info = widget.notice; }
   final email = TextEditingController(), pw = TextEditingController(), code = TextEditingController();
@@ -66,6 +70,13 @@ class _AuthPageState extends State<AuthPage> {
       if (code.text.trim().length < 6) { setState(() { busy = false; error = L('Enter the code from your email'); }); return; }
       r = await Sb.verifyCode(code.text.trim());
     } else if (mode == _Mode.signUp) {
+      if (_askNick) {
+        final n = nick.text.trim();
+        if (n.length < 2 || n.length > 20) { setState(() { busy = false; error = L('Choose a nickname (2 to 20 letters), not your real name. • اختار اسم مستعار'); }); return; }
+        if (!adult) { setState(() { busy = false; error = L('Please confirm you are 18 or older. • أكد إنك 18 سنة أو أكتر'); }); return; }
+        if (widget.cc.isNotEmpty) { Passport.country = widget.cc; Passport.addStamp('home-${widget.cc}'); }
+        Passport.nickname = n;
+      }
       if (pw.text.length < 8) { setState(() { busy = false; error = 'Password: at least 8 characters • كلمة السر 8 حروف على الأقل'; }); return; }
       r = await Sb.signUp(e, pw.text);
       if (r == Sb.kNeedCode) {
@@ -98,7 +109,7 @@ class _AuthPageState extends State<AuthPage> {
   @override
   Widget build(BuildContext context) {
     final title = mode == _Mode.verify ? 'تأكيد الإيميل • Verify email' : mode == _Mode.signIn ? 'تسجيل الدخول • Sign in' : mode == _Mode.signUp ? 'إنشاء حساب • Create account' : 'نسيت كلمة السر • Forgot password';
-    final tabs = (mode == _Mode.forgot || mode == _Mode.verify) ? <Widget>[] : <Widget>[
+    final tabs = (widget.fromFirstRun || mode == _Mode.forgot || mode == _Mode.verify) ? <Widget>[] : <Widget>[
       Container(
         decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(14)),
         padding: const EdgeInsets.all(4),
@@ -138,6 +149,12 @@ class _AuthPageState extends State<AuthPage> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           ...tabs,
           if (mode == _Mode.forgot || mode == _Mode.verify) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(L(title), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
+          if (widget.fromFirstRun && (mode == _Mode.signIn || mode == _Mode.signUp)) Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(L(mode == _Mode.signUp ? 'Create your account • إنشاء حساب' : 'Sign in • تسجيل الدخول'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700))),
+          if (_askNick) ...[
+            TextField(controller: nick, maxLength: 20, decoration: InputDecoration(prefixIcon: const Icon(Icons.person_outline), labelText: L('Nickname, not your real name • اسم مستعار'), border: const OutlineInputBorder())),
+            CheckboxListTile(value: adult, onChanged: (v) => setState(() => adult = v ?? false), dense: true, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading, title: Text(L('I am 18+ and accept the rules • عمري 18+ وموافق على القواعد'), style: const TextStyle(fontSize: 13))),
+            const SizedBox(height: 6),
+          ],
           TextField(controller: email, keyboardType: TextInputType.emailAddress, autocorrect: false, decoration: InputDecoration(prefixIcon: const Icon(Icons.mail_outline), labelText: L('Email • الإيميل'), border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)))),
           const SizedBox(height: 12),
           if (mode == _Mode.verify) ...[
@@ -169,15 +186,15 @@ class _AuthPageState extends State<AuthPage> {
           const SizedBox(height: 6),
           if (mode == _Mode.signIn) ...[
             TextButton(onPressed: () => setState(() { mode = _Mode.forgot; error = null; info = null; codeSent = false; }), child: Text(L('Forgot password? • نسيت كلمة السر؟'))),
-            TextButton(onPressed: () => setState(() { mode = _Mode.signUp; error = null; }), child: Text(L('New here? Create an account • حساب جديد'))),
-          ] else
+            if (!widget.fromFirstRun) TextButton(onPressed: () => setState(() { mode = _Mode.signUp; error = null; }), child: Text(L('New here? Create an account • حساب جديد'))),
+          ] else if (!(widget.fromFirstRun && mode != _Mode.forgot))
             TextButton(onPressed: () => setState(() { mode = _Mode.signIn; error = null; info = null; }), child: Text(L('Back to sign in • رجوع'))),
             ]),
           ),
           const SizedBox(height: 18),
-          OutlinedButton(onPressed: busy ? null : _done, child: Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text(L('Continue as guest • كمل كضيف')))),
+          if (!widget.fromFirstRun) ...[OutlinedButton(onPressed: busy ? null : _done, child: Padding(padding: EdgeInsets.symmetric(vertical: 10), child: Text(L('Continue as guest • كمل كضيف')))),
           const SizedBox(height: 6),
-          Text(L('A guest account lives on this phone only. If you lose the phone you lose it. Create an account to keep your papyri.'), style: TextStyle(fontSize: 11, color: Colors.white54)),
+          Text(L('A guest account lives on this phone only. If you lose the phone you lose it. Create an account to keep your papyri.'), style: TextStyle(fontSize: 11, color: Colors.white54))],
           const SizedBox(height: 14),
           Wrap(alignment: WrapAlignment.center, children: [
             TextButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => TextDocPage('Privacy Policy', kPrivacy))), child: Text(L('Privacy'), style: TextStyle(fontSize: 12))),

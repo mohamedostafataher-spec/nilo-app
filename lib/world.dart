@@ -1004,12 +1004,7 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
   /// Same checks as the passport button, then the email sign-up screen (the passport data stays on this phone and is saved to the account).
   void _signup() {
     if (code.isEmpty) { toast(context, 'Tap the flag to choose your country'); return; }
-    if (nick.text.trim().length < 2) { toast(context, 'Choose a nickname (2 to 20 letters)'); nickF.requestFocus(); return; }
-    if (!adult) { toast(context, 'Please confirm you are 18 or older'); return; }
-    Passport.country = code;
-    Passport.addStamp('home-$code');
-    Passport.nickname = nick.text.trim();
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => AuthPage(next: widget.next, startSignUp: true, fromFirstRun: true)));
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => AuthPage(next: widget.next, startSignUp: true, fromFirstRun: true, cc: code)));
   }
 
   void _login() => Navigator.of(context).push(MaterialPageRoute(builder: (_) => AuthPage(next: widget.next, fromFirstRun: true)));
@@ -1068,14 +1063,14 @@ class _FirstRunPageState extends State<FirstRunPage> with SingleTickerProviderSt
                   ]))),
                 ]),
                 const SizedBox(height: 14),
-                SizedBox(width: double.infinity, height: 52, child: FilledButton(onPressed: _finish, style: FilledButton.styleFrom(shape: StadiumBorder()), child: Text(L('Get my passport • استلم جوازك'), style: TextStyle(fontSize: 16)))),
+                SizedBox(width: double.infinity, height: 52, child: FilledButton(onPressed: _finish, style: FilledButton.styleFrom(shape: StadiumBorder()), child: Text(L('Continue as guest • كمل كضيف'), style: TextStyle(fontSize: 16)))),
                 const SizedBox(height: 10),
                 Row(children: [
                   Expanded(child: OutlinedButton(onPressed: _signup, child: Text(L('Create account • حساب جديد'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)))),
                   const SizedBox(width: 10),
                   Expanded(child: OutlinedButton(onPressed: _login, child: Text(L('I have an account • عندي حساب'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 13)))),
                 ]),
-                Text(L('Continue as a guest with the passport button, or keep your papyri safe with an account.'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Colors.white54)),
+                Text(L('The nickname and 18+ box are only for guests. With an account you set them on the next screen.'), textAlign: TextAlign.center, style: const TextStyle(fontSize: 11, color: Colors.white54)),
                 TextButton(onPressed: busy ? null : _gps, child: Text(L('Confirm with my location once (country only, nothing saved) • أكد بالموقع مرة'), style: TextStyle(fontSize: 12, color: Colors.white54))),
               ]),
             ),
