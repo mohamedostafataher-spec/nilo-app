@@ -11,7 +11,7 @@ def shot(name):
         fh.write(subprocess.run(['adb', 'exec-out', 'screencap', '-p'], capture_output=True).stdout)
     print('shot', f, flush=True)
 def nodes():
-    adb('shell', 'uiautomator', 'dump', '/sdcard/u.xml')
+    adb('shell', 'rm', '-f', '/sdcard/u.xml'); adb('shell', 'uiautomator', 'dump', '/sdcard/u.xml')
     x = adb('shell', 'cat', '/sdcard/u.xml')
     try:
         root = ET.fromstring(x[x.index('<'):])
@@ -80,22 +80,14 @@ adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
 adb('shell', 'monkey', '-p', 'eg.nilo.nilo_app', '-c', 'android.intent.category.LAUNCHER', '1')
 time.sleep(10); anr(); step('onboarding_translate')
 tap_text('Skip'); time.sleep(4); anr(); step('entry')
-tap_class('EditText'); time.sleep(1); adb('shell', 'input', 'text', 'Traveler'); time.sleep(1); hide_kb()
-tap_text('I am 18'); time.sleep(1); step('entry_filled')
-tap_text('Continue as guest'); time.sleep(6); anr(); step('after_guest')
-for _ in range(4):
-    if not tap_any('Skip', 'Got it', 'Not now', 'Later', 'Close'): break
-    time.sleep(3); anr()
-time.sleep(8); anr(); step('home')
-time.sleep(3); step('home_b')
-# bottom bar: try 5 equal slots
+def T(x, y, w=3):
+    adb('shell', 'input', 'tap', str(x), str(y)); time.sleep(w)
+T(540, 1232, 1); adb('shell', 'input', 'text', 'Traveler'); time.sleep(1); adb('shell', 'input', 'keyevent', '4'); time.sleep(1.5)
+T(124, 1388, 1); step('entry_filled')
+T(540, 1544, 8); step('after_guest')
+time.sleep(6); step('home')
+for _ in range(3):
+    T(540, 2000, 1) if False else None
 for i in range(5):
-    x = int(W * (i + 0.5) / 5)
-    adb('shell', 'input', 'tap', str(x), str(H - 110)); time.sleep(5); anr(); step('nav%d' % i)
-    for _ in range(2):
-        if tap_any('Skip', 'Got it', 'Not now', 'Later'): time.sleep(2)
-adb('shell', 'input', 'tap', str(int(W * 0.1)), str(H - 110)); time.sleep(4)
-for chip in ['Trip', 'Passport', 'Name card', 'Daily word']:
-    if tap_text(chip):
-        time.sleep(6); anr(); step('chip_' + chip.replace(' ', '_')); back(); time.sleep(2)
+    T(int(W * (i + 0.5) / 5), 2170, 6); step('nav%d' % i)
 dump('final')
