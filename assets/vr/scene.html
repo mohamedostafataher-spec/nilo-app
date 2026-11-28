@@ -45,7 +45,7 @@ const S=new THREE.Scene();
 const cam=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,0.5,3000);
 addEventListener('resize',()=>{R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()});
 
-const TEXD=window.TEXD||{};function ext(k,rep){const t=new THREE.TextureLoader().load(TEXD[k]);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1]);t.anisotropy=4;return t}
+var COLS=[];const TEXD=window.TEXD||{};function ext(k,rep){const t=new THREE.TextureLoader().load(TEXD[k]);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep[0],rep[1]);t.anisotropy=4;return t}
 function canvasTex(w,h,draw,rep){const c=document.createElement('canvas');c.width=w;c.height=h;draw(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;if(rep)t.repeat.set(rep[0],rep[1]);t.anisotropy=4;return t}
 function rnd(a){return (Math.sin(a*127.1)*43758.5453)%1}
 const stoneTex=(base,rep)=>canvasTex(256,256,(g,w,h)=>{g.fillStyle=base;g.fillRect(0,0,w,h);for(let y=0;y<8;y++){const off=(y%2)*16;for(let x=-1;x<8;x++){const v=Math.abs(rnd(x*7+y*13))*30-15;g.fillStyle=`rgba(${v>0?255:60},${v>0?240:40},${v>0?200:20},${Math.abs(v)/90})`;g.fillRect(x*32+off,y*32,32,32);g.strokeStyle='rgba(70,45,20,.35)';g.lineWidth=2;g.strokeRect(x*32+off,y*32,32,32)}}},rep);
@@ -490,96 +490,132 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  }
  const NEWSC=['bluemosque','cappadocia','pamukkale','gyeong','bulguksa'];
  const M=(c)=>new THREE.MeshLambertMaterial({color:c});
+ const sol=(x,z,w,d)=>{COLS.push([x-w/2,x+w/2,z+S.position.z-d/2,z+S.position.z+d/2])};
+ const tm=(k,w,h,tile,col)=>{if(!TEXD[k])return M(col||0xcccccc);const rx=Math.max(.5,w/(tile||10)),ry=Math.max(.5,h/(tile||10));const m={map:ext(k,[rx,ry]),shininess:5};if(TEXD[k+'N'])m.normalMap=ext(k+'N',[rx,ry]);if(col)m.color=col;return new THREE.MeshPhongMaterial(m)};
+ const bt=(w,h,d,k,x,y,z,tile,col,sd)=>{const m=B(w,h,d,tm(k,Math.max(w,d),h,tile,col),x,y,z);if(sd)sol(x,z,w,d);return m};
  const pyr=(w,h,d,mat,x,y,z)=>{const m=new THREE.Mesh(new THREE.ConeGeometry(1,1,4),mat);m.rotation.y=Math.PI/4;m.scale.set(w/Math.SQRT2,h,d/Math.SQRT2);m.position.set(x,y+h/2,z);m.castShadow=true;S.add(m);return m};
- const dome=(r,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,24,12,0,Math.PI*2,0,Math.PI/2),mat);m.position.set(x,y,z);m.castShadow=true;S.add(m);return m};
+ const dome=(r,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(r,28,14,0,Math.PI*2,0,Math.PI/2),mat);m.position.set(x,y,z);m.castShadow=true;S.add(m);return m};
  const cyl=(r1,r2,h,mat,x,y,z,sg=12)=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(r1,r2,h,sg),mat);m.position.set(x,y+h/2,z);m.castShadow=true;S.add(m);return m};
- const hill=(x,z,s,h,mat)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(s,14,8,0,Math.PI*2,0,Math.PI/2),mat);m.position.set(x,-1,z);m.scale.y=h/s;S.add(m)};
- const pine=(x,z)=>{if(z>-100&&Math.abs(x)<70)return;const h=8+r2()*6;cyl(.4,.5,h*.4,M(0x5a4028),x,0,z,6);const c=new THREE.Mesh(new THREE.ConeGeometry(2.6+r2(),h,7),M(0x2f5f3a));c.position.set(x,h*.4+h/2,z);S.add(c)};
- // Korean hall: stone platform, red pillars, hipped dark-tile roof with a second tier
- const hall=(w,d,x,z,tiers,base)=>{const bh=base||2.2;B(w+10,bh,d+10,M(0xb9b4a8),x,bh/2,z);const py=bh;const pm=M(0xa8342a);
-  for(let i=0;i<=Math.round(w/6);i++){cyl(.7,.7,9,pm,x-w/2+i*w/Math.round(w/6),py,z+d/2,8);cyl(.7,.7,9,pm,x-w/2+i*w/Math.round(w/6),py,z-d/2,8)}
-  B(w,7,d,M(0xc9a36a),x,py+4.5,z);B(w+4,1.6,d+4,M(0x3d7d6f),x,py+9.4,z);
-  const rm=M(0x4a5560);pyr(w+12,7,d+12,rm,x,py+10,z);
-  if(tiers>1){B(w*.7,5,d*.7,M(0xc9a36a),x,py+17,z);B(w*.7+3,1.2,d*.7+3,M(0x3d7d6f),x,py+22,z);pyr(w*.7+9,6,d*.7+9,rm,x,py+23,z)}};
+ const hill=(x,z,s,h,mat)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(s,16,10,0,Math.PI*2,0,Math.PI/2),mat);m.position.set(x,-1,z);m.scale.y=h/s;S.add(m)};
+ const pine=(x,z)=>{if(z>-100&&Math.abs(x)<70)return;const h=8+r2()*6;cyl(.4,.5,h*.4,M(0x5a4028),x,0,z,6);for(let i=0;i<3;i++){const c=new THREE.Mesh(new THREE.ConeGeometry((2.8-i*.6)+r2()*.6,h*.55,8),M([0x2f5f3a,0x356b40,0x2b5634][i]));c.position.set(x,h*.4+h*.18+i*h*.2,z);S.add(c)}};
+ const grd=(k,w,d,x,z,tile,col)=>{const m=B(w,2,d,tm(k,w,d,tile,col),x,-1,z);m.receiveShadow=true;return m};
+ const lamp=(x,y,z,c)=>{const m=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),new THREE.MeshBasicMaterial({color:c||0xffe2a8}));m.position.set(x,y,z);S.add(m);const l=new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,6,4),M(0x333333));l.position.set(x,y+3.4,z);S.add(l)};
+ const domeTex=cv0(256,256,(g,w,h)=>{g.fillStyle='#2c5a8f';g.fillRect(0,0,w,h);for(let i=0;i<14;i++){g.strokeStyle=i%2?'#e8d9a8':'#1f3f6e';g.lineWidth=3;g.beginPath();g.arc(w/2,h/2,10+i*9,0,7);g.stroke()}for(let i=0;i<24;i++){g.fillStyle='#e8d9a8';g.beginPath();g.arc(w/2+Math.cos(i/24*6.28)*70,h/2+Math.sin(i/24*6.28)*70,5,0,7);g.fill()}});
+ const carpet=cv0(256,256,(g,w,h)=>{g.fillStyle='#8a1f2b';g.fillRect(0,0,w,h);g.strokeStyle='#e8c872';g.lineWidth=4;g.strokeRect(10,10,w-20,h-20);g.strokeStyle='#2f4f8a';g.lineWidth=3;g.strokeRect(24,24,w-48,h-48);for(let i=0;i<5;i++)for(let j=0;j<5;j++){g.fillStyle='#e8c872';g.beginPath();g.moveTo(50+i*38,40+j*38);g.lineTo(60+i*38,52+j*38);g.lineTo(50+i*38,64+j*38);g.lineTo(40+i*38,52+j*38);g.fill()}});
+ // Korean hall (hollow, enterable): stone platform, red pillars, plank floor, back and side walls, hipped tile roof
+ const hallH=(w,d,x,z,tiers,base,deco)=>{const bh=base||2.2;
+  B(w+10,bh,d+10,tm('sF',w+10,d+10,12),x,bh/2+.01,z);
+  const py=bh,pm=M(0xa8342a),n=Math.max(2,Math.round(w/6));
+  B(w,.03,d,tm('wK',w,d,6),x,py+.04,z);
+  for(let i=0;i<=n;i++){cyl(.7,.7,9,pm,x-w/2+i*w/n,py,z+d/2,8);cyl(.7,.7,9,pm,x-w/2+i*w/n,py,z-d/2,8)}
+  const wm=tm('wK',d,8,6,0xd9b887);B(w,8,1,wm,x,py+4.3,z-d/2);B(1,8,d,wm,x-w/2,py+4.3,z);B(1,8,d,wm,x+w/2,py+4.3,z);
+  sol(x,z-d/2,w+1,1.6);sol(x-w/2,z,1.6,d);sol(x+w/2,z,1.6,d);
+  // front: lattice doors on both sides, open centre
+  B(w*.32,6,.6,tm('wK',w,6,4,0xc9a36a),x-w*.34,py+3.4,z+d/2);B(w*.32,6,.6,tm('wK',w,6,4,0xc9a36a),x+w*.34,py+3.4,z+d/2);sol(x-w*.34,z+d/2,w*.32,1.4);sol(x+w*.34,z+d/2,w*.32,1.4);
+  B(w+4,1.6,d+4,M(0x3d7d6f),x,py+9.4,z);
+  pyr(w+12,7,d+12,tm('rK',w+12,10,8),x,py+10,z);
+  if(tiers>1){B(w*.7,5,d*.7,M(0xc9a36a),x,py+17,z);B(w*.7+3,1.2,d*.7+3,M(0x3d7d6f),x,py+22,z);pyr(w*.7+9,6,d*.7+9,tm('rK',w*.7+9,8,8),x,py+23,z)}
+  if(deco==='throne'){B(14,1.4,10,M(0x6b1a1a),x,py+1,z-d/2+7);B(8,.6,6,M(0xd9a441),x,py+2,z-d/2+7);
+   const sc=cv0(256,256,(g,w2,h2)=>{g.fillStyle='#1b3358';g.fillRect(0,0,w2,h2);g.fillStyle='#e8d9a8';g.beginPath();g.arc(w2*.5,h2*.28,26,0,7);g.fill();g.fillStyle='#c9372c';g.beginPath();g.arc(w2*.3,h2*.2,12,0,7);g.fill();g.fillStyle='#e8e8e8';g.beginPath();g.arc(w2*.7,h2*.2,12,0,7);g.fill();g.fillStyle='#2e6a7a';for(let i=0;i<6;i++){g.beginPath();g.moveTo(0,h2-i*14);g.lineTo(w2,h2-i*14-10);g.lineTo(w2,h2);g.lineTo(0,h2);g.fill()}});
+   B(22,9,.5,new THREE.MeshLambertMaterial({map:sc}),x,py+6.2,z-d/2+1.2);
+   for(let i=0;i<4;i++)lamp(x-15+i*10,py+7,z+2,0xffd27a)}
+ };
  if(Q=='bluemosque'){S.position.z=250;LIMIT=330;
- const wl=M(0xd9d3c4),bl=M(0x8d9bb3),gr=M(0xa9a392),cm=new THREE.MeshLambertMaterial({map:stone('#d9d3c4')});
- B(300,2,300,M(0xc8c0ac),0,-1,-200);
- // prayer hall: block + big central dome with four semi-domes and smaller domes in the corners
- B(52,22,52,cm,0,11,-300);dome(24,0,22,-300,new THREE.MeshLambertMaterial({color:0x8d9bb3}));
- [[0,-26],[0,26],[-26,0],[26,0]].forEach(([a,b])=>{dome(13,a,16,-300+b,bl)});
- [[-24,-24],[24,-24],[-24,24],[24,24]].forEach(([a,b])=>{dome(7,a,22,-300+b,bl)});
- // six minarets (approximate: Blue Mosque is the one with six)
- [[-38,-262],[38,-262],[-38,-338],[38,-338],[-62,-262],[62,-262]].forEach(([a,b])=>{cyl(2.2,2.6,52,wl,a,0,b,12);B(7,1.2,7,gr,a,38,b);B(7,1.2,7,gr,a,46,b);const c=new THREE.Mesh(new THREE.ConeGeometry(2.6,10,12),bl);c.position.set(a,57,b);S.add(c)});
- // courtyard with arcade and fountain
- for(let i=0;i<10;i++){cyl(.9,.9,9,wl,-34+i*7.5,0,-218,10);cyl(.9,.9,9,wl,-34+i*7.5,0,-258,10)}
- for(let i=0;i<5;i++){cyl(.9,.9,9,wl,-34,0,-218-i*10,10);cyl(.9,.9,9,wl,34,0,-218-i*10,10)}
- B(76,1.4,42,gr,0,9.7,-238);for(let i=0;i<8;i++)dome(5,-33+i*9.5,10.4,-238-(i%2?0:0),M(0x8f98a8));
- cyl(5,5,2.4,gr,0,0,-238,8);dome(3.2,0,2.4,-238,M(0x6f7a88));
- for(let i=0;i<22;i++)palm(-120+r2()*240,-80+r2()*40,0);
- city(-140,140,20,90,18,10,24);
+ const wl=M(0xd9d3c4),bl=new THREE.MeshLambertMaterial({color:0x8d9bb3}),gr=M(0xa9a392);
+ const dIn=new THREE.MeshLambertMaterial({map:domeTex,side:THREE.DoubleSide});
+ grd('sF',420,420,0,-200,8,0xe2dccb);
+ // courtyard paving
+ B(84,.04,52,tm('fM',84,52,10),0,.03,-240);
+ // prayer hall: hollow, open front (doorway faces the courtyard)
+ const hz=-300,hs=52;
+ B(hs,22,2,tm('wW',hs,22,12),0,11,hz-hs/2);B(2,22,hs,tm('wW',hs,22,12),-hs/2,11,hz);B(2,22,hs,tm('wW',hs,22,12),hs/2,11,hz);
+ B(20,22,2,tm('wW',20,22,12),-16,11,hz+hs/2);B(20,22,2,tm('wW',20,22,12),16,11,hz+hs/2);B(12,7,2,tm('wW',12,7,12),0,18.5,hz+hs/2);
+ sol(0,hz-hs/2,hs,2.4);sol(-hs/2,hz,2.4,hs);sol(hs/2,hz,2.4,hs);sol(-16,hz+hs/2,20,2.4);sol(16,hz+hs/2,20,2.4);
+ B(hs-4,.04,hs-4,new THREE.MeshLambertMaterial({map:(()=>{const t=carpet.clone();t.repeat.set(2,2);t.needsUpdate=true;return t})()}),0,.04,hz);
+ // four big piers, ceiling ring and the domes (seen from below too)
+ [[-14,-14],[14,-14],[-14,14],[14,14]].forEach(([a,b])=>{bt(6,22,6,'wW',a,11,hz+b,10,0xcfc9b8,true)});
+ [[0,-25],[0,25],[-25,0],[25,0]].forEach(([a,b])=>{B(a?3:52,1.2,b?3:52,wl,a,22.6,hz+b)});
+ dome(24,0,22,hz,dIn);
+ [[0,-26],[0,26],[-26,0],[26,0]].forEach(([a,b])=>{dome(13,a,16,hz+b,dIn)});
+ [[-24,-24],[24,-24],[-24,24],[24,24]].forEach(([a,b])=>{dome(7,a,22,hz+b,dIn)});
+ // mihrab, minbar, hanging lamps, blue windows
+ B(8,12,1.2,M(0xe2c46a),0,6,hz-hs/2+1.2);B(5,9,.8,M(0x2c5a8f),0,5.5,hz-hs/2+1.8);
+ B(4,8,10,M(0xe8dcc0),16,4,hz-hs/2+7);
+ for(let i=0;i<10;i++){const a=i/10*6.28;lamp(Math.cos(a)*9,9,hz+Math.sin(a)*9)}
+ for(let i=0;i<6;i++){B(3,5,.3,new THREE.MeshBasicMaterial({color:0x6ea6e8}),-18+i*7.2,14,hz-hs/2+1.2);B(.3,5,3,new THREE.MeshBasicMaterial({color:0x6ea6e8}),-hs/2+1.2,14,hz-18+i*7.2);B(.3,5,3,new THREE.MeshBasicMaterial({color:0x6ea6e8}),hs/2-1.2,14,hz-18+i*7.2)}
+ // six minarets (the Blue Mosque is the one with six)
+ [[-38,-262],[38,-262],[-38,-338],[38,-338],[-62,-262],[62,-262]].forEach(([a,b])=>{const m=cyl(2.2,2.6,52,tm('wW',12,52,6),a,0,b,16);sol(a,b,5.4,5.4);B(7,1.2,7,gr,a,38,b);B(7,1.2,7,gr,a,46,b);const c=new THREE.Mesh(new THREE.ConeGeometry(2.7,11,16),bl);c.position.set(a,57.5,b);S.add(c)});
+ // courtyard arcade with domed bays and a fountain
+ for(let i=0;i<10;i++){cyl(.9,.9,9,wl,-34+i*7.5,0,-218,10);cyl(.9,.9,9,wl,-34+i*7.5,0,-262,10)}
+ for(let i=0;i<5;i++){cyl(.9,.9,9,wl,-34,0,-218-i*11,10);cyl(.9,.9,9,wl,34,0,-218-i*11,10)}
+ B(76,1.4,46,gr,0,9.7,-240);for(let i=0;i<8;i++)dome(5,-33+i*9.5,10.4,-240,M(0x8f98a8));
+ cyl(5,5,2.4,gr,0,0,-238,10);dome(3.2,0,2.4,-238,M(0x6f7a88));sol(0,-238,10,10);
+ for(let i=0;i<22;i++)palm(-130+r2()*260,-60+r2()*40,0);
+ city(-160,160,20,100,22,10,26);
  }
  if(Q=='cappadocia'){S.position.z=250;LIMIT=340;
- B(700,2,700,M(0xcdb289),0,-1,-250);
- const tuff=[0xd4b996,0xc9a883,0xdcc3a3,0xbf9f7c].map(M),cap=M(0x8a6a4c);
- for(let i=0;i<46;i++){const x=-260+r2()*520,z=-60-r2()*420,h=14+r2()*30,r=3+r2()*5;const m=tuff[i%4];const c=new THREE.Mesh(new THREE.ConeGeometry(r,h,9),m);c.position.set(x,h/2,z);c.castShadow=true;S.add(c);
-  if(r2()<.6){const k=new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.7,2.4,9),cap);k.position.set(x,h+.4,z);S.add(k)}}
- // rock ridges around the valley (approximate shapes)
- [[-330,-250,120,50],[330,-300,130,60],[0,-520,160,70]].forEach(([x,z,s,h])=>hill(x,z,s,h,tuff[0]));
- // cave doors in a rock face
- B(36,22,14,tuff[3],-140,11,-120);for(let i=0;i<5;i++)B(2.6,4,.4,M(0x3a2a1c),-152+i*6.5,4,-112.6);
- // hot-air balloons (static, hanging in the air)
+ grd('rC',720,720,0,-250,24,0xe0c9a6);
+ const rk=(w,h)=>tm('rC',w,h,14,0xe6cfae),cap=M(0x8a6a4c);
+ for(let i=0;i<54;i++){const x=-280+r2()*560,z=-150-r2()*380,h=14+r2()*30,r=3+r2()*5;const c=new THREE.Mesh(new THREE.ConeGeometry(r,h,10),rk(r*6,h));c.position.set(x,h/2,z);c.castShadow=true;S.add(c);sol(x,z,r*1.4,r*1.4);
+  if(r2()<.6){const k=new THREE.Mesh(new THREE.CylinderGeometry(r*.55,r*.7,2.4,10),tm('rC',6,3,5,0x9a7a5a));k.position.set(x,h+.4,z);S.add(k)}}
+ [[-330,-300,120,50],[330,-330,130,60],[0,-540,170,70]].forEach(([x,z,s,h])=>hill(x,z,s,h,tm('rC',s*2,h,20,0xd9c1a0)));
+ // rock-cut church: a hollow room you can walk into, with a dark interior and arches
+ const rz=-130;bt(44,26,22,'rC',-120,13,rz-16,14,0xd9c1a0);
+ B(2,24,22,tm('rC',22,24,14,0xd0b894),-141,12,rz+5);B(2,24,22,tm('rC',22,24,14,0xd0b894),-99,12,rz+5);B(44,24,2,tm('rC',44,24,14,0xd0b894),-120,12,rz+16);
+ B(14,18,2,tm('rC',14,18,14,0xd0b894),-135,9,rz-6);B(14,18,2,tm('rC',14,18,14,0xd0b894),-105,9,rz-6);
+ B(44,.04,22,M(0x7a6048),-120,.03,rz+5);
+ sol(-141,rz+5,2.6,22);sol(-99,rz+5,2.6,22);sol(-120,rz+16,44,2.6);sol(-135,rz-6,14,2.6);sol(-105,rz-6,14,2.6);
+ for(let i=0;i<4;i++){const c=cyl(1.4,1.6,16,tm('rC',6,16,8,0xc9b08a),-132+i*8,0,rz+5,10);}
+ for(let i=0;i<3;i++)lamp(-126+i*6,8,rz+8,0xffc66b);
+ // hot-air balloons
  const bc=[0xd9534f,0xf0ad4e,0x5bc0de,0x5cb85c,0xb85cd9,0xffe066];
- for(let i=0;i<9;i++){const x=-180+r2()*360,z=-120-r2()*260,y=70+r2()*70;const b=new THREE.Mesh(new THREE.SphereGeometry(9,14,10),M(bc[i%6]));b.scale.y=1.15;b.position.set(x,y,z);S.add(b);B(2.2,1.8,2.2,M(0x6b4a2b),x,y-12,z)}
- for(let i=0;i<16;i++)pine(-200+r2()*400,-40-r2()*60);
+ for(let i=0;i<9;i++){const x=-180+r2()*360,z=-150-r2()*260,y=70+r2()*70;const b=new THREE.Mesh(new THREE.SphereGeometry(9,16,12),M(bc[i%6]));b.scale.y=1.15;b.position.set(x,y,z);S.add(b);B(2.2,1.8,2.2,M(0x6b4a2b),x,y-12,z);[[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([a,c])=>{const l=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,9,3),M(0x333333));l.position.set(x+a*.9,y-6.5,z+c*.9);S.add(l)})}
+ for(let i=0;i<14;i++)pine(-200+r2()*400,-110-r2()*60);
  }
  if(Q=='pamukkale'){S.position.z=250;LIMIT=330;
- B(700,2,700,M(0xb7a98a),0,-1,-250);
- const wh=M(0xf4f2ec),wt=new THREE.MeshLambertMaterial({color:0x3fb8c4,transparent:true,opacity:.85});
- // travertine terraces: stepped white basins with turquoise water, descending toward the viewer
+ grd('sF',720,720,0,-250,26,0xb7a98a);
+ const wt=new THREE.MeshPhongMaterial({color:0x3fb8c4,transparent:true,opacity:.82,shininess:90,specular:0xffffff});
+ const trv=(w,h)=>tm('tr',w,h,12,0xfbfaf6);
  for(let k=0;k<9;k++){const z=-110-k*34,y=(9-k)*3.2,w=140-k*4;
-  const s=new THREE.Mesh(new THREE.CylinderGeometry(w*.5,w*.56,y+3,28),wh);s.scale.z=.34;s.position.set(0,(y+3)/2-3,z);s.castShadow=s.receiveShadow=true;S.add(s);
-  const p=new THREE.Mesh(new THREE.CylinderGeometry(w*.46,w*.46,.5,28),wt);p.scale.z=.3;p.position.set(0,y+.35,z);S.add(p);
-  [[-1,.5],[1,.5],[0,1]].forEach(([a,b])=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(5+r2()*5,6+r2()*5,.5,14),wt);m.position.set(a*w*.22*(.5+r2()),y+.4,z+b*(r2()-.5)*8);S.add(m)})}
- // Hierapolis ruins on top (approximate): broken colonnade and a theatre-like arc
- for(let i=0;i<12;i++){const h=5+r2()*7;cyl(1,1.2,h,M(0xe0d9c8),-60+i*10,32,-380,10)}
- for(let i=0;i<9;i++){const a=Math.PI+i/8*Math.PI;B(9,4+i%2*2,5,M(0xd6cfbd),90+Math.cos(a)*30,31+i*.9,-340+Math.sin(a)*24)}
- hill(-300,-300,160,90,M(0xa89d80));hill(320,-260,150,80,M(0xa89d80));
- for(let i=0;i<14;i++)pine(-220+r2()*440,-10-r2()*40);
+  const s=new THREE.Mesh(new THREE.CylinderGeometry(w*.5,w*.56,y+3,36),trv(w*1.4,y+3));s.scale.z=.34;s.position.set(0,(y+3)/2-3,z);s.castShadow=s.receiveShadow=true;S.add(s);
+  const p=new THREE.Mesh(new THREE.CylinderGeometry(w*.46,w*.46,.5,36),wt);p.scale.z=.3;p.position.set(0,y+.35,z);S.add(p);
+  for(let q=0;q<5;q++){const m=new THREE.Mesh(new THREE.CylinderGeometry(4+r2()*5,5+r2()*5,.5,14),wt);m.position.set((r2()-.5)*w*.8,y+.4,z+(r2()-.3)*8);S.add(m)}}
+ // terrace walkway so you can wade down the slope (water is knee deep and flat, approximate)
+ for(let i=0;i<12;i++){const h=5+r2()*7;cyl(1,1.2,h,tm('wW',4,h,6,0xe8e2d0),-60+i*10,32,-380,10);sol(-60+i*10,-380,2.6,2.6)}
+ for(let i=0;i<9;i++){const a=Math.PI+i/8*Math.PI;bt(9,4+i%2*2,5,'wW',90+Math.cos(a)*30,31+i*.9+(4+i%2*2)/2-2,-340+Math.sin(a)*24,8,0xe0d9c8)}
+ hill(-300,-300,160,90,tm('rC',300,90,22,0xcfc2a4));hill(320,-260,150,80,tm('rC',300,90,22,0xcfc2a4));
+ for(let i=0;i<14;i++)pine(-220+r2()*440,-100-r2()*40);
  }
  if(Q=='gyeong'){S.position.z=250;LIMIT=330;
- B(380,2,520,M(0xbdb7aa),0,-1,-250);
- const pt=cv0(256,256,(g,w,h)=>{g.fillStyle='#b9b4a8';g.fillRect(0,0,w,h);for(let i=0;i<260;i++){g.fillStyle=`rgba(${r2()<.5?'255,255,255':'60,55,45'},${r2()*.12})`;g.fillRect(r2()*w,r2()*h,18+r2()*30,10+r2()*14)}});pt.repeat.set(30,40);
- const fl=new THREE.Mesh(new THREE.BoxGeometry(260,.3,340),new THREE.MeshLambertMaterial({map:pt}));fl.position.set(0,.2,-230);S.add(fl);
- // Gwanghwamun gate (approximate): stone base with three arches, wooden two-storey pavilion
- B(70,8,16,M(0xb9b4a8),0,4,-130);[-20,0,20].forEach(x=>B(10,6,17,M(0x2a2420),x,3,-130));
- B(56,10,12,M(0xc9a36a),0,13,-130);B(60,1.6,16,M(0x3d7d6f),0,18.6,-130);pyr(66,8,22,M(0x4a5560),0,19,-130);
+ grd('sF',380,520,0,-250,14,0xb9b4a8);
+ const fl=new THREE.Mesh(new THREE.BoxGeometry(260,.04,340),tm('sF',260,340,10,0xd0cbbd));fl.position.set(0,.02,-230);S.add(fl);
+ // Gwanghwamun gate: stone base with three arches (centre open), wooden two-storey pavilion
+ const gb=tm('sF',70,8,12,0xc8c2b4);
+ B(23,8,16,gb,-23.5,4,-130);B(23,8,16,gb,23.5,4,-130);B(70,2,16,gb,0,7,-130);sol(-23.5,-130,23,16);sol(23.5,-130,23,16);
+ B(2,6,16,gb,-5.5,3,-130);B(2,6,16,gb,5.5,3,-130);sol(-5.5,-130,2,16);sol(5.5,-130,2,16);
+ B(56,10,12,tm('wK',56,10,6,0xc9a36a),0,13,-130);B(60,1.6,16,M(0x3d7d6f),0,18.6,-130);pyr(66,8,22,tm('rK',66,10,8),0,19,-130);
  for(let i=0;i<7;i++)cyl(.7,.7,10,M(0xa8342a),-27+i*9,8,-124,8);
- B(110,8,3,M(0xb9b4a8),-90,4,-130);B(110,8,3,M(0xb9b4a8),90,4,-130);
- // Geunjeongjeon throne hall on a two-tier stone platform
- B(100,3,76,M(0xb9b4a8),0,1.5,-380);B(86,3,62,M(0xb9b4a8),0,4.5,-380);hall(56,34,0,-380,2,6);
- // Gyeonghoeru pavilion on pillars over a pond (approximate)
- const wt2=new THREE.MeshLambertMaterial({color:0x3f7d8c});B(110,.4,60,wt2,-130,.1,-250);
- for(let i=0;i<8;i++)for(let j=0;j<3;j++)cyl(.8,.8,6,M(0xb9b4a8),-146+i*4.4*1.1,0,-262+j*8,8);
- B(36,7,20,M(0xc9a36a),-130,10,-254);B(40,1.4,24,M(0x3d7d6f),-130,13.7,-254);pyr(46,7,30,M(0x4a5560),-130,14,-254);
- // Bugaksan backdrop (approximate) and pines
+ B(110,8,3,gb,-90,4,-130);B(110,8,3,gb,90,4,-130);sol(-90,-130,110,3.2);sol(90,-130,110,3.2);
+ // Geunjeongjeon throne hall: two-tier stone platform with stairs, hollow hall you can enter
+ B(100,.5,76,tm('sF',100,76,12,0xc8c2b4),0,.25,-380);
+ hallH(56,34,0,-380,2,.05,'throne');
+ // Gyeonghoeru pavilion over a pond
+ B(110,.05,60,new THREE.MeshPhongMaterial({color:0x3f7d8c,shininess:100,specular:0xffffff}),-130,.1,-250);
+ for(let i=0;i<8;i++)for(let j=0;j<3;j++)cyl(.8,.8,6,tm('sF',3,6,3),-146+i*4.8,0,-262+j*8,8);
+ B(36,7,20,tm('wK',36,7,6,0xc9a36a),-130,10,-254);B(40,1.4,24,M(0x3d7d6f),-130,13.7,-254);pyr(46,7,30,tm('rK',46,8,8),-130,14,-254);
  hill(0,-560,220,150,M(0x4f6b4d));hill(-210,-520,120,95,M(0x5a7656));hill(220,-520,120,100,M(0x5a7656));
  for(let i=0;i<30;i++)pine(-170+r2()*340,-60-r2()*30*(i%2));
  for(let i=0;i<20;i++)pine(-180+r2()*360,-470-r2()*50);
  }
  if(Q=='bulguksa'){S.position.z=250;LIMIT=330;
- B(380,2,520,M(0x6f8a5c),0,-1,-250);
- const sg=M(0xb9b4a8),wd=M(0xa8342a);
- // stone terraces with the two stairways (Cheongungyo/Baegungyo, approximate)
- B(120,3,50,sg,0,1.5,-150);B(110,6,40,sg,0,3,-200);
- for(let i=0;i<6;i++)B(14,1,2.4,sg,-30,.5+i*1,-130-i*3);
- for(let i=0;i<6;i++)B(14,1,2.4,sg,30,.5+i*1,-130-i*3);
- // Daeungjeon main hall, flanked by two pagodas (Dabotap and Seokgatap are simplified blocks)
- hall(52,30,0,-320,1,5);
- B(10,3,10,sg,-34,1.5,-270);B(7,10,7,sg,-34,8,-270);B(8.4,1,8.4,sg,-34,13.5,-270);B(5,5,5,sg,-34,16,-270);B(6.4,.8,6.4,sg,-34,19,-270);cyl(.6,.8,8,sg,-34,19.4,-270,6);
- B(12,4,12,sg,34,2,-270);B(9,2,9,sg,34,5,-270);B(8,1.4,8,sg,34,7,-270);B(6,1.4,6,sg,34,8.4,-270);B(5,1.4,5,sg,34,9.8,-270);cyl(.6,.8,8,sg,34,11,-270,6);
- // side halls
- hall(30,20,-86,-290,1,3);hall(30,20,86,-290,1,3);
- hall(34,18,0,-210,1,4);
+ B(380,2,520,tm('grass',380,520,16,0xb9cfa0),0,-1,-250);
+ const sgt=(w,h)=>tm('wS',w,h,10,0xd6d0c2);
+ B(120,.5,50,sgt(120,3),0,.25,-150);B(110,.5,40,sgt(110,6),0,.25,-200);
+ hallH(52,30,0,-320,1,.05);
+ const sg=sgt(10,10);
+ B(10,3,10,sg,-34,1.5,-270);B(7,10,7,sg,-34,8,-270);B(8.4,1,8.4,sg,-34,13.5,-270);B(5,5,5,sg,-34,16,-270);B(6.4,.8,6.4,sg,-34,19,-270);cyl(.6,.8,8,sg,-34,19.4,-270,6);sol(-34,-270,10,10);
+ B(12,4,12,sg,34,2,-270);B(9,2,9,sg,34,5,-270);B(8,1.4,8,sg,34,7,-270);B(6,1.4,6,sg,34,8.4,-270);B(5,1.4,5,sg,34,9.8,-270);cyl(.6,.8,8,sg,34,11,-270,6);sol(34,-270,12,12);
+ hallH(30,20,-86,-290,1,.05);hallH(30,20,86,-290,1,.05);hallH(34,18,0,-210,1,.05);
  hill(-200,-380,130,100,M(0x4a6b45));hill(210,-380,130,95,M(0x4a6b45));hill(0,-520,190,130,M(0x426443));
  for(let i=0;i<40;i++)pine(-180+r2()*360,-40-r2()*60);
  for(let i=0;i<30;i++)pine(-190+r2()*380,-420-r2()*80);
@@ -888,6 +924,7 @@ function loop(now){requestAnimationFrame(loop);const dtr=(now-last)/1000;const d
   const mag=Math.min(1,Math.hypot(fx,sx));const tvx=(-sin*fx+cos*sx)*sp,tvz=(-cos*fx-sin*sx)*sp;
   const kk=1-Math.exp(-dt*(mag>.05?6:9));PV.x+=(tvx-PV.x)*kk;PV.z+=(tvz-PV.z)*kk;
   P.x+=PV.x*dt;P.z+=PV.z*dt;
+  for(const c of COLS){if(P.x>c[0]-1&&P.x<c[1]+1&&P.z>c[2]-1&&P.z<c[3]+1){const dl=P.x-(c[0]-1),dr=(c[1]+1)-P.x,df=P.z-(c[2]-1),db=(c[3]+1)-P.z,m=Math.min(dl,dr,df,db);if(m===dl)P.x=c[0]-1;else if(m===dr)P.x=c[1]+1;else if(m===df)P.z=c[2]-1;else P.z=c[3]+1}}
   const r=Math.hypot(P.x,P.z);if(r>LIMIT+(SC==='giza'?100:0)){const k=(LIMIT+(SC==='giza'?100:0))/r;P.x*=k;P.z*=k}
   const bob=(Math.abs(fx)+Math.abs(sx))>0.1?Math.sin(t*9)*0.12:0;
   const moving=(Math.abs(fx)+Math.abs(sx))>0.1;avUpdate(dt,moving);mpTick(dt,t,now);cam.rotation.order='YXZ';
