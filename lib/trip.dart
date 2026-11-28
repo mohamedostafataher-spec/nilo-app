@@ -34,6 +34,12 @@ const kHomeAirports = <String, Airport>{
   'BR': Airport('GRU', 'Sao Paulo Guarulhos Airport', 'Sao Paulo', -23.4356, -46.4731),
 };
 const kCdg = Airport('CDG', 'Paris Charles de Gaulle Airport', 'Paris', 49.0097, 2.5479);
+const kFco = Airport('FCO', 'Rome Fiumicino Airport', 'Rome', 41.8003, 12.2389);
+/// Arrival airport, the walkable airport pack to open, and the country name, by destination country.
+const kArrival = <String, List<dynamic>>{
+  'FR': [kCdg, 49.009, 2.559, 'France'],
+  'IT': [kFco, 41.800, 12.250, 'Italy'],
+};
 
 double kmBetween(double la1, double lo1, double la2, double lo2) {
   const r = 6371.0;
@@ -66,6 +72,9 @@ class _TripPageState extends State<TripPage> {
     if (mounted) setState(() => busy = false);
   }
 
+  String _cc(List p) => p.length > 4 ? p[4].toString() : 'FR';
+  String _country(List p) => (kArrival[_cc(p)] ?? kArrival['FR']!)[3] as String;
+
   @override
   Widget build(BuildContext context) {
     final list = places.where((p) => q.isEmpty || p[3].toString().toLowerCase().contains(q.toLowerCase())).toList();
@@ -73,7 +82,7 @@ class _TripPageState extends State<TripPage> {
       backgroundColor: kBg,
       appBar: AppBar(title: Text(L('Trip • رحلة')), backgroundColor: kBg),
       body: Column(children: [
-        Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 4), child: Text(L('France, Paris area: ${places.length} real places from OpenStreetMap. More countries are coming. • فرنسا، باريس'), style: const TextStyle(color: Colors.white70, fontSize: 12))),
+        Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 4), child: Text(L('France and Italy: ${places.length} real places from OpenStreetMap. More countries are coming. • فرنسا وإيطاليا'), style: const TextStyle(color: Colors.white70, fontSize: 12))),
         Padding(padding: const EdgeInsets.all(12), child: TextField(onChanged: (v) => setState(() => q = v), decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: L('Search a place • دور على مكان'), border: const OutlineInputBorder()))),
         if (busy) const Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator()),
         if (err.isNotEmpty) Padding(padding: const EdgeInsets.all(16), child: Text(err)),
@@ -82,8 +91,8 @@ class _TripPageState extends State<TripPage> {
           return ListTile(
             leading: const Icon(Icons.flight_takeoff),
             title: Text(p[3].toString()),
-            subtitle: Text('France'),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BoardingPassPage(name: p[3].toString(), lat: (p[1] as num).toDouble(), lon: (p[2] as num).toDouble()))),
+            subtitle: Text(_country(p)),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => BoardingPassPage(cc: _cc(p), name: p[3].toString(), lat: (p[1] as num).toDouble(), lon: (p[2] as num).toDouble()))),
           );
         })),
       ]),
@@ -92,9 +101,9 @@ class _TripPageState extends State<TripPage> {
 }
 
 class BoardingPassPage extends StatefulWidget {
-  final String name;
+  final String name, cc;
   final double lat, lon;
-  const BoardingPassPage({super.key, required this.name, required this.lat, required this.lon});
+  const BoardingPassPage({super.key, this.cc = 'FR', required this.name, required this.lat, required this.lon});
   @override
   State<BoardingPassPage> createState() => _BoardingPassPageState();
 }
@@ -108,16 +117,18 @@ class _BoardingPassPageState extends State<BoardingPassPage> with SingleTickerPr
   @override
   void dispose() { _a.dispose(); super.dispose(); }
 
-  double get km => kmBetween(from.lat, from.lon, kCdg.lat, kCdg.lon);
+  List<dynamic> get arr => kArrival[widget.cc] ?? kArrival['FR']!;
+  Airport get dest => arr[0] as Airport;
+  double get km => kmBetween(from.lat, from.lon, dest.lat, dest.lon);
 
   Future<void> _fly() async {
     setState(() => flying = true);
     HapticFeedback.mediumImpact();
     await _a.forward();
     if (!mounted) return;
-    Passport.addStamp('trip-FR');
-    Passport.addStamp('word-FR');
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LandingPage(name: widget.name, lat: widget.lat, lon: widget.lon)));
+    Passport.addStamp('trip-${widget.cc}');
+    Passport.addStamp('word-${widget.cc}');
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LandingPage(cc: widget.cc, name: widget.name, lat: widget.lat, lon: widget.lon)));
   }
 
   @override
@@ -138,16 +149,16 @@ class _BoardingPassPageState extends State<BoardingPassPage> with SingleTickerPr
             Row(children: [
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(from.code, style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900)), Text(from.city, style: const TextStyle(color: Colors.white70))])),
               const Icon(Icons.flight, size: 30),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(kCdg.code, style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900)), Text(kCdg.city, style: const TextStyle(color: Colors.white70))])),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [Text(dest.code, style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900)), Text(dest.city, style: const TextStyle(color: Colors.white70))])),
             ]),
             const Divider(height: 28),
             Text(L('Passenger • المسافر'), style: const TextStyle(fontSize: 11, color: Colors.white60)),
             Text(nick, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             Text(L('Destination • الوجهة'), style: const TextStyle(fontSize: 11, color: Colors.white60)),
-            Text('${widget.name}, France', style: const TextStyle(fontSize: 16)),
+            Text('${widget.name}, ${arr[3]}', style: const TextStyle(fontSize: 16)),
             const SizedBox(height: 8),
-            Text('${from.name} → ${kCdg.name}', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+            Text('${from.name} → ${dest.name}', style: const TextStyle(fontSize: 12, color: Colors.white70)),
             const SizedBox(height: 8),
             Text('${km.round()} km • about ${h}h ${m.toString().padLeft(2, '0')}m at 800 km/h (estimate)', style: const TextStyle(fontWeight: FontWeight.w700)),
           ]),
@@ -195,8 +206,9 @@ class _FlightPainter extends CustomPainter {
 
 /// Arrival screen after the story flight: a sign with the real airport name, then the walkable airport area or the chosen place.
 class LandingPage extends StatelessWidget {
-  final String name; final double lat, lon;
-  const LandingPage({super.key, required this.name, required this.lat, required this.lon});
+  final String name, cc; final double lat, lon;
+  const LandingPage({super.key, this.cc = 'FR', required this.name, required this.lat, required this.lon});
+  List<dynamic> get arr => kArrival[cc] ?? kArrival['FR']!;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -207,10 +219,10 @@ class LandingPage extends StatelessWidget {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
           decoration: BoxDecoration(color: const Color(0xFFFFC400), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.black87, width: 3)),
-          child: Column(children: const [
-            Text('WELCOME TO FRANCE', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 2, color: Colors.black87)),
-            SizedBox(height: 6),
-            Text('Paris Charles de Gaulle Airport (CDG)', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.black87)),
+          child: Column(children: [
+            Text('WELCOME TO ${(arr[3] as String).toUpperCase()}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 2, color: Colors.black87)),
+            const SizedBox(height: 6),
+            Text('${(arr[0] as Airport).name} (${(arr[0] as Airport).code})', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.black87)),
           ]),
         ),
         const SizedBox(height: 14),
@@ -222,7 +234,7 @@ class LandingPage extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         OutlinedButton(
-          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const VrPage(scene: 'osm', title: 'Paris Charles de Gaulle Airport', lat: 49.009, lon: 2.559))),
+          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => VrPage(scene: 'osm', title: (arr[0] as Airport).name, lat: arr[1] as double, lon: arr[2] as double))),
           child: Text(L('Walk around the airport (real runway and taxiway layout) • اتمشى في المطار'), textAlign: TextAlign.center),
         ),
       ]))),
