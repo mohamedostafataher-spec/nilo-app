@@ -131,6 +131,7 @@ class NileScene extends StatefulWidget {
 class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat();
   int _real = 0, _people = 0;
+  List<dynamic> _peek = [];
   bool _checked = false;
   int _city = 0;
   int? _isDay;
@@ -179,6 +180,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
       if (!((p.getBool('b_age') ?? false) && (p.getString('b_nick') ?? '').isNotEmpty)) { if (mounted) setState(() => _checked = true); return; }
       if (!await Sb.signIn()) return;
       final r = await Sb.rpc('floating_count');
+      try { final pk = await Sb.rpc('floating_peek'); if (pk is List) _peek = pk; } catch (_) {}
       try { final s = await Sb.rpc('nilo_stats'); if (s is Map) _people = (s['people'] as num?)?.toInt() ?? 0; } catch (_) {}
       if (mounted) setState(() { _real = (r as num?)?.toInt() ?? 0; _checked = true; });
     } catch (_) {}
@@ -218,9 +220,11 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
           animation: _c,
           builder: (_, __) {
             final kids = <Widget>[];
-            for (var i = 0; i < math.min(_real, 3); i++) {
+            final shown = _peek.isNotEmpty ? math.min(_peek.length, 5) : math.min(_real, 3);
+            for (var i = 0; i < shown; i++) {
+              final pcc = _peek.isNotEmpty ? (_peek[i]['cc'] ?? '').toString() : '';
               final ph = (_c.value + i / 3) % 1.0;
-              final x = w * (0.08 + 0.55 * ((i * 0.37) % 1.0)) + math.sin((ph + i) * 2 * math.pi) * 10;
+              final x = w * (0.06 + 0.5 * ((i * 0.37) % 1.0)) + math.sin((ph + i) * 2 * math.pi) * 10;
               final y = hh * (0.76 + 0.04 * i) + math.sin(ph * 2 * math.pi * 2) * 6;
               kids.add(Positioned(
                 left: x, top: y,
@@ -230,7 +234,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: const Color(0xFFFFF6DC), borderRadius: BorderRadius.circular(14), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)]),
-                      child: Text(L('بردية • Papyrus'), style: TextStyle(color: Color(0xFF3B2A12), fontWeight: FontWeight.w700, fontSize: 14)),
+                      child: Text(pcc.isNotEmpty ? '${flagOf(pcc)}  ${L('Papyrus')}' : L('بردية • Papyrus'), style: const TextStyle(color: Color(0xFF3B2A12), fontWeight: FontWeight.w700, fontSize: 14)),
                     ),
                     const SizedBox(height: 2),
                     Text(papyrusForm(Passport.country), style: const TextStyle(fontSize: 34)),
