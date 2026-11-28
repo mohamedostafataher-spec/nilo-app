@@ -221,6 +221,7 @@ function buildGeneric(){
   [[0,1],[0,-1],[1,0],[-1,0]].forEach(p=>{const w=bx(p[0]?3:80,22,p[0]?80:3,p[0]*44,0,p[1]*44,m);for(let i=0;i<14;i++){const o=p[0]?[p[0]*44,-36+i*5.5]:[-36+i*5.5,p[1]*44];bx(2.6,3,2.6,o[0],22,o[1],m)}});
   bx(26,52,26,0,0,0,m);cone(19,22,0,52,0,MT(0x8a3a2a),4).rotation.y=Math.PI/4;cyl(.4,.4,10,0,74,0,MT(0xcccccc),4);bx(6,4,.4,3,80,0,MT(0xc23a2a));
   bx(14,16,6,0,0,46,dark);
+  if(typeof COLS!=='undefined'){COLS.push([-45.5,-7,42.5,45.5],[7,45.5,42.5,45.5],[-45.5,45.5,-45.5,-42.5],[-45.5,-42.5,-45.5,45.5],[42.5,45.5,-45.5,45.5],[-13,13,-13,13])}
   const mo=new THREE.Mesh(new THREE.RingGeometry(58,72,40),new THREE.MeshLambertMaterial({color:0x2e8fc4}));mo.rotation.x=-Math.PI/2;mo.position.y=.15;S.add(mo);bx(14,.6,16,0,0,66,MT(0x7a5a3a));
   lab=95;ly=30;dist=125;r0=270;h0=100;for(let i=0;i<12;i++){tree(-120+i*22,110);tree(-120+i*22,-110)}break}
  case 'cathedral':{
