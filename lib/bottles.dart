@@ -30,6 +30,7 @@ class Sb {
   static String? uid;
   static String get baseUrl => _sbUrl;
   static String get anonKey => _sbKey;
+  static String? get token => _token;
 
   static Map<String, String> _h([bool auth = true]) => {
         'apikey': _sbKey,
@@ -243,7 +244,7 @@ class Sb {
   static Future<void> wipeMyFiles() async {
     final u = uid;
     if (u == null) return;
-    for (final b in ['stories', 'gallery']) {
+    for (final b in ['stories', 'gallery', 'dm']) {
       try {
         final r = await http.post(Uri.parse('$_sbUrl/storage/v1/object/list/$b'), headers: _h(), body: jsonEncode({'prefix': u, 'limit': 200})).timeout(const Duration(seconds: 20));
         if (r.statusCode != 200) continue;

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:async';
 import 'bottles.dart';
+import 'dmmedia.dart';
 import 'net.dart';
 import 'circles.dart' show niloJoined, niloJoinGate;
 import 'i18n.dart';
@@ -188,7 +189,7 @@ class _DmPageState extends State<DmPage> {
     try {
       final me = Sb.uid;
       final o = widget.uid;
-      final r = await Sb.get('dms?select=id,sender,recipient,body,created_at&or=(and(sender.eq.$me,recipient.eq.$o),and(sender.eq.$o,recipient.eq.$me))&order=created_at.desc&limit=100') as List;
+      final r = await Sb.get('dms?select=id,sender,recipient,body,kind,media_path,created_at&or=(and(sender.eq.$me,recipient.eq.$o),and(sender.eq.$o,recipient.eq.$me))&order=created_at.desc&limit=100') as List;
       if (mounted) setState(() => msgs = r.reversed.toList());
     } catch (e, st) { Health.log(e, st); }
   }
@@ -206,6 +207,14 @@ class _DmPageState extends State<DmPage> {
     if (mounted) setState(() => sending = false);
   }
 
+  Future<void> _photo() async {
+    setState(() => sending = true);
+    final err = await DmMedia.pickAndSendPhoto(widget.uid);
+    if (!mounted) return;
+    setState(() => sending = false);
+    if (err != null) { toast(context, err); } else { _load(); }
+  }
+
   Future<void> _translate(String id, String text) async {
     final r = await trText(text, 'auto', Ui.lang == 'ar' ? 'ar' : 'en');
     if (!mounted) return;
@@ -214,7 +223,7 @@ class _DmPageState extends State<DmPage> {
 
   Future<void> _menu(Map m, bool mine) async {
     final v = await showModalBottomSheet<String>(context: context, builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      ListTile(leading: const Icon(Icons.translate), title: Text(L('Translate • ترجم')), onTap: () => Navigator.pop(context, 'tr')),
+      if ((m['kind'] ?? 'text') == 'text') ListTile(leading: const Icon(Icons.translate), title: Text(L('Translate • ترجم')), onTap: () => Navigator.pop(context, 'tr')),
       if (mine) ListTile(leading: const Icon(Icons.delete_outline), title: Text(L('Delete • احذف')), onTap: () => Navigator.pop(context, 'del')),
       if (!mine) ListTile(leading: const Icon(Icons.flag_outlined), title: Text(L('Report • أبلغ')), onTap: () => Navigator.pop(context, 'rep')),
     ])));
@@ -250,7 +259,7 @@ class _DmPageState extends State<DmPage> {
                             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
                             decoration: BoxDecoration(color: mine ? const Color(0xFF1B5E4B) : const Color(0xFF12304D), borderRadius: BorderRadius.circular(12)),
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(m['body'].toString()),
+                              if ((m['kind'] ?? 'text') == 'text') Text(m['body'].toString()) else DmMediaBubble(kind: m['kind'].toString(), path: (m['media_path'] ?? '').toString()),
                               if (tr[id] != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(tr[id]!, style: const TextStyle(color: Colors.white70, fontSize: 13))),
                             ]),
                           ),
@@ -263,6 +272,8 @@ class _DmPageState extends State<DmPage> {
               padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
               child: Row(children: [
                 Expanded(child: TextField(controller: c, maxLength: 500, minLines: 1, maxLines: 4, decoration: InputDecoration(counterText: '', hintText: L('Message • رسالة'), border: const OutlineInputBorder()))),
+                IconButton(icon: const Icon(Icons.photo_outlined), tooltip: L('Photo • صورة'), onPressed: sending ? null : _photo),
+                DmVoiceButton(toUid: widget.uid, onSent: _load),
                 IconButton(icon: const Icon(Icons.send), onPressed: sending ? null : _send),
               ]),
             ),
