@@ -5,6 +5,7 @@ import 'journey.dart';
 import 'health.dart';
 import 'dart:async';
 import 'auth.dart' show AuthPage;
+import 'chatlayer.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'home.dart' show TouristHome;
 import 'i18n.dart';
@@ -898,15 +899,41 @@ class _ThreadPageState extends State<ThreadPage> {
     super.initState();
     SharedPreferences.getInstance().then((p) { auto = p.getBool('auto_tr') ?? false; _load(); });
     _poll = Timer.periodic(const Duration(seconds: 10), (_) => _load());
+    _stT = Timer.periodic(const Duration(seconds: 3), (_) => _pstatus());
+    _pstatus();
+    c.addListener(_onType);
+  }
+
+  Timer? _stT;
+  Map pst = {};
+  Map? _bt;
+  DateTime _typedAt = DateTime(2000);
+  void _onType() {
+    if (c.text.isEmpty || other.isEmpty || DateTime.now().difference(_typedAt).inSeconds < 3) return;
+    _typedAt = DateTime.now();
+    Sb.rpc('dm_typing', {'p_peer': other}).catchError((_) {});
+  }
+  Future<void> _pstatus() async {
+    if (other.isEmpty) return;
+    try { final v = await Sb.rpc('dm_status', {'p_peer': other}); if (v is Map && mounted) setState(() => pst = v); } catch (e, st) { Health.log(e, st); }
+  }
+  Widget? _tick(Map? m, bool bottleItself) {
+    // my messages only: sent, delivered (the other app saw it) and read (conversation opened, if both allow receipts)
+    final bt = _bt ?? widget.bottle;
+    final delivered = bottleItself ? bt['catcher'] != null : m!['delivered_at'] != null;
+    final read = bottleItself ? bt['read_at'] != null : m!['read_at'] != null;
+    return ChatLayer.ticks(delivered: delivered, read: read, receipts: pst['receipts'] == true);
   }
 
   @override
-  void dispose() { _poll?.cancel(); c.dispose(); super.dispose(); }
+  void dispose() { _poll?.cancel(); _stT?.cancel(); c.removeListener(_onType); c.dispose(); super.dispose(); }
 
   Future<void> _load() async {
     try {
       final r = await Sb.get('replies?bottle_id=eq.$bid&order=created_at.asc');
+      try { final bl = await Sb.get('bottles?select=catcher,read_at&id=eq.$bid') as List; if (bl.isNotEmpty) _bt = bl.first as Map; } catch (e, st) { Health.log(e, st); }
       if (mounted) setState(() { replies = r as List; err = ''; });
+      Sb.rpc('papyrus_open', {'p_bid': bid}).catchError((_) {});
       _loadProf();
       if (auto) _autoTranslate();
     } catch (e) {
@@ -1025,7 +1052,7 @@ class _ThreadPageState extends State<ThreadPage> {
     ]);
   }
 
-  Widget _msg(String key, String text, bool mine) => Align(
+  Widget _msg(String key, String text, bool mine, {String? at, Widget? tick}) => Align(
         alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 4),
@@ -1043,6 +1070,7 @@ class _ThreadPageState extends State<ThreadPage> {
               onPressed: () async { final i = text.indexOf(' = '); await saveWord(text.substring(3, i), text.substring(i + 3)); if (mounted) toast(context, L('Saved to your word book.')); },
               icon: const Icon(Icons.bookmark_add_outlined, size: 16), label: Text(L('Save to my word book')))),
             if (tr[key] != null) Text(tr[key]!, style: const TextStyle(color: kGreen)),
+            if (at != null) Padding(padding: const EdgeInsets.only(top: 3), child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.end, children: [Text(ChatLayer.hm(at), style: const TextStyle(fontSize: 10, color: Colors.white54)), if (mine && tick != null) ...[const SizedBox(width: 4), tick]])),
             if (!mine && tr[key] == null) InkWell(onTap: () => _translate(key, text), child: Padding(padding: EdgeInsets.only(top: 6), child: Text(L('Translate (machine, may be wrong)'), style: TextStyle(fontSize: 12, color: Colors.white54)))),
           ]),
         ),
@@ -1057,8 +1085,9 @@ class _ThreadPageState extends State<ThreadPage> {
       appBar: AppBar(titleSpacing: 0, title: Row(children: [if (_prof.isNotEmpty) Padding(padding: const EdgeInsets.only(right: 10), child: AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 34)),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
           Text(((_prof['nick'] ?? '').toString().isNotEmpty ? _prof['nick'].toString() : L('Papyrus friend')) + ((_prof['gender'] ?? '').toString().isEmpty ? '' : ' ' + Gender.icon(_prof['gender'].toString())), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
-          Text(b['kind'] == 'place' ? 'About ${b['place']}' : L('Papyrus • بردية'), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.white60)),
+          Text(ChatLayer.line(pst).isNotEmpty ? ChatLayer.line(pst) : (b['kind'] == 'place' ? 'About ${b['place']}' : L('Papyrus • بردية')), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, color: pst['typing'] == true || pst['online'] == true ? kGreen : Colors.white60)),
         ]))]), backgroundColor: kBg, actions: [
+        IconButton(icon: const Icon(Icons.lock_outline), tooltip: L('Chat privacy'), onPressed: () => ChatLayer.privacyDialog(context).then((_) => _pstatus())),
         IconButton(icon: Icon(Icons.translate, color: auto ? kGreen : Colors.white54), tooltip: L('Language bridge'), onPressed: _toggleAuto),
         PopupMenuButton<String>(onSelected: (v) { if (v == 'j') _journey(); if (v == 'r') _report(); if (v == 'b') _block(); if (v == 'd') _deleteMine(); }, itemBuilder: (_) => [
           PopupMenuItem(value: 'j', child: Text(L('Journey • الرحلة'))),
@@ -1070,8 +1099,8 @@ class _ThreadPageState extends State<ThreadPage> {
       body: Column(children: [
         Expanded(
           child: ListView(padding: const EdgeInsets.all(12), children: [
-            _msg('b', (b['body'] ?? '').toString(), b['author'] == Sb.uid),
-            for (final r in replies) _msg(r['id'].toString(), (r['body'] ?? '').toString(), r['author'] == Sb.uid),
+            _msg('b', (b['body'] ?? '').toString(), b['author'] == Sb.uid, at: b['created_at']?.toString(), tick: _tick(null, true)),
+            for (final r in replies) _msg(r['id'].toString(), (r['body'] ?? '').toString(), r['author'] == Sb.uid, at: r['created_at']?.toString(), tick: _tick(r as Map, false)),
             if (err.isNotEmpty) Row(children: [Expanded(child: Text(err, style: const TextStyle(color: Colors.white70))), TextButton(onPressed: _load, child: Text(L('Retry')))]),
             Padding(padding: EdgeInsets.all(8), child: Text(L('Safety: never send money or ID details. Meet only in public places. Report anything wrong.'), style: TextStyle(fontSize: 11, color: Colors.white38))),
           ]),

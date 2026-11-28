@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'dart:async';
 import 'bottles.dart';
 import 'dmmedia.dart';
+import 'chatlayer.dart';
 import 'net.dart';
 import 'circles.dart' show niloJoined, niloJoinGate;
 import 'i18n.dart';
@@ -219,20 +220,7 @@ class _DmPageState extends State<DmPage> {
     return '';
   }
 
-  Future<void> _privacy() async {
-    var on = true, rc = myReceipts;
-    try { final v = await Sb.rpc('my_chat_privacy', {}); if (v is Map) { on = v['online'] != false; rc = v['receipts'] != false; } } catch (e, st2) { Health.log(e, st2); }
-    if (!mounted) return;
-    await showDialog(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, set) => AlertDialog(
-      title: Text(L('Chat privacy • خصوصية الشات')),
-      content: Column(mainAxisSize: MainAxisSize.min, children: [
-        SwitchListTile(value: on, onChanged: (v) => set(() => on = v), title: Text(L('Show when I am online • اظهر إني متصل'))),
-        SwitchListTile(value: rc, onChanged: (v) => set(() => rc = v), title: Text(L('Read receipts (blue ticks) • علامة القراءة'))),
-        Text(L('Like WhatsApp: if you turn these off, you also cannot see them for others. Typing is always shown to your friends in an open chat.'), style: const TextStyle(fontSize: 11, color: Colors.white60)),
-      ]),
-      actions: [TextButton(onPressed: () async { try { await Sb.rpc('set_chat_privacy', {'p_online': on, 'p_receipts': rc}); } catch (e, st2) { Health.log(e, st2); } if (mounted) setState(() => myReceipts = rc); if (ctx.mounted) Navigator.pop(ctx); _status(); }, child: Text(L('Save • حفظ')))],
-    )));
-  }
+  Future<void> _privacy() async { await ChatLayer.privacyDialog(context); _status(); Sb.rpc('my_chat_privacy', {}).then((v) { if (v is Map && mounted) setState(() => myReceipts = v['receipts'] != false); }).catchError((_) {}); }
 
   String _hm(String? iso) {
     final d = DateTime.tryParse(iso ?? '')?.toLocal();
@@ -464,19 +452,58 @@ class _GroupChatPageState extends State<GroupChatPage> {
   List msgs = [];
   final c = TextEditingController();
   final tr = <String, String>{};
-  Timer? t;
+  Timer? t, ts;
   bool sending = false;
+  Map gst = {};
+  DateTime _typedAt = DateTime(2000);
 
   @override
-  void initState() { super.initState(); _load(); t = Timer.periodic(const Duration(seconds: 6), (_) => _load()); }
+  void initState() {
+    super.initState();
+    _load();
+    _status();
+    t = Timer.periodic(const Duration(seconds: 6), (_) => _load());
+    ts = Timer.periodic(const Duration(seconds: 3), (_) => _status());
+    c.addListener(_onType);
+  }
 
   @override
-  void dispose() { t?.cancel(); c.dispose(); super.dispose(); }
+  void dispose() { t?.cancel(); ts?.cancel(); c.removeListener(_onType); c.dispose(); super.dispose(); }
+
+  void _onType() {
+    if (c.text.isEmpty || DateTime.now().difference(_typedAt).inSeconds < 3) return;
+    _typedAt = DateTime.now();
+    Sb.rpc('grp_typing', {'p_grp': widget.id}).catchError((_) {});
+  }
+
+  Future<void> _status() async {
+    try {
+      final v = await Sb.rpc('grp_status', {'p_grp': widget.id});
+      if (v is Map && mounted) setState(() => gst = v);
+    } catch (e, st) { Health.log(e, st); }
+  }
+
+  String _gline() {
+    final ty = (gst['typing'] is List) ? (gst['typing'] as List).map((e) => e.toString()).toList() : <String>[];
+    if (ty.isNotEmpty) return ty.length == 1 ? L('${ty.first} is typing… • بيكتب…') : L('${ty.length} people are typing… • ${ty.length} بيكتبوا…');
+    final o = gst['online'];
+    if (o is num && o > 0) return L('$o online • $o متصل');
+    return '';
+  }
+
+  /// Number of other members who opened the group after this message (only members who allow receipts, and only if I allow them).
+  int _seenBy(Map m) {
+    if (gst['receipts'] != true || gst['reads'] is! List) return 0;
+    final ct = DateTime.tryParse((m['created_at'] ?? '').toString());
+    if (ct == null) return 0;
+    return (gst['reads'] as List).where((x) { final d = DateTime.tryParse(x.toString()); return d != null && !d.isBefore(ct); }).length;
+  }
 
   Future<void> _load() async {
     try {
       final r = await Sb.get('chat_msgs?select=id,sender,nick,body,created_at&grp=eq.${widget.id}&order=created_at.desc&limit=100') as List;
       if (mounted) setState(() => msgs = r.reversed.toList());
+      Sb.rpc('grp_open', {'p_grp': widget.id}).catchError((_) {});
     } catch (e, st) { Health.log(e, st); }
   }
 
@@ -518,7 +545,11 @@ class _GroupChatPageState extends State<GroupChatPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: kBg,
-        appBar: AppBar(title: Text(widget.title), backgroundColor: kBg, actions: [
+        appBar: AppBar(titleSpacing: 0, title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(widget.title, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+          if (_gline().isNotEmpty) Text(_gline(), style: TextStyle(fontSize: 12, color: (gst['typing'] is List && (gst['typing'] as List).isNotEmpty) ? kGreen : Colors.white60)),
+        ]), backgroundColor: kBg, actions: [
+          IconButton(icon: const Icon(Icons.lock_outline), tooltip: L('Chat privacy'), onPressed: () => ChatLayer.privacyDialog(context).then((_) => _status())),
           IconButton(icon: const Icon(Icons.exit_to_app), tooltip: L('Leave group'), onPressed: _leave),
         ]),
         body: Column(children: [
@@ -545,6 +576,10 @@ class _GroupChatPageState extends State<GroupChatPage> {
                               if (!mine) Text((m['nick'] ?? '').toString(), style: const TextStyle(fontSize: 11, color: Colors.white60, fontWeight: FontWeight.w700)),
                               Text(m['body'].toString()),
                               if (tr[id] != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(tr[id]!, style: const TextStyle(color: Colors.white70, fontSize: 13))),
+                              Padding(padding: const EdgeInsets.only(top: 3), child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.end, children: [
+                                Text(ChatLayer.hm(m['created_at']?.toString()), style: const TextStyle(fontSize: 10, color: Colors.white54)),
+                                if (mine) ...[const SizedBox(width: 4), ChatLayer.ticks(delivered: _seenBy(m) > 0, read: _seenBy(m) > 0, receipts: true), if (_seenBy(m) > 0) Text(' ${_seenBy(m)}', style: const TextStyle(fontSize: 10, color: Color(0xFF53BDEB)))],
+                              ])),
                             ]),
                           ),
                         ),
