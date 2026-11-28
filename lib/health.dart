@@ -53,18 +53,26 @@ class Health {
   static const build = int.fromEnvironment('NILO_BUILD');
 
   /// Returns the download URL only when version.json lists a higher build number than this installed build.
+  static List<String> lastChangelog = [];
+  static String lastVersion = '';
+
   static Future<String?> updateUrl() async {
     if (build <= 0) return null;
     try {
-      final r = await http.get(Uri.parse('https://mohamedostafataher-spec.github.io/nilo-dl/version.json')).timeout(const Duration(seconds: 8));
+      final r = await http.get(Uri.parse('https://mohamedostafataher-spec.github.io/nilo-dl/version.json?t=${DateTime.now().millisecondsSinceEpoch ~/ 60000}')).timeout(const Duration(seconds: 8));
       if (r.statusCode != 200) return null;
       final j = jsonDecode(utf8.decode(r.bodyBytes)) as Map;
       final n = int.tryParse((j['build'] ?? '').toString()) ?? 0;
-      if (n > build) return 'https://mohamedostafataher-spec.github.io/nilo-dl';
-    } catch (_) {}
+      if (n > build) {
+        lastVersion = (j['version'] ?? '').toString();
+        lastChangelog = ((j['changelog'] ?? []) as List).map((e) => e.toString()).toList();
+        return 'https://mohamedostafataher-spec.github.io/nilo-dl';
+      }
+    } catch (e, st) { log(e, st); }
     return null;
   }
 
+  /// Clear dialog with the release notes and a Download button. Shown at most once per day; the top notice bar stays until the user updates.
   static Future<void> offerUpdate(BuildContext context) async {
     final p = await SharedPreferences.getInstance();
     final today = DateTime.now().toUtc().toIso8601String().substring(0, 10);
@@ -72,10 +80,17 @@ class Health {
     final u = await updateUrl();
     if (u == null || !context.mounted) return;
     await p.setString('upd_seen', today);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: const Text('A new Nilo version is ready • في نسخة جديدة من نيلو'),
-      duration: const Duration(seconds: 10),
-      action: SnackBarAction(label: 'Download • تحميل', onPressed: () => launchUrl(Uri.parse(u), mode: LaunchMode.externalApplication)),
+    await showDialog(context: context, builder: (c) => AlertDialog(
+      title: Text('New Nilo version $lastVersion • نسخة جديدة'),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        for (final l in lastChangelog.take(6)) Padding(padding: const EdgeInsets.only(bottom: 4), child: Text('• $l')),
+        const SizedBox(height: 8),
+        const Text('Your data and account stay. The new version installs over this one. • بياناتك وحسابك بيفضلوا.', style: TextStyle(fontSize: 12)),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c), child: const Text('Later • بعدين')),
+        FilledButton(onPressed: () { launchUrl(Uri.parse(u), mode: LaunchMode.externalApplication); Navigator.pop(c); }, child: const Text('Download • تحميل')),
+      ],
     ));
   }
 
