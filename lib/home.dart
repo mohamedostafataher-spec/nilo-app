@@ -26,7 +26,7 @@ import 'friends.dart';
 import 'notice.dart';
 import 'myhome.dart';
 import 'places.dart';
-import 'journey.dart';
+import 'daily.dart';
 
 /// Main shell: one living Nile scene + simple bottom nav.
 class TouristHome extends StatefulWidget {

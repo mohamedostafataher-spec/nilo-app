@@ -5,7 +5,7 @@ import 'bottles.dart' show Sb;
 import 'circles.dart' show niloJoined, niloJoinGate;
 import 'screens.dart' show toast;
 import 'profile.dart' show AvatarView;
-import 'journey.dart' show flagOf;
+import 'daily.dart' show flagOf;
 
 /// Gems shop and the daily riddle. All prices, balances and answers are checked on the server.
 class ShopPage extends StatefulWidget {
