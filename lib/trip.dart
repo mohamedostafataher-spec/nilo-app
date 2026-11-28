@@ -117,7 +117,7 @@ class _BoardingPassPageState extends State<BoardingPassPage> with SingleTickerPr
     if (!mounted) return;
     Passport.addStamp('trip-FR');
     Passport.addStamp('word-FR');
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => VrPage(scene: 'osm', title: widget.name, lat: widget.lat, lon: widget.lon)));
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => LandingPage(name: widget.name, lat: widget.lat, lon: widget.lon)));
   }
 
   @override
@@ -190,4 +190,42 @@ class _FlightPainter extends CustomPainter {
   }
   @override
   bool shouldRepaint(_FlightPainter o) => o.t != t;
+}
+
+
+/// Arrival screen after the story flight: a sign with the real airport name, then the walkable airport area or the chosen place.
+class LandingPage extends StatelessWidget {
+  final String name; final double lat, lon;
+  const LandingPage({super.key, required this.name, required this.lat, required this.lon});
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF0B2A4A),
+      body: SafeArea(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        const Icon(Icons.flight_land, color: Colors.white70, size: 64),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+          decoration: BoxDecoration(color: const Color(0xFFFFC400), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.black87, width: 3)),
+          child: Column(children: const [
+            Text('WELCOME TO FRANCE', style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 2, color: Colors.black87)),
+            SizedBox(height: 6),
+            Text('Paris Charles de Gaulle Airport (CDG)', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, fontSize: 22, color: Colors.black87)),
+          ]),
+        ),
+        const SizedBox(height: 14),
+        Text(L('Story flight, not a real booking. • رحلة قصة مش حجز حقيقي.'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white60)),
+        const SizedBox(height: 28),
+        FilledButton(
+          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => VrPage(scene: 'osm', title: name, lat: lat, lon: lon))),
+          child: Text(L('Go to $name • روح على المكان')),
+        ),
+        const SizedBox(height: 10),
+        OutlinedButton(
+          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const VrPage(scene: 'osm', title: 'Paris Charles de Gaulle Airport', lat: 49.009, lon: 2.559))),
+          child: Text(L('Walk around the airport (real runway and taxiway layout) • اتمشى في المطار'), textAlign: TextAlign.center),
+        ),
+      ]))),
+    );
+  }
 }
