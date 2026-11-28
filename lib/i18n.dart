@@ -1,24 +1,45 @@
 import 'i18n.dart';
 import 'dart:ui' as ui;
+import 'dart:convert';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// UI language: 'ar' or 'en'. Stored in prefs key ui_lang ('auto' follows the phone).
+/// Supported interface languages: [code, name in its own language]. 'en' and 'ar' are built in (kPairs);
+/// the others load assets/i18n/<code>.json (English text -> translation) when selected.
+const kUiLangs = <List<String>>[
+  ['en', 'English'], ['ar', 'العربية'], ['fr', 'Français'], ['es', 'Español'], ['de', 'Deutsch'], ['it', 'Italiano'],
+  ['ru', 'Русский'], ['pt', 'Português'], ['tr', 'Türkçe'], ['zh', '中文'], ['hi', 'हिन्दी'],
+];
+const _kRtl = {'ar', 'he', 'fa', 'ur'};
+
+/// UI language code. Stored in prefs key ui_lang ('auto' follows the phone).
 class Ui {
   static String lang = 'en';
   static String pref = 'auto';
-  static bool get rtl => lang == 'ar';
+  static Map<String, String> _tr = {};
+  static bool get rtl => _kRtl.contains(lang);
   static Future<void> load() async {
     final p = await SharedPreferences.getInstance();
     pref = p.getString('ui_lang') ?? 'auto';
-    _apply();
+    await _apply();
   }
-  static void _apply() {
-    lang = pref == 'auto' ? (ui.PlatformDispatcher.instance.locale.languageCode == 'ar' ? 'ar' : 'en') : pref;
+  static Future<void> _apply() async {
+    final ph = ui.PlatformDispatcher.instance.locale.languageCode;
+    final want = pref == 'auto' ? ph : pref;
+    lang = kUiLangs.any((l) => l[0] == want) ? want : 'en';
+    _tr = {};
+    if (lang != 'en' && lang != 'ar') {
+      try {
+        final m = jsonDecode(await rootBundle.loadString('assets/i18n/$lang.json')) as Map;
+        _tr = {for (final e in m.entries) e.key.toString(): e.value.toString()};
+      } catch (_) { _tr = {}; }
+    }
   }
+  static String name(String code) => kUiLangs.firstWhere((l) => l[0] == code, orElse: () => [code, code])[1];
   static Future<void> set(String v) async {
     pref = v;
-    _apply();
+    await _apply();
     (await SharedPreferences.getInstance()).setString('ui_lang', v);
     rebuildAll();
   }
@@ -42,8 +63,13 @@ void _init() {
 /// Localize a UI string. Accepts 'English • عربي' pairs, English-only or Arabic-only
 /// literals (looked up in kPairs). Unknown strings are shown unchanged.
 String L(String s) {
+  if (Ui.lang == 'en' || Ui.lang == 'ar') return _L(s, Ui.lang == 'ar');
+  final e = _L(s, false);
+  return Ui._tr[e.trim()] ?? e;
+}
+
+String _L(String s, bool ar) {
   _init();
-  final ar = Ui.lang == 'ar';
   if (s.contains(' • ')) {
     final i = s.indexOf(' • ');
     final a = s.substring(0, i), b = s.substring(i + 3);

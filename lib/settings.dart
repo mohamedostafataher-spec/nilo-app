@@ -154,13 +154,13 @@ class _SettingsPageState extends State<SettingsPage> {
         ListTile(
           leading: const Icon(Icons.language),
           title: Text(L('Interface language • لغة التطبيق')),
-          subtitle: Text(Ui.pref == 'auto' ? L('Automatic (phone) • تلقائي (التليفون)') : Ui.pref == 'ar' ? 'العربية' : 'English'),
+          subtitle: Text(Ui.pref == 'auto' ? L('Automatic (phone) • تلقائي (التليفون)') : Ui.name(Ui.pref)),
           onTap: () async {
             final v = await showDialog<String>(context: context, builder: (c) => SimpleDialog(
               title: Text(L('Interface language • لغة التطبيق')),
               children: [
-                for (final o in const [['auto', 'Automatic (phone) • تلقائي (التليفون)'], ['ar', 'العربية'], ['en', 'English']])
-                  SimpleDialogOption(onPressed: () => Navigator.pop(c, o[0]), child: Text(L(o[1]))),
+                for (final o in [['auto', 'Automatic (phone) • تلقائي (التليفون)'], ...kUiLangs])
+                  SimpleDialogOption(onPressed: () => Navigator.pop(c, o[0]), child: Text(o[0] == 'auto' ? L(o[1]) : o[1])),
               ]));
             if (v != null) { await Ui.set(v); if (mounted) setState(() {}); }
           },

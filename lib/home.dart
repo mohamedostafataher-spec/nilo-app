@@ -65,11 +65,11 @@ class _TouristHomeState extends State<TouristHome> {
     if (!mounted) return;
     await showDialog(context: context, builder: (c) => AlertDialog(
       title: const Text('Language • اللغة'),
-      content: const Text('Choose the app language. You can change it later in Settings.\nاختار لغة التطبيق. تقدر تغيّرها بعدين من الإعدادات.'),
-      actions: [
-        TextButton(onPressed: () { Ui.set('en'); Navigator.pop(c); }, child: const Text('English')),
-        TextButton(onPressed: () { Ui.set('ar'); Navigator.pop(c); }, child: const Text('العربية')),
-      ],
+      content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Text('Choose the app language. You can change it later in Settings.\nاختار لغة التطبيق. تقدر تغيّرها بعدين من الإعدادات.'),
+        const SizedBox(height: 8),
+        Wrap(spacing: 6, children: [for (final l in kUiLangs) ActionChip(label: Text(l[1]), onPressed: () { Ui.set(l[0]); Navigator.pop(c); })]),
+      ])),
     ));
   }
 

@@ -181,7 +181,7 @@ class _DailyQuestionPageState extends State<DailyQuestionPage> {
   }
 
   Future<void> _translate(String id, String text) async {
-    final r = await trText(text, 'auto', Ui.lang == 'ar' ? 'ar' : 'en');
+    final r = await trText(text, 'auto', Ui.lang);
     if (!mounted) return;
     if (r.ok) { setState(() => tr[id] = r.translation); } else { toast(context, r.error.isEmpty ? 'Translation failed' : r.error); }
   }

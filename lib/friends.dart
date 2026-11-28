@@ -280,7 +280,7 @@ class _DmPageState extends State<DmPage> {
   }
 
   Future<void> _translate(String id, String text) async {
-    final r = await trText(text, 'auto', Ui.lang == 'ar' ? 'ar' : 'en');
+    final r = await trText(text, 'auto', Ui.lang);
     if (!mounted) return;
     if (r.ok) { setState(() => tr[id] = r.translation); } else { toast(context, r.error.isEmpty ? 'Translation failed' : r.error); }
   }
@@ -554,7 +554,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     ])));
     final id = m['id'].toString();
     if (v == 'tr') {
-      final r = await trText(m['body'].toString(), 'auto', Ui.lang == 'ar' ? 'ar' : 'en');
+      final r = await trText(m['body'].toString(), 'auto', Ui.lang);
       if (mounted && r.ok) setState(() => tr[id] = r.translation);
     }
     if (v == 'del') { try { await Sb.delete('chat_msgs?id=eq.$id'); } catch (e, st) { Health.log(e, st); } _load(); }
