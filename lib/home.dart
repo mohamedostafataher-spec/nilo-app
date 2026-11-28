@@ -26,6 +26,7 @@ import 'friends.dart';
 import 'notice.dart';
 import 'myhome.dart';
 import 'places.dart';
+import 'journey.dart';
 
 /// Main shell: one living Nile scene + simple bottom nav.
 class TouristHome extends StatefulWidget {
@@ -266,6 +267,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
             ]),
             const SizedBox(height: 8),
             const NoticeBar(),
+            const JourneyCard(),
             Row(children: [
               _cell(Icons.build_circle_outlined, L('Tools'), () => Navigator.of(context).push(niloRoute(const ToolsPage()))),
               const SizedBox(width: 8),
