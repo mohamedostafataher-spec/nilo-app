@@ -598,14 +598,14 @@ function makeHuman(cfg,tex,g){
  const rest={};['upperarm_l','upperarm_r','thigh_l','thigh_r','lowerarm_l','lowerarm_r','calf_l','calf_r'].forEach(nm=>{const b=by[nm];if(!b)return;const pq=new THREE.Quaternion();b.parent.getWorldQuaternion(pq);rest[nm]={b,q:b.quaternion.clone(),pq,pi:pq.clone().invert(),sx:Math.sign(b.getWorldPosition(new THREE.Vector3()).x)||1}});
  const ax=new THREE.Vector3(),qq=new THREE.Quaternion();
  const rot=(nm,axis,ang)=>{const r=rest[nm];if(!r)return;qq.setFromAxisAngle(ax.set(axis[0],axis[1],axis[2]),ang);r.b.quaternion.copy(r.pi).multiply(qq).multiply(r.pq).multiply(r.q)};
- const pose=(t,mv)=>{const a=mv?Math.sin(t)*.65:0;
+ const pose=(t,mv)=>{const wa=(typeof walkAmp==='number'?walkAmp:1);const a=mv?Math.sin(t)*.65*wa:0;
   ['l','r'].forEach((sd,i)=>{const sg=i?-1:1;const A=rest['upperarm_'+sd],S=A?A.sx:1;
    // arms down (about world Z), swing about world X
    const th=sg>0?a:-a;
-   if(A){qq.setFromAxisAngle(ax.set(0,0,1),-S*1.2);const q1=qq.clone();qq.setFromAxisAngle(ax.set(1,0,0),-th*.8);A.b.quaternion.copy(A.pi).multiply(qq).multiply(q1).multiply(A.pq).multiply(A.q)}
+   if(A){qq.setFromAxisAngle(ax.set(0,0,1),-S*1.2);const q1=qq.clone();qq.setFromAxisAngle(ax.set(1,0,0),-th*1.0);A.b.quaternion.copy(A.pi).multiply(qq).multiply(q1).multiply(A.pq).multiply(A.q)}
    const L=rest['lowerarm_'+sd];if(L){qq.setFromAxisAngle(ax.set(1,0,0),-.25-(mv?.2:0));L.b.quaternion.copy(L.pi).multiply(qq).multiply(L.pq).multiply(L.q)}
    const T=rest['thigh_'+sd];if(T){qq.setFromAxisAngle(ax.set(1,0,0),-th);T.b.quaternion.copy(T.pi).multiply(qq).multiply(T.pq).multiply(T.q)}
-   const C=rest['calf_'+sd];if(C){const bend=mv?Math.max(0,Math.sin(t+(sg>0?1.5:-1.5)))*.7:0;qq.setFromAxisAngle(ax.set(1,0,0),bend);C.b.quaternion.copy(C.pi).multiply(qq).multiply(C.pq).multiply(C.q)}
+   const C=rest['calf_'+sd];if(C){const bend=mv?Math.max(0,Math.sin(t+(sg>0?1.5:-1.5)))*.7*wa:0;qq.setFromAxisAngle(ax.set(1,0,0),bend);C.b.quaternion.copy(C.pi).multiply(qq).multiply(C.pq).multiply(C.q)}
   });g.updateMatrixWorld(true)};
  pose(0,false);
  // accessories (hair, hats, glasses, backpack) reuse the old definitions scaled onto the human head
@@ -677,9 +677,21 @@ let fq=[],qt=0;
 function tierTick(dt){if(!tierAuto||mode!=='walk')return;fq.push(dt);if(fq.length<90)return;const avg=fq.reduce((a,b)=>a+b,0)/fq.length;fq=[];if(avg>1/26&&tier!=='low'){tier=TIERS[TIERS.indexOf(tier)-1];applyTier()}}
 let sunDir=sun.position.clone().normalize();
 function shadowFollow(){if(!sun.castShadow)return;const o=sunDir.clone().multiplyScalar(300);sun.target.position.set(P.x,0,P.z);sun.position.set(P.x+o.x,o.y,P.z+o.z);sun.target.updateMatrixWorld()}
-let walkT=0;
-function avUpdate(dt,moving){avG.position.set(P.x,groundH(P.x,P.z),P.z);avG.rotation.y=P.yaw+Math.PI;avG.visible=(VIEW!=='first'&&mode==='walk');
- if(moving)walkT+=dt*9;walkPose(avParts,walkT,moving)}
+var walkAmp=1;let walkT=0;const PV={x:0,z:0};let avHead=0,avInit=false;
+function avUpdate(dt,moving){avG.position.set(P.x,groundH(P.x,P.z),P.z);avG.visible=(VIEW!=='first'&&mode==='walk');
+ const spd=Math.hypot(PV.x,PV.z),base=(SC==='myroom'?2.8:28),s=Math.min(1.4,spd/base);
+ // gentle turn: heading eases toward the movement direction by the shortest angle
+ if(!avInit){avHead=P.yaw+Math.PI;avInit=true}
+ if(spd>base*.12){const tg=Math.atan2(PV.x,PV.z);let d=tg-avHead;d=Math.atan2(Math.sin(d),Math.cos(d));avHead+=d*(1-Math.exp(-dt*7))}
+ walkAmp=Math.min(1,s*1.1);const mv=s>.06;
+ if(mv)walkT+=dt*(4.5+5.5*Math.min(1,s));
+ avG.rotation.order='YXZ';
+ const st=Math.min(1,s);
+ avG.rotation.y=avHead+Math.sin(walkT)*.05*st;                 // slight hip twist
+ avG.rotation.x=.08*st;                                         // lean into the walk
+ avG.rotation.z=Math.sin(walkT)*.035*st;                        // side sway
+ avG.position.y+=Math.abs(Math.sin(walkT))*.05*st;              // foot bob (one lift per step)
+ walkPose(avParts,walkT,mv)}
 
 // ---- presence + text chat (Supabase Realtime broadcast, no database, nothing stored) ----
 const MP=(()=>{try{return JSON.parse(Q.get('mp')||'null')}catch(e){return null}})();
@@ -758,7 +770,7 @@ if(MP&&MP.url){
   if((key!==k&&now-lastSend>650)||now-lastSend>4000){lastSend=now;lastKey=key;bc('pos',me())}
   for(const id in peers){const p=peers[id];if(now-p.seen>9000){removePeer(id);setCnt();continue}
    const dx=p.tx-p.x,dz=p.tz-p.z,d=Math.hypot(dx,dz);const f=Math.min(1,dt*5);p.x+=dx*f;p.z+=dz*f;let dy=p.ty-p.yaw;dy=Math.atan2(Math.sin(dy),Math.cos(dy));p.yaw+=dy*f;
-   p.g.position.set(p.x,groundH(p.x,p.z),p.z);p.g.rotation.y=p.yaw+Math.PI;const mv2=d>.4;if(mv2)p.wt+=dt*9;walkPose(p.pr,p.wt,mv2);
+   p.g.position.set(p.x,groundH(p.x,p.z),p.z);p.g.rotation.y=p.yaw+Math.PI;const mv2=d>.4;if(mv2)p.wt+=dt*9;{const _w=walkAmp;walkAmp=1;p.g.rotation.order='YXZ';p.g.rotation.z=mv2?Math.sin(p.wt)*.035:0;p.g.rotation.x=mv2?.08:0;if(mv2)p.g.position.y+=Math.abs(Math.sin(p.wt))*.05;walkPose(p.pr,p.wt,mv2);walkAmp=_w}
    const dist=Math.hypot(p.x-P.x,p.z-P.z);place(p.tag,p.x,groundH(p.x,p.z)+2.4,p.z,dist<120);
    place(p.bub,p.x,groundH(p.x,p.z)+3.15,p.z,now<p.bt&&dist<120)}
   place(myBub,P.x,groundH(P.x,P.z)+3.15,P.z,now<myBubT&&VIEW!=='first')}
@@ -775,8 +787,11 @@ function loop(now){requestAnimationFrame(loop);const dtr=(now-last)/1000;const d
  if(mode==='intro'){const u=Math.min(1,t/9);const e=u*u*(3-2*u);const p=introPath(e);cam.position.set(p[0],p[1]+groundH(p[0],p[2]),p[2]);cam.lookAt(p[3],p[4],p[5]);if(t>9.5)endIntro();}
  else{
   let fx=-mv.y,sx=mv.x;if(keys.w||keys.arrowup)fx=1;if(keys.s||keys.arrowdown)fx=-1;if(keys.a||keys.arrowleft)sx=-1;if(keys.d||keys.arrowright)sx=1;
-  const sp=(keys.shift?60:28);const sin=Math.sin(P.yaw),cos=Math.cos(P.yaw);
-  P.x+=(-sin*fx+cos*sx)*sp*dt;P.z+=(-cos*fx-sin*sx)*sp*dt;
+  const sp=(keys.shift?60:28)*(SC==='myroom'?.1:1);const sin=Math.sin(P.yaw),cos=Math.cos(P.yaw);
+  // smooth acceleration and deceleration: velocity eases toward the stick direction
+  const mag=Math.min(1,Math.hypot(fx,sx));const tvx=(-sin*fx+cos*sx)*sp,tvz=(-cos*fx-sin*sx)*sp;
+  const kk=1-Math.exp(-dt*(mag>.05?6:9));PV.x+=(tvx-PV.x)*kk;PV.z+=(tvz-PV.z)*kk;
+  P.x+=PV.x*dt;P.z+=PV.z*dt;
   const r=Math.hypot(P.x,P.z);if(r>LIMIT+(SC==='giza'?100:0)){const k=(LIMIT+(SC==='giza'?100:0))/r;P.x*=k;P.z*=k}
   const bob=(Math.abs(fx)+Math.abs(sx))>0.1?Math.sin(t*9)*0.12:0;
   const moving=(Math.abs(fx)+Math.abs(sx))>0.1;avUpdate(dt,moving);mpTick(dt,t,now);cam.rotation.order='YXZ';
