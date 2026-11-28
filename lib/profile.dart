@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'i18n.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -68,7 +69,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       final f = (await Sb.rpc('my_friends') as List?) ?? [];
       final ph = (await Sb.get('profile_photos?select=id&uid=eq.${Sb.uid}') as List?) ?? [];
       if (mounted) setState(() { nFriends = f.where((x) => x['status'] == 'accepted').length; nPhotos = ph.length; });
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   Widget _stat(String label, int? v, IconData ic) => Expanded(

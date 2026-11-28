@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'quests.dart';
 import 'dart:convert';
 import 'dart:math' as math;
@@ -62,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
-    try { placed = Map<String, String>.from(jsonDecode(p.getString('home_slots') ?? '{}')); } catch (_) {}
+    try { placed = Map<String, String>.from(jsonDecode(p.getString('home_slots') ?? '{}')); } catch (e, st) { Health.log(e, st); }
     trees = p.getInt('focus_trees') ?? 0;
     stamps = (p.getStringList('globe_stamps') ?? <String>[]).length;
     if (mounted) setState(() {});

@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'quests.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -116,7 +117,7 @@ class _MoodSkyPageState extends State<MoodSkyPage> {
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
-    try { log = jsonDecode(p.getString('mood_log') ?? '[]') as List; } catch (_) {}
+    try { log = jsonDecode(p.getString('mood_log') ?? '[]') as List; } catch (e, st) { Health.log(e, st); }
     if (mounted) setState(() {});
   }
 

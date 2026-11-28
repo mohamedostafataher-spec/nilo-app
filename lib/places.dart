@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/rendering.dart';
@@ -159,7 +160,7 @@ class _PlacePageState extends State<PlacePage> {
               srcNote = L('Text: Arabic Wikipedia (CC BY-SA 4.0). Image: Wikimedia Commons; the author and licence are on the article page.');
             }
           }
-        } catch (_) {}
+        } catch (e, st) { Health.log(e, st); }
       }
     } catch (_) {
       err = L('Could not load. Check your connection.');
@@ -178,7 +179,7 @@ class _PlacePageState extends State<PlacePage> {
         if (pics.length >= 12) break;
       }
       if (mounted) setState(() {});
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     // 3) a real wide / 360 panorama file from Commons for this place, if one exists
     try {
       final name = Uri.decodeComponent(t).replaceAll('_', ' ');
@@ -197,7 +198,7 @@ class _PlacePageState extends State<PlacePage> {
         if (sc > bestScore) { bestScore = sc; best = p as Map; }
       }
       if (best != null) { pano = _pic(best); if (mounted) setState(() {}); }
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   double? plat, plon;
@@ -221,7 +222,7 @@ class _PlacePageState extends State<PlacePage> {
         if (mm != null && plat == null) { plon = double.tryParse(mm.group(1)!); plat = double.tryParse(mm.group(2)!); }
       }
       types = ts.join(' ');
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     if (cc.isEmpty) cc = Passport.country.toUpperCase();
     vrScene = known ?? vrTemplate(types, Uri.decodeComponent(key).replaceAll('_', ' '), cc);
     const desertK = ['taj', 'giza', 'petra', 'abusimbel', 'burj', 'karnak'];
@@ -339,7 +340,7 @@ class _PanoPageState extends State<PanoPage> with SingleTickerProviderStateMixin
       final f = File('${dir.path}/nilo_visit_${DateTime.now().millisecondsSinceEpoch}.png');
       await f.writeAsBytes(bytes);
       await Share.shareXFiles([XFile(f.path)], text: '${widget.title} • Nilo');
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   @override
@@ -418,7 +419,7 @@ class _LandmarkStripState extends State<LandmarkStrip> {
           final u = (((jsonDecode(utf8.decode(r.bodyBytes)) as Map)['thumbnail'] as Map?)?['source'] ?? '').toString();
           if (u.isNotEmpty) _cache[i[0]] = u;
         }
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
     }));
     if (mounted) setState(() => _done = true);
   }

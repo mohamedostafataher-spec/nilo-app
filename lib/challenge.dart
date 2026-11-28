@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'quests.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -52,7 +53,7 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
 
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
-    try { done = Map<String, dynamic>.from(jsonDecode(p.getString('weekly_done') ?? '{}')); } catch (_) {}
+    try { done = Map<String, dynamic>.from(jsonDecode(p.getString('weekly_done') ?? '{}')); } catch (e, st) { Health.log(e, st); }
     countMe = p.getBool('ch_count') ?? false;
     _board();
     final mine = done['${_week()}'];
@@ -64,13 +65,13 @@ class _WeeklyChallengePageState extends State<WeeklyChallengePage> {
     try {
       final r = await Sb.rpc('challenge_board', {'p_week': _week()}) as List;
       board = r; total = r.fold<int>(0, (a, x) => a + ((x['n'] as num?)?.toInt() ?? 0));
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     if (mounted) setState(() {});
   }
 
   Future<void> _tick() async {
     if (!countMe) return;
-    try { await Sb.rpc('challenge_tick', {'p_week': _week()}); } catch (_) {}
+    try { await Sb.rpc('challenge_tick', {'p_week': _week()}); } catch (e, st) { Health.log(e, st); }
     _board();
   }
 

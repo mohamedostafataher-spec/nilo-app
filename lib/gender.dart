@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'bottles.dart' show Sb;
@@ -23,7 +24,7 @@ class Gender {
       if (!await Sb.signIn()) return;
       await Sb.rpc('set_gender', {'p_g': g});
       await p.setBool('p_gender_sync', true);
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   static String label(String g) => g == 'f' ? L('Female • أنثى') : g == 'm' ? L('Male • ذكر') : '';

@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'i18n.dart';
 import 'sharecard.dart';
 // Nilo World: passport (stamps, XP, streak), home country, daily word/puzzle, chapters, papyrus trip animation.
@@ -367,19 +368,19 @@ Future<String> detectCountry({required bool allowGps}) async {
         final cc = pm.isNotEmpty ? (pm.first.isoCountryCode ?? '') : '';
         if (cc.isNotEmpty) { lastDetectSource = 'location'; return cc.toUpperCase(); }
       }
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
   // Mobile network / SIM country first: it follows where the phone really is, unlike the language setting (en_US on many Egyptian phones).
   try {
     final r = await const MethodChannel('nilo/native').invokeMethod<String>('region');
     if (r != null && r.length == 2) { lastDetectSource = 'network'; return r.toUpperCase(); }
-  } catch (_) {}
+  } catch (e, st) { Health.log(e, st); }
   // No SIM (wifi-only phone or tablet): the country of the internet connection. Only your IP reaches Cloudflare's public trace page; nothing is stored.
   try {
     final t = await http.get(Uri.parse('https://www.cloudflare.com/cdn-cgi/trace')).timeout(const Duration(seconds: 4));
     final m = RegExp(r'^loc=([A-Z]{2})', multiLine: true).firstMatch(t.body);
     if (m != null) { lastDetectSource = 'ip'; return m.group(1)!; }
-  } catch (_) {}
+  } catch (e, st) { Health.log(e, st); }
   lastDetectSource = 'language';
   return PlatformDispatcher.instance.locale.countryCode?.toUpperCase() ?? '';
 }

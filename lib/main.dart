@@ -346,7 +346,7 @@ class _ChatPageState extends State<ChatPage> {
         if (sc > bs) { bs = sc; best = m; }
       }
       if (best != null) await tts.setVoice({'name': best['name'].toString(), 'locale': best['locale'].toString()});
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     await tts.setSpeechRate(0.47);
     await tts.setPitch(1.0);
   }
@@ -357,14 +357,14 @@ class _ChatPageState extends State<ChatPage> {
       if (x == null) return;
       final b = await x.readAsBytes();
       setState(() { pendImg = base64Encode(b); if (ctrl.text.isEmpty) ctrl.text = 'اشرحلي الصورة دي بالمصري وقولي أعمل ايه'; });
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   Future<void> sendFb(Msg m, String r) async {
     setState(() => m.fbDone = r);
     try {
       await http.post(Uri.parse('https://nilo-eg.vercel.app/api/feedback'), headers: {'Content-Type': 'application/json'}, body: jsonEncode({'rating': r, 'q': m.q ?? '', 'a': m.text})).timeout(const Duration(seconds: 15));
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   Future<bool> neuralSpeak(String t) async {

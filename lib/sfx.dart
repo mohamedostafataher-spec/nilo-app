@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:audioplayers/audioplayers.dart';
@@ -52,6 +53,6 @@ class Sfx {
       }
       await _p.stop();
       await _p.play(BytesSource(_get(k), mimeType: 'audio/wav'), volume: 1.0);
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 }

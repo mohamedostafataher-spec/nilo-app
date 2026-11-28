@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'gender.dart';
 import 'i18n.dart';
 import 'dart:io';
@@ -75,7 +76,7 @@ class _StoriesTabState extends State<StoriesTab> {
       final l = await Sb.rpc('expired_objects') as List;
       for (final n in l) { await Sb.removeFile(n.toString()); }
       await Sb.rpc('purge_rows');
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   Future<void> _write() async {
@@ -449,7 +450,7 @@ class _CommentsPageState extends State<CommentsPage> {
   Future<void> _load() async {
     try {
       l = await Sb.get('story_comments?select=*&story_id=eq.${widget.story['id']}&order=created_at.asc&limit=100') as List;
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     if (mounted) setState(() => busy = false);
   }
 

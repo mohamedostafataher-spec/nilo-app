@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -90,7 +91,7 @@ class _VrPageState extends State<VrPage> {
       ..addJavaScriptChannel('NiloPhoto', onMessageReceived: (m) => _photo(m.message))
       ..addJavaScriptChannel('NiloReport', onMessageReceived: (m) => _report(m.message))
       ..addJavaScriptChannel('NiloMic', onMessageReceived: (m) => _mic())
-      ..addJavaScriptChannel('NiloAvatar', onMessageReceived: (m) async { try { (await SharedPreferences.getInstance()).setString('vr_avatar', m.message); } catch (_) {} });
+      ..addJavaScriptChannel('NiloAvatar', onMessageReceived: (m) async { try { (await SharedPreferences.getInstance()).setString('vr_avatar', m.message); } catch (e, st) { Health.log(e, st); } });
     _load();
   }
 
@@ -102,21 +103,21 @@ class _VrPageState extends State<VrPage> {
       final sp = await SharedPreferences.getInstance();
       var av = sp.getString('vr_avatar') ?? '{}';
       final gnd = sp.getString('p_gender') ?? '';
-      if (gnd.isNotEmpty) { try { final m = Map<String, dynamic>.from(jsonDecode(av) as Map); m['bd'] = gnd == 'f' ? 1 : 0; if (gnd != 'f') m['hj'] = 0; av = jsonEncode(m); } catch (_) {} }
+      if (gnd.isNotEmpty) { try { final m = Map<String, dynamic>.from(jsonDecode(av) as Map); m['bd'] = gnd == 'f' ? 1 : 0; if (gnd != 'f') m['hj'] = 0; av = jsonEncode(m); } catch (e, st) { Health.log(e, st); } }
       final facePath = sp.getString('p_avatar_path') ?? '';
       final mp = await _mpConfig(sp, facePath);
       final texd = <String, String>{};
       for (final k in ['sand', 'grass', 'stone', 'stoneg', 'rock', 'abu1', 'psand', 'psandN', 'pstone', 'pstoneN', 'wS', 'wSN', 'wW', 'wWN', 'fM', 'fMN', 'rK', 'rKN', 'wK', 'wKN', 'rC', 'rCN', 'tr', 'trN', 'sF', 'sFN']) {
-        try { texd[k] = 'data:image/jpeg;base64,${base64Encode((await rootBundle.load('assets/vr/tex/$k.jpg')).buffer.asUint8List())}'; } catch (_) {}
+        try { texd[k] = 'data:image/jpeg;base64,${base64Encode((await rootBundle.load('assets/vr/tex/$k.jpg')).buffer.asUint8List())}'; } catch (e, st) { Health.log(e, st); }
       }
       final modd = <String, String>{};
       for (final k in ['ram']) {
-        try { modd[k] = base64Encode((await rootBundle.load('assets/vr/models/$k.bin')).buffer.asUint8List()); } catch (_) {}
+        try { modd[k] = base64Encode((await rootBundle.load('assets/vr/models/$k.bin')).buffer.asUint8List()); } catch (e, st) { Health.log(e, st); }
       }
       String humd = 'null';
-      try { humd = await rootBundle.loadString('assets/vr/human.json'); } catch (_) {}
+      try { humd = await rootBundle.loadString('assets/vr/human.json'); } catch (e, st) { Health.log(e, st); }
       String humf = 'null';
-      try { humf = await rootBundle.loadString('assets/vr/human_f.json'); } catch (_) {}
+      try { humf = await rootBundle.loadString('assets/vr/human_f.json'); } catch (e, st) { Health.log(e, st); }
       final gald = <Map<String, String>>[];
       try {
         final gj = jsonDecode(await rootBundle.loadString('assets/vr/gallery.json')) as Map;
@@ -125,7 +126,7 @@ class _VrPageState extends State<VrPage> {
           final d = base64Encode((await rootBundle.load('assets/vr/gal/${m['f']}.jpg')).buffer.asUint8List());
           gald.add({'d': 'data:image/jpeg;base64,$d', 'en': '${m['en']}', 'ar': '${m['ar']}', 'by': '${m['by']}', 'lic': '${m['lic']}'});
         }
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
       html = html.replaceFirst('<script src="three.min.js"></script>', '<script>window.TEXD=${jsonEncode(texd)};window.MODD=${jsonEncode(modd)};window.GALD=${jsonEncode(gald)};window.GAL_ON=false;window.GLOCK=${gnd.isNotEmpty ? 1 : 0};window.HUMD=$humd;window.HUMDF=$humf</script><script>$three</script>');
       html = html.replaceFirst('new URLSearchParams(location.search)', "new URLSearchParams('s=${widget.scene}&lang=$lang&b=${widget.biome}&k=${widget.color}&n=${Uri.encodeQueryComponent(widget.title)}&av=${Uri.encodeQueryComponent(av)}&mp=${Uri.encodeQueryComponent(mp)}')");
       await wc.loadHtmlString(html, baseUrl: 'https://nilo-dl.vercel.app/');
@@ -155,7 +156,7 @@ class _VrPageState extends State<VrPage> {
           try {
             final r = await http.post(Uri.parse(host), headers: {'User-Agent': 'Nilo/1.5 (tourist app)'}, body: {'data': q}).timeout(const Duration(seconds: 50));
             if (r.statusCode == 200) { data = jsonDecode(utf8.decode(r.bodyBytes)); break; }
-          } catch (_) {}
+          } catch (e, st) { Health.log(e, st); }
         }
         if (data == null) { if (mounted) setState(() => osmStatus = L('Map server is busy. Try again in a minute. • سيرفر الخريطة مشغول. جرب بعد دقيقة.')); return; }
         json = jsonEncode(_osmCompact(data['elements'] as List, lat, lon));
@@ -212,7 +213,7 @@ class _VrPageState extends State<VrPage> {
       try {
         final r = await Sb.get('blocks?blocker=eq.${Sb.uid}&select=blocked');
         blocked = [for (final x in (r as List)) x['blocked'].toString()];
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
       final share = (sp.getBool('vr_face') ?? false) && facePath.isNotEmpty;
       return jsonEncode({
         'url': Sb.baseUrl, 'key': Sb.anonKey, 'uid': Sb.uid, 'nick': sp.getString('b_nick') ?? '', 'cc': Passport.country,
@@ -267,8 +268,8 @@ class _VrPageState extends State<VrPage> {
 
   Future<void> _mic() async {
     bool ok = false;
-    try { final rec = AudioRecorder(); ok = await rec.hasPermission(); await rec.dispose(); } catch (_) {}
-    try { await wc.runJavaScript('window.nilo_micOk($ok)'); } catch (_) {}
+    try { final rec = AudioRecorder(); ok = await rec.hasPermission(); await rec.dispose(); } catch (e, st) { Health.log(e, st); }
+    try { await wc.runJavaScript('window.nilo_micOk($ok)'); } catch (e, st) { Health.log(e, st); }
   }
 
   Future<void> _report(String msg) async {
@@ -283,7 +284,7 @@ class _VrPageState extends State<VrPage> {
         await Sb.rpc('report_place_user', {'p_user': u, 'p_place': (m['p'] ?? '').toString()});
         if (mounted) toast(context, L('Reported. Thank you.'));
       }
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   /// Own profile photo as the avatar's face. Loaded from the user's own photo, shown only on this phone here.
@@ -298,7 +299,7 @@ class _VrPageState extends State<VrPage> {
       if (b.length > 3000000) return;
       await Future.delayed(const Duration(milliseconds: 800));
       await wc.runJavaScript("window.nilo_setFace('data:image/jpeg;base64,${base64Encode(b)}')");
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   Future<void> _photo(String dataUrl) async {
@@ -308,7 +309,7 @@ class _VrPageState extends State<VrPage> {
       final f = File('${dir.path}/nilo_visit_${DateTime.now().millisecondsSinceEpoch}.jpg');
       await f.writeAsBytes(b);
       await Share.shareXFiles([XFile(f.path)], text: '${widget.title} • Nilo (3D)');
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   @override

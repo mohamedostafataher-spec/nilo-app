@@ -147,7 +147,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
       } else {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L('Someone else caught this papyrus first.'))));
       }
-      try { final pk = await Sb.rpc('floating_peek'); if (pk is List && mounted) setState(() => _peek = pk); } catch (_) {}
+      try { final pk = await Sb.rpc('floating_peek'); if (pk is List && mounted) setState(() => _peek = pk); } catch (e, st) { Health.log(e, st); }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     }
@@ -200,10 +200,10 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
       if (!((p.getBool('b_age') ?? false) && (p.getString('b_nick') ?? '').isNotEmpty)) { if (mounted) setState(() => _checked = true); return; }
       if (!await Sb.signIn()) return;
       final r = await Sb.rpc('floating_count');
-      try { final pk = await Sb.rpc('floating_peek'); if (pk is List) _peek = pk; } catch (_) {}
-      try { final s = await Sb.rpc('nilo_stats'); if (s is Map) _people = (s['people'] as num?)?.toInt() ?? 0; } catch (_) {}
+      try { final pk = await Sb.rpc('floating_peek'); if (pk is List) _peek = pk; } catch (e, st) { Health.log(e, st); }
+      try { final s = await Sb.rpc('nilo_stats'); if (s is Map) _people = (s['people'] as num?)?.toInt() ?? 0; } catch (e, st) { Health.log(e, st); }
       if (mounted) setState(() { _real = (r as num?)?.toInt() ?? 0; _checked = true; });
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   Future<void> _open(bool send) async {

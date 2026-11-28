@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'package:flutter/material.dart';
 import 'bottles.dart';
 import 'circles.dart' show niloJoined, niloJoinGate;
@@ -32,7 +33,7 @@ class _PassItOnPageState extends State<PassItOnPage> {
   Future<void> _load() async {
     joined = await niloJoined();
     if (joined) {
-      try { await Sb.signIn(); mine = (await Sb.rpc('my_chains') as List?) ?? []; } catch (_) {}
+      try { await Sb.signIn(); mine = (await Sb.rpc('my_chains') as List?) ?? []; } catch (e, st) { Health.log(e, st); }
     }
     if (mounted) setState(() => busy = false);
   }
@@ -105,7 +106,7 @@ class _ChainPageState extends State<ChainPage> {
   void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
-    try { lines = (await Sb.rpc('chain_view', {'p_chain': widget.id}) as List?) ?? []; } catch (_) {}
+    try { lines = (await Sb.rpc('chain_view', {'p_chain': widget.id}) as List?) ?? []; } catch (e, st) { Health.log(e, st); }
     if (mounted) setState(() => busy = false);
   }
 
@@ -122,7 +123,7 @@ class _ChainPageState extends State<ChainPage> {
   }
 
   Future<void> _report(Map l) async {
-    try { await Sb.rpc('report_chain_line', {'p_id': l['id']}); } catch (_) {}
+    try { await Sb.rpc('report_chain_line', {'p_id': l['id']}); } catch (e, st) { Health.log(e, st); }
     if (mounted) toast(context, 'Reported. Thank you.');
     _load();
   }

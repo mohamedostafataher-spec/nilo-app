@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'package:flutter/material.dart';
 import 'bottles.dart';
 import 'circles.dart' show niloJoined, niloJoinGate;
@@ -55,9 +56,9 @@ class _TipBoardPageState extends State<TipBoardPage> {
       if (!mine) ListTile(leading: const Icon(Icons.block), title: Text(L('Block • احظر')), onTap: () => Navigator.pop(context, 'blk')),
     ])));
     final id = r['id'].toString();
-    if (v == 'del') { try { await Sb.delete('tips?id=eq.$id'); } catch (_) {} }
-    if (v == 'rep') { try { await Sb.rpc('report_tip', {'pid': id}); } catch (_) {} if (mounted) toast(context, 'Reported. Thank you.'); }
-    if (v == 'blk') { try { await Sb.post('blocks', {'blocker': Sb.uid, 'blocked': r['author']}); } catch (_) {} if (mounted) toast(context, 'Blocked.'); }
+    if (v == 'del') { try { await Sb.delete('tips?id=eq.$id'); } catch (e, st) { Health.log(e, st); } }
+    if (v == 'rep') { try { await Sb.rpc('report_tip', {'pid': id}); } catch (e, st) { Health.log(e, st); } if (mounted) toast(context, 'Reported. Thank you.'); }
+    if (v == 'blk') { try { await Sb.post('blocks', {'blocker': Sb.uid, 'blocked': r['author']}); } catch (e, st) { Health.log(e, st); } if (mounted) toast(context, 'Blocked.'); }
     _load();
   }
 

@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -34,7 +35,7 @@ class _ShareCardDialogState extends State<_ShareCardDialog> {
       final f = File('${dir.path}/nilo_card.png');
       await f.writeAsBytes(data!.buffer.asUint8List());
       await Share.shareXFiles([XFile(f.path)], text: '${L('I am sending papyri across the world on Nilo, a translation app for travelers.')} $kNiloLink');
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     if (mounted) setState(() => busy = false);
   }
 

@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
@@ -31,7 +32,7 @@ Future<TrResult> trCall(Map<String, dynamic> body) async {
         empty: j['empty'] == true,
       );
       if (res.ok || res.empty || r.statusCode == 400 || r.statusCode == 413 || r.statusCode == 429) return res;
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
   return TrResult(error: 'مفيش اتصال أو الخدمة مشغولة. جرب تاني.');
 }

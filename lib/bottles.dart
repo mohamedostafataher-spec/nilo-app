@@ -42,7 +42,7 @@ class Sb {
   static Future<bool> signIn() async {
     final ok = await _signIn0();
     if (ok && uid != null && _ccSynced != uid && Passport.country.length == 2) {
-      try { await rpc('nilo_set_cc', {'c': Passport.country}); _ccSynced = uid; } catch (_) {}
+      try { await rpc('nilo_set_cc', {'c': Passport.country}); _ccSynced = uid; } catch (e, st) { Health.log(e, st); }
     }
     if (ok && uid != null && _healed != uid) {
       try {
@@ -55,7 +55,7 @@ class Sb {
           await p.setBool('b_age', true); await p.setString('b_nick', n);
         }
         if (has.isNotEmpty || n.length >= 2) _healed = uid;
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
     }
     return ok;
   }
@@ -72,7 +72,7 @@ class Sb {
           _save(p, jsonDecode(r.body));
           return true;
         }
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
     }
     try {
       final r = await http.post(Uri.parse('$_sbUrl/auth/v1/signup'), headers: _h(false), body: jsonEncode({'data': {}})).timeout(const Duration(seconds: 20));
@@ -80,7 +80,7 @@ class Sb {
         _save(p, jsonDecode(r.body));
         return true;
       }
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     return false;
   }
 
@@ -123,7 +123,7 @@ class Sb {
     try {
       final r = await http.post(Uri.parse('$_sbUrl/auth/v1/token?grant_type=refresh_token'), headers: _h(false), body: jsonEncode({'refresh_token': p.getString('sb_rt')})).timeout(const Duration(seconds: 20));
       if (r.statusCode == 200) { _save(p, jsonDecode(r.body)); return true; }
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     return false;
   }
   static Future<String?> verifyCode(String code) async {
@@ -204,7 +204,7 @@ class Sb {
   }
   static Future<void> signOut() async {
     final p = await SharedPreferences.getInstance();
-    try { await http.post(Uri.parse('$_sbUrl/auth/v1/logout'), headers: _h()).timeout(const Duration(seconds: 10)); } catch (_) {}
+    try { await http.post(Uri.parse('$_sbUrl/auth/v1/logout'), headers: _h()).timeout(const Duration(seconds: 10)); } catch (e, st) { Health.log(e, st); }
     _token = null; uid = null; _tokAt = null;
     await p.remove('sb_rt'); await p.remove('acct_email'); await p.remove('auth_done');
   }
@@ -231,7 +231,7 @@ class Sb {
   }
 
   static Future<void> removeFile(String path) async {
-    try { await http.delete(Uri.parse('$_sbUrl/storage/v1/object/stories/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20)); } catch (_) {}
+    try { await http.delete(Uri.parse('$_sbUrl/storage/v1/object/stories/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20)); } catch (e, st) { Health.log(e, st); }
   }
 
   static Future<bool> galUpload(String path, List<int> bytes, String mime) async {
@@ -252,11 +252,11 @@ class Sb {
           if (n == null || n.isEmpty) continue;
           await http.delete(Uri.parse('$_sbUrl/storage/v1/object/$b/$u/$n'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20));
         }
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
     }
   }
   static Future<void> galRemove(String path) async {
-    try { await http.delete(Uri.parse('$_sbUrl/storage/v1/object/gallery/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20)); } catch (_) {}
+    try { await http.delete(Uri.parse('$_sbUrl/storage/v1/object/gallery/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20)); } catch (e, st) { Health.log(e, st); }
   }
 
   /// Short-lived signed URL for a photo in the private gallery bucket.
@@ -350,7 +350,7 @@ class _BottlesPageState extends State<BottlesPage> with SingleTickerProviderStat
       } else { failed = true; }
     } else if (ageOk && nick.isNotEmpty) {
       final ok = await Sb.signIn();
-      if (!ok) failed = true; else { try { await Sb.post('profiles', {'id': Sb.uid, 'nick': nick, 'lang': lang, 'age_ok': true}, upsert: true); } catch (_) {} }
+      if (!ok) failed = true; else { try { await Sb.post('profiles', {'id': Sb.uid, 'nick': nick, 'lang': lang, 'age_ok': true}, upsert: true); } catch (e, st) { Health.log(e, st); } }
     }
     if (mounted) setState(() { ready = ageOk && nick.isNotEmpty && !failed; busy = false; });
   }
@@ -548,7 +548,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
     if (!Passport.useInk()) { toast(context, 'Out of ink. New ink at 12:00, or solve the daily puzzle for +3.'); return; }
     setState(() => busy = true);
     try {
-      try { await Sb.post('profiles', {'id': Sb.uid, 'nick': Passport.nickname.trim().length >= 2 ? Passport.nickname.trim() : 'Traveler', 'lang': writeLang, 'age_ok': true}, upsert: true); } catch (_) {}
+      try { await Sb.post('profiles', {'id': Sb.uid, 'nick': Passport.nickname.trim().length >= 2 ? Passport.nickname.trim() : 'Traveler', 'lang': writeLang, 'age_ok': true}, upsert: true); } catch (e, st) { Health.log(e, st); }
       final fc = friend.text.trim().toLowerCase();
       if (fc.isNotEmpty) {
         final ok = await Sb.rpc('send_direct', {'p_code': fc, 'p_kind': kind, 'p_place': kind == 'place' ? place : null, 'p_body': t, 'p_lang': writeLang});
@@ -799,7 +799,7 @@ class _ThreadPageState extends State<ThreadPage> {
     try {
       final r = await Sb.rpc('bottle_journey', {'p_id': bid}) as List;
       if (r.isNotEmpty) { from = (r.first['from_cc'] ?? '').toString(); to = (r.first['to_cc'] ?? '').toString(); }
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     if (!mounted) return;
     Navigator.push(context, MaterialPageRoute(builder: (_) => JourneyPage(fromCc: from, toCc: to)));
   }
@@ -1077,7 +1077,7 @@ class _PeerProfilePageState extends State<PeerProfilePage> {
     try {
       final r = await Sb.rpc('bottle_journey', {'p_id': widget.bid}) as List;
       if (r.isNotEmpty && mounted) setState(() => cc = (r.first[widget.otherIsAuthor ? 'from_cc' : 'to_cc'] ?? '').toString());
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     try {
       final since = DateTime.now().toUtc().subtract(const Duration(hours: 24)).toIso8601String();
       final r = await Sb.get('stories?select=id,body,mood,media_path,media_type,created_at&author=eq.${widget.uid}&created_at=gte.$since&order=created_at.desc&limit=20');
@@ -1086,7 +1086,7 @@ class _PeerProfilePageState extends State<PeerProfilePage> {
     try {
       final ids = ((await Sb.rpc('friend_ids')) as List?)?.map((e) => e.toString()).toList() ?? [];
       if (mounted) setState(() => friend = ids.contains(widget.uid));
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   String _flag(String c) => c.length == 2 ? String.fromCharCodes(c.toUpperCase().codeUnits.map((x) => 0x1F1E6 + x - 65)) : '';

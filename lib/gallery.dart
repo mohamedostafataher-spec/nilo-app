@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -29,7 +30,7 @@ class _GalleryEditorState extends State<GalleryEditor> {
         final u = await Sb.galSigned(x['path'].toString());
         if (u != null) urls[x['path'].toString()] = u;
       }
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     if (mounted) setState(() => loaded = true);
   }
 
@@ -125,7 +126,7 @@ class _PeerGalleryState extends State<PeerGallery> {
         final u = await Sb.galSigned((x['path'] ?? '').toString());
         if (u != null) urls.add(u);
       }
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     if (mounted) setState(() => done = true);
   }
 

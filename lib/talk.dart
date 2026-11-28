@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'i18n.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -103,7 +104,7 @@ class _TalkPageState extends State<TalkPage> {
           speak(tr, my);
         }
       }
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   String _name(String c) {

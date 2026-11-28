@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'i18n.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -43,7 +44,7 @@ class _NileFactsPageState extends State<NileFactsPage> {
       try {
         final w = await http.get(Uri.https('en.wikipedia.org', '/api/rest_v1/page/summary/Nile'), headers: ua).timeout(const Duration(seconds: 15));
         if (w.statusCode == 200) summary = (jsonDecode(utf8.decode(w.bodyBytes))['extract'] ?? '').toString();
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
       final n = DateTime.now().toUtc();
       date = '${n.year}-${n.month.toString().padLeft(2, '0')}-${n.day.toString().padLeft(2, '0')}';
       if (mounted) setState(() => busy = false);

@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'i18n.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -39,7 +40,7 @@ class _PhrasebookPageState extends State<PhrasebookPage> {
     if (raw != null) {
       try {
         (jsonDecode(raw) as Map<String, dynamic>).forEach((k, v) => cache[k] = v.toString());
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
     }
     if (mounted) setState(() {});
     _fill();

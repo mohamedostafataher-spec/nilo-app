@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'earth.dart';
 import 'nilefacts.dart';
 import 'i18n.dart';
@@ -604,7 +605,7 @@ class _PlacesPageState extends State<PlacesPage> {
       final p = (g['query']['pages'] as Map).values.first as Map;
       final e = (p['extract'] ?? '').toString();
       if (mounted) setState(() { guide = e.length > 900 ? '${e.substring(0, 900)}...' : e; guideUrl = 'https://en.wikivoyage.org/wiki/${n.replaceAll(' ', '_')}'; });
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     try {
       final j = await getJ('https://en.wikipedia.org/w/api.php?action=query&generator=geosearch&ggscoord=$la%7C$lo&ggsradius=8000&ggslimit=15&prop=extracts&exintro=1&explaintext=1&exchars=170&format=json');
       final ps = ((j['query']['pages'] as Map).values.toList().cast<Map>()..sort((a, b) => (a['index'] as int).compareTo(b['index'] as int)));

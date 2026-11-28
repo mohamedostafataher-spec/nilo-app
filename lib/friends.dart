@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
@@ -47,7 +48,7 @@ class _FriendsPageState extends State<FriendsPage> {
           final since = DateTime.now().toUtc().subtract(const Duration(hours: 24)).toIso8601String();
           feed = (await Sb.get('stories?select=id,author,nick,country,body,mood,created_at&author=in.(${ids.join(',')})&created_at=gte.$since&order=created_at.desc&limit=50') as List?) ?? [];
         } else { feed = []; }
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
     }
     if (mounted) setState(() => busy = false);
   }
@@ -189,7 +190,7 @@ class _DmPageState extends State<DmPage> {
       final o = widget.uid;
       final r = await Sb.get('dms?select=id,sender,recipient,body,created_at&or=(and(sender.eq.$me,recipient.eq.$o),and(sender.eq.$o,recipient.eq.$me))&order=created_at.desc&limit=100') as List;
       if (mounted) setState(() => msgs = r.reversed.toList());
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   Future<void> _send() async {
@@ -219,8 +220,8 @@ class _DmPageState extends State<DmPage> {
     ])));
     final id = m['id'].toString();
     if (v == 'tr') { _translate(id, m['body'].toString()); }
-    if (v == 'del') { try { await Sb.delete('dms?id=eq.$id'); } catch (_) {} _load(); }
-    if (v == 'rep') { try { await Sb.rpc('report_dm', {'p_id': id}); } catch (_) {} if (mounted) toast(context, 'Reported. Thank you.'); _load(); }
+    if (v == 'del') { try { await Sb.delete('dms?id=eq.$id'); } catch (e, st) { Health.log(e, st); } _load(); }
+    if (v == 'rep') { try { await Sb.rpc('report_dm', {'p_id': id}); } catch (e, st) { Health.log(e, st); } if (mounted) toast(context, 'Reported. Thank you.'); _load(); }
   }
 
   @override
@@ -287,7 +288,7 @@ class _GroupsPageState extends State<GroupsPage> {
   void initState() { super.initState(); _load(); }
 
   Future<void> _load() async {
-    try { await Sb.signIn(); groups = (await Sb.rpc('my_groups') as List?) ?? []; } catch (_) {}
+    try { await Sb.signIn(); groups = (await Sb.rpc('my_groups') as List?) ?? []; } catch (e, st) { Health.log(e, st); }
     if (mounted) setState(() => busy = false);
   }
 
@@ -391,7 +392,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
     try {
       final r = await Sb.get('chat_msgs?select=id,sender,nick,body,created_at&grp=eq.${widget.id}&order=created_at.desc&limit=100') as List;
       if (mounted) setState(() => msgs = r.reversed.toList());
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   Future<void> _send() async {
@@ -419,13 +420,13 @@ class _GroupChatPageState extends State<GroupChatPage> {
       final r = await trText(m['body'].toString(), 'auto', Ui.lang == 'ar' ? 'ar' : 'en');
       if (mounted && r.ok) setState(() => tr[id] = r.translation);
     }
-    if (v == 'del') { try { await Sb.delete('chat_msgs?id=eq.$id'); } catch (_) {} _load(); }
-    if (v == 'rep') { try { await Sb.rpc('report_group_msg', {'p_id': id}); } catch (_) {} if (mounted) toast(context, 'Reported. Thank you.'); _load(); }
-    if (v == 'blk') { try { await Sb.post('blocks', {'blocker': Sb.uid, 'blocked': m['sender']}); } catch (_) {} if (mounted) toast(context, 'Blocked.'); }
+    if (v == 'del') { try { await Sb.delete('chat_msgs?id=eq.$id'); } catch (e, st) { Health.log(e, st); } _load(); }
+    if (v == 'rep') { try { await Sb.rpc('report_group_msg', {'p_id': id}); } catch (e, st) { Health.log(e, st); } if (mounted) toast(context, 'Reported. Thank you.'); _load(); }
+    if (v == 'blk') { try { await Sb.post('blocks', {'blocker': Sb.uid, 'blocked': m['sender']}); } catch (e, st) { Health.log(e, st); } if (mounted) toast(context, 'Blocked.'); }
   }
 
   Future<void> _leave() async {
-    try { await Sb.rpc('leave_group', {'p_grp': widget.id}); } catch (_) {}
+    try { await Sb.rpc('leave_group', {'p_grp': widget.id}); } catch (e, st) { Health.log(e, st); }
     if (mounted) Navigator.pop(context);
   }
 

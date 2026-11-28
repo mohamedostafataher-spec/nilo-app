@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
@@ -33,7 +34,7 @@ class _LettersPageState extends State<LettersPage> {
   Future<void> _init() async {
     joined = await niloJoined();
     if (joined) {
-      try { await Sb.signIn(); mine = await Sb.get('letters?select=*&author=eq.${Sb.uid}&order=created_at.desc&limit=20') as List; } catch (_) {}
+      try { await Sb.signIn(); mine = await Sb.get('letters?select=*&author=eq.${Sb.uid}&order=created_at.desc&limit=20') as List; } catch (e, st) { Health.log(e, st); }
     }
     if (mounted) setState(() => busy = false);
   }

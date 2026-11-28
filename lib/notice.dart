@@ -25,13 +25,13 @@ class _NoticeBarState extends State<NoticeBar> {
   Future<void> _load() async {
     final p = await SharedPreferences.getInstance();
     String? u;
-    try { u = await Health.updateUrl(); } catch (_) {}
+    try { u = await Health.updateUrl(); } catch (e, st) { Health.log(e, st); }
     Map? a;
     try {
       await Sb.signIn();
       final r = await Sb.get('announcements?select=id,title,body&active=eq.true&order=created_at.desc&limit=1') as List;
       if (r.isNotEmpty && p.getString('ann_seen') != r.first['id'].toString()) a = r.first as Map;
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
     if (mounted) setState(() { upd = u; ann = a; });
   }
 
@@ -95,7 +95,7 @@ class _FounderPageState extends State<FounderPage> {
   }
 
   Future<void> _remove(Map r) async {
-    try { await Sb.rpc('founder_remove', {'p_kind': r['kind'], 'p_id': r['id']}); } catch (_) {}
+    try { await Sb.rpc('founder_remove', {'p_kind': r['kind'], 'p_id': r['id']}); } catch (e, st) { Health.log(e, st); }
     _load();
   }
 
@@ -155,7 +155,7 @@ class _FounderPageState extends State<FounderPage> {
                     Row(children: [
                       FilledButton(onPressed: _post, child: Text(L('Post • انشر'))),
                       const SizedBox(width: 8),
-                      OutlinedButton(onPressed: () async { try { await Sb.rpc('founder_clear_announce'); if (mounted) toast(context, 'Cleared.'); } catch (_) {} }, child: Text(L('Clear • امسح'))),
+                      OutlinedButton(onPressed: () async { try { await Sb.rpc('founder_clear_announce'); if (mounted) toast(context, 'Cleared.'); } catch (e, st) { Health.log(e, st); } }, child: Text(L('Clear • امسح'))),
                     ]),
                     const Divider(),
                     Text('${L('Reported items • بلاغات')} (${reports.length})', style: const TextStyle(fontWeight: FontWeight.w800)),

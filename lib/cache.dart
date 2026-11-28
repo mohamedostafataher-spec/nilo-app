@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,7 +20,7 @@ Future<CachedResp> cachedGet(String url, int freshMinutes, {Map<String, String>?
       final j = jsonDecode(raw) as Map;
       final age = DateTime.now().millisecondsSinceEpoch - (j['t'] as int);
       if (age < freshMinutes * 60000) return CachedResp(j['b'] as String);
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
   try {
     final r = await http.get(Uri.parse(url), headers: headers).timeout(Duration(seconds: timeoutSec));
@@ -28,7 +29,7 @@ Future<CachedResp> cachedGet(String url, int freshMinutes, {Map<String, String>?
       await p.setString(k, jsonEncode({'t': DateTime.now().millisecondsSinceEpoch, 'b': b}));
       return CachedResp(b);
     }
-  } catch (_) {}
-  if (raw != null) { try { return CachedResp((jsonDecode(raw) as Map)['b'] as String); } catch (_) {} }
+  } catch (e, st) { Health.log(e, st); }
+  if (raw != null) { try { return CachedResp((jsonDecode(raw) as Map)['b'] as String); } catch (e, st) { Health.log(e, st); } }
   throw Exception('offline');
 }

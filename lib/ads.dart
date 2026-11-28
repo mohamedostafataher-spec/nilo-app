@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -24,7 +25,7 @@ class Ads {
         maxAdContentRating: MaxAdContentRating.pg,
       ));
       await MobileAds.instance.initialize();
-    } catch (_) {}
+    } catch (e, st) { Health.log(e, st); }
   }
 
   static const _req = AdRequest(nonPersonalizedAds: true);

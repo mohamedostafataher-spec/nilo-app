@@ -1,3 +1,4 @@
+import 'health.dart';
 import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -36,7 +37,7 @@ class _InvitePageState extends State<InvitePage> {
         final p = await SharedPreferences.getInstance();
         final claimed = p.getInt('inv_claimed') ?? 0;
         if (count > claimed) { gained = (count - claimed) * 10; Passport.addReeds(gained); await p.setInt('inv_claimed', count); }
-      } catch (_) {}
+      } catch (e, st) { Health.log(e, st); }
     }
     if (mounted) setState(() => busy = false);
   }
