@@ -61,6 +61,12 @@ const kHello = <String, HelloWord>{
   'KE': HelloWord('Swahili', 'sw-KE', 'Habari', 'Asante'),
 };
 
+/// Standard (winter) UTC offset in hours for single-zone countries. Summer time is NOT applied, so shown times can be 1 h off. Multi-zone countries are left out.
+const kUtc = <String, double>{
+  'FR': 1, 'ES': 1, 'IT': 1, 'DE': 1, 'AT': 1, 'CH': 1, 'PT': 0, 'GB': 0, 'IE': 0, 'NL': 1, 'SE': 1, 'NO': 1, 'DK': 1, 'FI': 2, 'PL': 1, 'CZ': 1, 'HU': 1, 'RO': 2,
+  'UA': 2, 'GR': 2, 'TR': 3, 'IL': 2, 'EG': 2, 'SA': 3, 'AE': 4, 'MA': 1, 'JO': 3, 'IN': 5.5, 'PK': 5, 'JP': 9, 'KR': 9, 'CN': 8, 'TH': 7, 'VN': 7, 'KE': 3, 'AR': -3, 'CO': -5,
+};
+
 /// Card shown on top of a papyrus thread: a word from the other person's country. Collects a stamp the first time it is heard.
 class HelloCard extends StatefulWidget {
   final String bid;
@@ -88,6 +94,17 @@ class _HelloCardState extends State<HelloCard> {
     } catch (e, st) { Health.log(e, st); }
   }
 
+  /// Local time there (about) and whether the sun is up, from the standard offset.
+  String? get _there {
+    final o = kUtc[cc];
+    if (o == null) return null;
+    final t = DateTime.now().toUtc().add(Duration(minutes: (o * 60).round()));
+    final h = t.hour + t.minute / 60;
+    final day = h >= 6.5 && h < 18.5;
+    final hm = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
+    return L('${day ? '☀️ Daytime' : '🌙 Night'} there, about $hm (no summer-time correction) • ${day ? 'عندهم نهار' : 'عندهم ليل'}');
+  }
+
   Future<void> _say(String text, HelloWord w) async {
     try {
       final ok = await _tts.isLanguageAvailable(w.voice);
@@ -112,6 +129,7 @@ class _HelloCardState extends State<HelloCard> {
         const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(L('A word from their country (${w.lang}) • كلمة من بلدهم'), style: const TextStyle(fontSize: 11, color: Colors.white60)),
+          if (_there != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(_there!, style: const TextStyle(fontSize: 12, color: Colors.white70))),
           const SizedBox(height: 4),
           Wrap(spacing: 8, children: [
             ActionChip(avatar: const Icon(Icons.volume_up, size: 16), label: Text('${w.hello}  (hello)'), onPressed: () => _say(w.hello, w)),
