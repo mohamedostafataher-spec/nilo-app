@@ -33,7 +33,7 @@ Nilo is a free tourist and translation app made by Mohamed Mostafa Taher (Egypt)
 
 What stays on your phone: your nickname, XP, streak, stamps, saved items and settings.
 
-What goes to our server (Supabase) only when you use Papyrus, Stories or comments: the text, photo or short clip you post, your country code (two letters, for example EG), an anonymous random account id, your reactions, and reports or blocks you make. We never store your GPS coordinates. Your country is worked out on your phone and only the two-letter code is kept. If location is off, we use your phone region.
+What goes to our server (Supabase) only when you use Papyrus, Stories or comments: the text, photo or short clip you post, your country code (two letters, for example EG), your nickname (shown to others on papyri you send), an anonymous random account id, your reactions, and reports or blocks you make. We never store your GPS coordinates. Your country is worked out on your phone and only the two-letter code is kept. If location is off, we use your phone region.
 
 Translation: the text you type or say is sent to online translation services to give you the translation. Machine translation can be wrong. Do not rely on it for medical, legal or safety matters.
 

@@ -132,6 +132,26 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
   late final AnimationController _c = AnimationController(vsync: this, duration: const Duration(seconds: 14))..repeat();
   int _real = 0, _people = 0;
   List<dynamic> _peek = [];
+  Future<void> _openExact(String id) async {
+    if (Passport.catchesLeft <= 0) { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L('You caught your 10 papyri for now. A new batch arrives at 12:00.')))); return; }
+    final sp = await SharedPreferences.getInstance();
+    if (!((sp.getBool('b_age') ?? false) && (sp.getString('b_nick') ?? '').isNotEmpty)) { _open(false); return; }
+    final plang = sp.getString('b_lang') ?? 'en';
+    try {
+      await Sb.signIn();
+      final j = await Sb.rpc('catch_specific', {'p_id': id});
+      if (!mounted) return;
+      if (j is Map && j['id'] != null) {
+        Passport.useCatch();
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => ThreadPage(bottle: Map<String, dynamic>.from(j), lang: plang)));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(L('Someone else caught this papyrus first.'))));
+      }
+      try { final pk = await Sb.rpc('floating_peek'); if (pk is List && mounted) setState(() => _peek = pk); } catch (_) {}
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+    }
+  }
   bool _checked = false;
   int _city = 0;
   int? _isDay;
@@ -229,12 +249,12 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
               kids.add(Positioned(
                 left: x, top: y,
                 child: GestureDetector(
-                  onTap: () => _open(false),
+                  onTap: () => (_peek.isNotEmpty ? _openExact(_peek[i]['id'].toString()) : _open(false)),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(color: const Color(0xFFFFF6DC), borderRadius: BorderRadius.circular(14), boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6)]),
-                      child: Text(pcc.isNotEmpty ? '${flagOf(pcc)}  ${L('Papyrus')}' : L('بردية • Papyrus'), style: const TextStyle(color: Color(0xFF3B2A12), fontWeight: FontWeight.w700, fontSize: 14)),
+                      child: Text(pcc.isNotEmpty ? '${flagOf(pcc)}  ${(_peek[i]['nick'] ?? '').toString()}' : L('بردية • Papyrus'), style: const TextStyle(color: Color(0xFF3B2A12), fontWeight: FontWeight.w700, fontSize: 14)),
                     ),
                     const SizedBox(height: 2),
                     Text(papyrusForm(Passport.country), style: const TextStyle(fontSize: 34)),
