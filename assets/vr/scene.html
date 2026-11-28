@@ -265,7 +265,7 @@ if(SC==='giza'){
  groundH=D;
  const g=new THREE.PlaneGeometry(2400,2400,150,150);g.rotateX(-Math.PI/2);const pa=g.attributes.position;for(let i=0;i<pa.count;i++){pa.setY(i,D(pa.getX(i),pa.getZ(i)))}g.computeVertexNormals();
  S.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({map:sandTex})));
- const pyr=(x,z,side,h,rot)=>{const m=new THREE.Mesh(new THREE.ConeGeometry(side/Math.SQRT2,h,4,1),new THREE.MeshLambertMaterial({map:stoneTex('#cfa968',[side/24,h/24])}));m.rotation.y=Math.PI/4+(rot||0);m.position.set(x,D(x,z)+h/2-1,z);S.add(m);return m};
+ const pyr=(x,z,side,h,rot)=>{const m=new THREE.Mesh(new THREE.ConeGeometry(side/Math.SQRT2,h,4,1),new THREE.MeshLambertMaterial({map:stoneTex('#cfa968',[side/24,h/24])}));m.rotation.y=Math.PI/4+(rot||0);m.position.set(x,D(x,z)+h/2-1,z);S.add(m);COLS.push([x-side/2*.96,x+side/2*.96,z-side/2*.96,z+side/2*.96]);return m};
  pyr(60,-80,115,73);  // Khufu (half scale)
  const k=pyr(-100,-210,108,72);// Khafre
  const cap=new THREE.Mesh(new THREE.ConeGeometry(14,15,4,1),new THREE.MeshLambertMaterial({color:0xf5ecd6}));cap.rotation.y=Math.PI/4;cap.position.set(-100,D(-100,-210)+72-6,-210);S.add(cap);
