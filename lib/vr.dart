@@ -23,6 +23,7 @@ const kVrScenes = <String, String>{
   'Eiffel_Tower': 'eiffel', 'Leaning_Tower_of_Pisa': 'pisa', 'Big_Ben': 'bigben', 'Elizabeth_Tower': 'bigben', 'Taj_Mahal': 'taj',
   'Hagia_Sophia': 'hagia', 'Colosseum': 'colosseum', 'Statue_of_Liberty': 'liberty', 'Christ_the_Redeemer_(statue)': 'christ',
   'Great_Wall_of_China': 'greatwall', 'Petra': 'petra', 'Sydney_Opera_House': 'opera', 'Mount_Fuji': 'fuji', 'Burj_Khalifa': 'burj', 'Chichen_Itza': 'steppyr',
+  'Blue_Mosque': 'bluemosque', 'Sultan_Ahmed_Mosque': 'bluemosque', 'Cappadocia': 'cappadocia', 'Göreme_National_Park_and_the_Rock_Sites_of_Cappadocia': 'cappadocia', 'Goreme_National_Park': 'cappadocia', 'Pamukkale': 'pamukkale', 'Hierapolis': 'pamukkale', 'Gyeongbokgung': 'gyeong', 'Bulguksa': 'bulguksa',
 };
 
 /// Picks a generated scene from the Wikidata type words and the place name. Same type = same shape (honest limit).
