@@ -47,7 +47,12 @@ class _GalleryEditorState extends State<GalleryEditor> {
       if (out == null || out.length > 2800 * 1024) throw Exception('size');
       final p = '${Sb.uid}/g_${DateTime.now().millisecondsSinceEpoch}.png';
       if (!await Sb.galUpload(p, out, 'image/png')) throw Exception('upload');
-      await Sb.post('profile_photos', {'uid': Sb.uid, 'path': p, 'is_public': false});
+      try {
+        await Sb.post('profile_photos', {'uid': Sb.uid, 'path': p, 'is_public': false});
+      } catch (e) {
+        await Sb.galRemove(p);
+        rethrow;
+      }
       await _load();
     } catch (_) {
       if (mounted) toast(context, L('Could not add this photo. Try another.'));
@@ -85,7 +90,7 @@ class _GalleryEditorState extends State<GalleryEditor> {
             ClipRRect(borderRadius: BorderRadius.circular(10), child: SizedBox(width: 104, height: 104, child: urls[x['path']] == null ? Container(color: Colors.white10) : Image.network(urls[x['path']]!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container(color: Colors.white10)))),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Icon((x['is_public'] == true) ? Icons.public : Icons.lock, size: 16, color: Colors.white70),
-              Switch(value: x['is_public'] == true, onChanged: (v) => _toggle(x, v)),
+              Transform.scale(scale: 0.75, child: Switch(value: x['is_public'] == true, onChanged: (v) => _toggle(x, v))),
               InkWell(onTap: () => _del(x), child: const Icon(Icons.delete_outline, size: 18, color: Colors.white54)),
             ]),
           ])),
