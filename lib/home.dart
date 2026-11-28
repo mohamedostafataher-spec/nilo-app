@@ -14,6 +14,7 @@ import 'extras.dart';
 import 'world.dart';
 import 'net.dart';
 import 'bottles.dart';
+import 'auth.dart' show AuthPage;
 import 'screens.dart';
 import 'stories.dart';
 import 'navbar.dart';
@@ -36,13 +37,21 @@ class TouristHome extends StatefulWidget {
 }
 
 class _TouristHomeState extends State<TouristHome> {
+  @override
+  void dispose() { Sb.expired.removeListener(_onExpired); super.dispose(); }
   int tab = 0;
   int hub = 0; // stories hub: 0 story, 1 stories, 2 circles, 3 place letters
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { _askLang(); Health.offerUpdate(context); Health.refreshUnread(); Gender.ensure(context); } });
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { _askLang(); Health.offerUpdate(context); Health.refreshUnread(); Gender.ensure(context); Sb.expired.addListener(_onExpired); _onExpired(); } });
+  }
+
+  void _onExpired() {
+    if (!Sb.expired.value || !mounted) return;
+    Sb.expired.value = false;
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => AuthPage(next: const TouristHome(), notice: L('Your session ended. Please sign in again. • الجلسة انتهت، سجل دخول تاني.'))));
   }
 
   Future<void> _askLang() async {

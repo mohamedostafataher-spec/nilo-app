@@ -5,6 +5,7 @@ import 'journey.dart';
 import 'health.dart';
 import 'dart:async';
 import 'auth.dart' show AuthPage;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'home.dart' show TouristHome;
 import 'i18n.dart';
 import 'dart:convert';
@@ -62,25 +63,63 @@ class Sb {
   }
 
   static DateTime? _tokAt;
-  static Future<bool> _signIn0() async {
+  static const _ss = FlutterSecureStorage(aOptions: AndroidOptions(encryptedSharedPreferences: true));
+  static String? _rtMem;
+  /// True when the saved account session was rejected by the server (truly expired or revoked). The app then shows the sign-in screen.
+  static final ValueNotifier<bool> expired = ValueNotifier(false);
+
+  /// Refresh token lives in Android secure storage (encrypted). Old installs kept it in plain preferences: moved on first read.
+  static Future<String?> _rtGet(SharedPreferences p) async {
+    if (_rtMem != null) return _rtMem;
+    try {
+      var v = await _ss.read(key: 'sb_rt');
+      if (v == null) {
+        final old = p.getString('sb_rt');
+        if (old != null) { await _ss.write(key: 'sb_rt', value: old); v = old; }
+      }
+      if (v != null) await p.remove('sb_rt');
+      _rtMem = v;
+      return v;
+    } catch (e, st) { Health.log(e, st); return p.getString('sb_rt'); }
+  }
+  static Future<void> _rtSet(SharedPreferences p, String rt) async {
+    _rtMem = rt;
+    if (!(p.getBool('keep_signed') ?? true) && (p.getString('acct_email') ?? '').isNotEmpty) { await _rtClear(p, keepMem: true); return; }
+    try { await _ss.write(key: 'sb_rt', value: rt); await p.remove('sb_rt'); } catch (e, st) { Health.log(e, st); await p.setString('sb_rt', rt); }
+  }
+  static Future<void> _rtClear(SharedPreferences p, {bool keepMem = false}) async {
+    if (!keepMem) _rtMem = null;
+    try { await _ss.delete(key: 'sb_rt'); } catch (e, st) { Health.log(e, st); }
+    await p.remove('sb_rt');
+  }
+
+  static Future<bool>? _flight;
+  /// One sign-in/refresh at a time: refresh tokens rotate, two parallel refreshes would invalidate each other.
+  static Future<bool> _signIn0() => _flight ??= _signIn1().whenComplete(() => _flight = null);
+
+  static Future<bool> _signIn1() async {
     if (_token != null && uid != null && _tokAt != null && DateTime.now().difference(_tokAt!).inMinutes < 45) return true;
     final p = await SharedPreferences.getInstance();
-    final rt = p.getString('sb_rt');
+    final rt = await _rtGet(p);
+    final isAccount = (p.getString('acct_email') ?? '').isNotEmpty;
     if (rt != null) {
       try {
         final r = await http.post(Uri.parse('$_sbUrl/auth/v1/token?grant_type=refresh_token'), headers: _h(false), body: jsonEncode({'refresh_token': rt})).timeout(const Duration(seconds: 20));
-        if (r.statusCode == 200) {
-          _save(p, jsonDecode(r.body));
-          return true;
+        if (r.statusCode == 200) { await _save(p, jsonDecode(r.body)); expired.value = false; return true; }
+        if (r.statusCode >= 500 || r.statusCode == 429) return false; // server trouble: keep the session, try again later
+        // 400/401/403: the session is really gone.
+        await _rtClear(p);
+        if (isAccount) {
+          _token = null; uid = null; _tokAt = null;
+          await p.remove('acct_email'); guest = true;
+          expired.value = true;
+          return false;
         }
-      } catch (e, st) { Health.log(e, st); }
+      } catch (e, st) { Health.log(e, st); return false; } // offline: never replace a saved session with a new guest
     }
     try {
       final r = await http.post(Uri.parse('$_sbUrl/auth/v1/signup'), headers: _h(false), body: jsonEncode({'data': {}})).timeout(const Duration(seconds: 20));
-      if (r.statusCode == 200) {
-        _save(p, jsonDecode(r.body));
-        return true;
-      }
+      if (r.statusCode == 200) { await _save(p, jsonDecode(r.body)); return true; }
     } catch (e, st) { Health.log(e, st); }
     return false;
   }
@@ -93,7 +132,7 @@ class Sb {
     try {
       final r = await f.timeout(const Duration(seconds: 20));
       if (r.statusCode >= 300) return _err(r);
-      if (save) { final j = jsonDecode(utf8.decode(r.bodyBytes)); if (j is Map && j['access_token'] != null) _save(p, j); }
+      if (save) { final j = jsonDecode(utf8.decode(r.bodyBytes)); if (j is Map && j['access_token'] != null) await _save(p, j); }
       return null;
     } catch (_) { return 'No connection'; }
   }
@@ -102,7 +141,7 @@ class Sb {
   static const kNeedCode = 'NEED_CODE';
   static Future<String?> signUp(String email, String pw) async {
     final p = await SharedPreferences.getInstance();
-    final hasSession = p.getString('sb_rt') != null && await _refresh(p);
+    final hasSession = await _rtGet(p) != null && await _refresh(p);
     try {
       if (hasSession) {
         final r = await http.put(Uri.parse('$_sbUrl/auth/v1/user'), headers: _h(), body: jsonEncode({'email': email, 'password': pw})).timeout(const Duration(seconds: 20));
@@ -115,15 +154,15 @@ class Sb {
       final r = await http.post(Uri.parse('$_sbUrl/auth/v1/signup'), headers: _h(false), body: jsonEncode({'email': email, 'password': pw})).timeout(const Duration(seconds: 20));
       if (r.statusCode >= 300) return _err(r);
       final j = jsonDecode(utf8.decode(r.bodyBytes));
-      if (j is Map && j['access_token'] != null) { _save(p, j); await p.setString('acct_email', email); guest = false; return null; }
+      if (j is Map && j['access_token'] != null) { await _save(p, j); await p.setString('acct_email', email); guest = false; return null; }
       await p.setString('pend_email', email); await p.setString('pend_type', 'signup');
       return kNeedCode;
     } catch (_) { return 'No connection'; }
   }
   static Future<bool> _refresh(SharedPreferences p) async {
     try {
-      final r = await http.post(Uri.parse('$_sbUrl/auth/v1/token?grant_type=refresh_token'), headers: _h(false), body: jsonEncode({'refresh_token': p.getString('sb_rt')})).timeout(const Duration(seconds: 20));
-      if (r.statusCode == 200) { _save(p, jsonDecode(r.body)); return true; }
+      final r = await http.post(Uri.parse('$_sbUrl/auth/v1/token?grant_type=refresh_token'), headers: _h(false), body: jsonEncode({'refresh_token': await _rtGet(p)})).timeout(const Duration(seconds: 20));
+      if (r.statusCode == 200) { await _save(p, jsonDecode(r.body)); return true; }
     } catch (e, st) { Health.log(e, st); }
     return false;
   }
@@ -203,19 +242,34 @@ class Sb {
     if (e2 == null) await p.setString('acct_email', email);
     return e2;
   }
+  /// After signing in on a fresh install: bring back nickname and country from the account's profile.
+  static Future<bool> restoreProfile() async {
+    try {
+      await signIn();
+      final r = await get('profiles?select=nick,cc&id=eq.$uid') as List;
+      if (r.isEmpty) return false;
+      final nick = (r.first['nick'] ?? '').toString(), cc = (r.first['cc'] ?? '').toString();
+      if (nick.length < 2) return false;
+      Passport.nickname = nick;
+      if (cc.length == 2) Passport.country = cc;
+      final p = await SharedPreferences.getInstance();
+      await p.setString('b_nick', nick); await p.setBool('b_age', true);
+      return Passport.country.length == 2;
+    } catch (e, st) { Health.log(e, st); return false; }
+  }
   static Future<void> signOut() async {
     final p = await SharedPreferences.getInstance();
     try { await http.post(Uri.parse('$_sbUrl/auth/v1/logout'), headers: _h()).timeout(const Duration(seconds: 10)); } catch (e, st) { Health.log(e, st); }
     _token = null; uid = null; _tokAt = null;
-    await p.remove('sb_rt'); await p.remove('acct_email'); await p.remove('auth_done');
+    await _rtClear(p); await p.remove('acct_email'); await p.remove('auth_done');
   }
 
-  static void _save(SharedPreferences p, dynamic j) {
+  static Future<void> _save(SharedPreferences p, dynamic j) async {
     _tokAt = DateTime.now();
     _token = j['access_token'] as String?;
     uid = (j['user'] ?? {})['id'] as String?;
     final rt = j['refresh_token'] as String?;
-    if (rt != null) p.setString('sb_rt', rt);
+    if (rt != null) await _rtSet(p, rt);
   }
 
   static Future<dynamic> get(String path) async {

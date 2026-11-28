@@ -12,13 +12,22 @@ enum _Mode { signIn, signUp, forgot, verify }
 /// Shown after the splash. Email + password accounts (Supabase Auth). Guest mode keeps working.
 class AuthPage extends StatefulWidget {
   final Widget next;
-  const AuthPage({super.key, required this.next});
+  /// Open on the create-account tab instead of sign-in.
+  final bool startSignUp;
+  /// Opened from the first screen: after success restore the nickname and country from the account and open Home as the root.
+  final bool fromFirstRun;
+  /// Shown on top (for example when the saved session expired).
+  final String? notice;
+  const AuthPage({super.key, required this.next, this.startSignUp = false, this.fromFirstRun = false, this.notice});
   @override
   State<AuthPage> createState() => _AuthPageState();
 }
 
 class _AuthPageState extends State<AuthPage> {
-  _Mode mode = _Mode.signIn;
+  late _Mode mode = widget.startSignUp ? _Mode.signUp : _Mode.signIn;
+  bool keep = true;
+  @override
+  void initState() { super.initState(); if (widget.notice != null) info = widget.notice; }
   final email = TextEditingController(), pw = TextEditingController(), code = TextEditingController();
   bool busy = false, codeSent = false, show = false;
   String? error, info;
@@ -26,6 +35,17 @@ class _AuthPageState extends State<AuthPage> {
   Future<void> _done() async {
     final p = await SharedPreferences.getInstance();
     await p.setBool('auth_done', true);
+    if (widget.fromFirstRun) {
+      if (mode == _Mode.signIn) {
+        final ok = await Sb.restoreProfile();
+        if (!mounted) return;
+        if (!ok) { setState(() { busy = false; error = L('Signed in, but this account has no saved nickname or country yet. Go back, choose them, and create the passport.'); }); return; }
+        await p.setBool('onboarded', true);
+      }
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(niloRoute(widget.next), (_) => false);
+      return;
+    }
     if (!mounted) return;
     Navigator.of(context).pushReplacement(niloRoute(widget.next));
   }
@@ -37,6 +57,7 @@ class _AuthPageState extends State<AuthPage> {
     final e = email.text.trim();
     if (!_emailOk) { setState(() => error = 'Enter a valid email • اكتب إيميل صحيح'); return; }
     setState(() => busy = true);
+    (await SharedPreferences.getInstance()).setBool('keep_signed', keep);
     String? r;
     if (mode == _Mode.signIn) {
       if (pw.text.isEmpty) { setState(() { busy = false; error = 'Enter your password • اكتب كلمة السر'; }); return; }
@@ -132,6 +153,11 @@ class _AuthPageState extends State<AuthPage> {
               decoration: InputDecoration(labelText: mode == _Mode.forgot ? 'New password • كلمة سر جديدة' : 'Password • كلمة السر', border: const OutlineInputBorder(), suffixIcon: IconButton(icon: Icon(show ? Icons.visibility_off : Icons.visibility), onPressed: () => setState(() => show = !show))),
             ),
           ],
+          if (mode == _Mode.signIn || mode == _Mode.signUp) CheckboxListTile(
+            value: keep, onChanged: (v) => setState(() => keep = v ?? true), dense: true, contentPadding: EdgeInsets.zero, controlAffinity: ListTileControlAffinity.leading,
+            title: Text(L('Keep me signed in • خليني مسجل دخول'), style: const TextStyle(fontSize: 13)),
+            subtitle: Text(L('Stored encrypted on this phone. Turn off on a shared phone.'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
+          ),
           if (error != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(error!, style: const TextStyle(color: Colors.orangeAccent))),
           if (info != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text(info!, style: const TextStyle(color: Colors.white70))),
           const SizedBox(height: 14),
