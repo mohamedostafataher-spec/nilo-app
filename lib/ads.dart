@@ -10,8 +10,19 @@ import 'i18n.dart';
 /// shown inside the Store page: one opt-in rewarded ad the user taps, and one
 /// small native ad. Never on app open, never during play, never a popup.
 class Ads {
-  static const rewardedId = 'ca-app-pub-4446395628942302/8607240916';
-  static const nativeId = 'ca-app-pub-4446395628942302/7645513031';
+  /// Config slots. Keep false for releases: real ids below. Set true ONLY for a private debug build (Google's test units, never shipped).
+  /// The interstitial slot is empty until the real unit id is filled in, so no interstitial is shown before that.
+  static const useTestUnits = false;
+  static const _realRewarded = 'ca-app-pub-4446395628942302/8607240916';
+  static const _realNative = 'ca-app-pub-4446395628942302/7645513031';
+  static const _realInterstitial = ''; // not created yet: no interstitial is shown until this is filled in
+  static const _testRewarded = 'ca-app-pub-3940256099942544/5224354917';
+  static const _testNative = 'ca-app-pub-3940256099942544/2247696110';
+  static const _testInterstitial = 'ca-app-pub-3940256099942544/1033173712';
+  static String get rewardedId => useTestUnits ? _testRewarded : _realRewarded;
+  static String get nativeId => useTestUnits ? _testNative : _realNative;
+  static String get interstitialId => useTestUnits ? _testInterstitial : _realInterstitial;
+  static const interMinGapMin = 30, interDailyCap = 4;
   static const dailyCap = 5; // rewarded ads per day
   static const rewardReeds = 5;
   static bool _init = false;
@@ -45,7 +56,7 @@ class Ads {
   }
 
   /// Loads and shows a rewarded ad. Returns true if Reeds were granted.
-  static Future<String> watchRewarded() async {
+  static Future<String> watchRewarded({bool reeds = true, void Function()? onReward}) async {
     await init();
     if (await usedToday() >= dailyCap) return 'cap';
     final done = Completer<String>();
@@ -59,12 +70,54 @@ class Ads {
             onAdDismissedFullScreenContent: (a) { a.dispose(); if (!done.isCompleted) done.complete(earned ? 'ok' : 'skipped'); },
             onAdFailedToShowFullScreenContent: (a, e) { a.dispose(); if (!done.isCompleted) done.complete('none'); },
           );
-          ad.show(onUserEarnedReward: (_, __) async { earned = true; Passport.addReeds(rewardReeds); await _count(); });
+          ad.show(onUserEarnedReward: (_, __) async { earned = true; if (reeds) Passport.addReeds(rewardReeds); onReward?.call(); await _count(); });
         },
         onAdFailedToLoad: (e) { if (!done.isCompleted) done.complete('none'); },
       ),
     );
     return done.future.timeout(const Duration(seconds: 45), onTimeout: () => 'none');
+  }
+
+  // ---- Interstitial: only after the user sent a papyrus, at most 1 per 30 min and 4 per day, never if ads are turned off. ----
+  static InterstitialAd? _inter;
+  static bool _interLoading = false;
+
+  static Future<void> preloadInterstitial() async {
+    if (_inter != null || _interLoading || interstitialId.isEmpty) return;
+    final p = await SharedPreferences.getInstance();
+    if (p.getBool('ads_off') ?? false) return;
+    _interLoading = true;
+    await init();
+    InterstitialAd.load(
+      adUnitId: interstitialId,
+      request: _req,
+      adLoadCallback: InterstitialAdLoadCallback(
+        onAdLoaded: (ad) { _inter = ad; _interLoading = false; },
+        onAdFailedToLoad: (e) { _interLoading = false; },
+      ),
+    );
+  }
+
+  static Future<void> maybeInterstitialAfterSend() async {
+    try {
+      final ad = _inter;
+      if (ad == null) return;
+      final p = await SharedPreferences.getInstance();
+      if (p.getBool('ads_off') ?? false) return;
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final last = p.getInt('ia_last') ?? 0;
+      final n = p.getString('ia_day') == _today() ? (p.getInt('ia_n') ?? 0) : 0;
+      if (now - last < interMinGapMin * 60000 || n >= interDailyCap) return;
+      await p.setInt('ia_last', now);
+      await p.setString('ia_day', _today());
+      await p.setInt('ia_n', n + 1);
+      _inter = null;
+      ad.fullScreenContentCallback = FullScreenContentCallback(
+        onAdDismissedFullScreenContent: (a) { a.dispose(); preloadInterstitial(); },
+        onAdFailedToShowFullScreenContent: (a, e) { a.dispose(); },
+      );
+      await ad.show();
+    } catch (e, st) { Health.log(e, st); }
   }
 }
 

@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'i18n.dart';
 import 'sfx.dart';
+import 'unlocks.dart';
 
 /// A papyrus arrives sealed. Tap the wax seal: it cracks (sound and animation), the scroll unrolls, then the thread opens.
 class SealPage extends StatefulWidget {
@@ -14,6 +15,9 @@ class SealPage extends StatefulWidget {
 class _SealPageState extends State<SealPage> with SingleTickerProviderStateMixin {
   late final AnimationController _a = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
   bool broken = false;
+  Color wax = const Color(0xFFB02A1E);
+  @override
+  void initState() { super.initState(); Unlocks.sealColor().then((c) { if (mounted) setState(() => wax = c); }); }
 
   @override
   void dispose() { _a.dispose(); super.dispose(); }
@@ -67,7 +71,7 @@ class _SealPageState extends State<SealPage> with SingleTickerProviderStateMixin
 
   Widget _half(bool left) => ClipRect(child: Align(alignment: left ? Alignment.centerLeft : Alignment.centerRight, widthFactor: 0.5, child: Container(
     width: 64, height: 64,
-    decoration: const BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [Color(0xFFD94B3D), Color(0xFF8E1E14)])),
+    decoration: BoxDecoration(shape: BoxShape.circle, gradient: RadialGradient(colors: [Color.lerp(wax, Colors.white, 0.25)!, wax])),
     child: const Center(child: Text('𓂀', style: TextStyle(fontSize: 30, color: Color(0xFF5A0E08)))),
   )));
 }

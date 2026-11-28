@@ -1,6 +1,7 @@
 import 'i18n.dart';
 import 'package:flutter/material.dart';
 import 'ads.dart';
+import 'unlocks.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
 import 'world.dart' show Passport;
@@ -92,6 +93,7 @@ class _StorePageState extends State<StorePage> {
             ),
           ]),
         ),
+        if (!_adsOff) const RewardSection(),
         if (!_adsOff) const NativeAdTile(),
         for (final it in _items)
           Container(

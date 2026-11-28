@@ -346,6 +346,7 @@ class Passport {
   static int get catchesLeft { _refill(); return _p.getInt('w_catch') ?? 10; }
   static bool useInk() { if (ink <= 0) return false; _p.setInt('w_ink', ink - 1); return true; }
   static void addInk(int n) { _p.setInt('w_ink', ink + n); }
+  static void addCatch(int n) { _p.setInt('w_catch', catchesLeft + n); }
   static bool useCatch() { if (catchesLeft <= 0) return false; _p.setInt('w_catch', catchesLeft - 1); return true; }
   static bool get puzzleDone => _p.getString('w_puz') == _today();
   static void puzzleSolved() { _p.setString('w_puz', _today()); addXp(15); addReeds(5); addInk(3); addStamp('puzzle-${_today()}'); }

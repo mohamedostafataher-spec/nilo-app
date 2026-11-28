@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'health.dart';
 import 'i18n.dart';
+import 'unlocks.dart';
 import 'world.dart' show Passport;
 
 /// Letter-by-letter spelling of a Latin nickname in other scripts. Sound-alike, NOT a real translation or transliteration standard.
@@ -43,6 +44,9 @@ class NameCardPage extends StatefulWidget {
 
 class _NameCardPageState extends State<NameCardPage> {
   final key = GlobalKey();
+  Color frame = const Color(0xFF7A5A1E);
+  @override
+  void initState() { super.initState(); Unlocks.frameColor().then((c) { if (mounted) setState(() => frame = c); }); }
   late final TextEditingController c = TextEditingController(text: _latin(Passport.nickname));
   static String _latin(String s) => s.toLowerCase().replaceAll(RegExp(r'[^a-z ]'), '').trim();
 
@@ -78,7 +82,7 @@ class _NameCardPageState extends State<NameCardPage> {
           key: key,
           child: Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(color: const Color(0xFFE8D5A3), borderRadius: BorderRadius.circular(8), border: Border.all(color: const Color(0xFF7A5A1E), width: 3)),
+            decoration: BoxDecoration(color: const Color(0xFFE8D5A3), borderRadius: BorderRadius.circular(8), border: Border.all(color: frame, width: 6)),
             child: Column(children: [
               const Text('𓂀', style: TextStyle(fontSize: 30, color: Color(0xFF7A5A1E))),
               _row('HIEROGLYPHS (sound-alike)', spell(n, _hiero), size: 34),

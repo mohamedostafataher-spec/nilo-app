@@ -1,6 +1,7 @@
 import 'gallery.dart';
 import 'hello.dart';
 import 'seal.dart';
+import 'ads.dart' show Ads;
 import 'gender.dart';
 import 'friends.dart' show DmPage;
 import 'journey.dart';
@@ -548,6 +549,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
+    Ads.preloadInterstitial();
     Sb.gateOpen(context);
     c.addListener(() => SharedPreferences.getInstance().then((p) => c.text.isEmpty ? p.remove('draft_throw') : p.setString('draft_throw', c.text)));
     SharedPreferences.getInstance().then((p) async {
@@ -641,7 +643,7 @@ class _ThrowPageState extends State<ThrowPage> with SingleTickerProviderStateMix
     return Scaffold(
       backgroundColor: kBg,
       body: flying
-          ? SendSequence(onDone: () { if (mounted) Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PapyrusTripPage())); })
+          ? SendSequence(onDone: () { if (mounted) { Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const PapyrusTripPage())); Ads.maybeInterstitialAfterSend(); } })
           : SafeArea(
         child: Stack(children: [
           Opacity(
