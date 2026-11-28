@@ -7,6 +7,7 @@ import 'i18n.dart';
 import 'main.dart';
 import 'screens.dart' show toast;
 import 'world.dart' show Passport, kWorld;
+import 'vr.dart' show VrPage;
 
 /// My Home: your own house and garden, drawn on the phone. Look depends on your home country.
 /// Slots hold items you unlock with Reeds. Your focus palms and stamps show up here too.
@@ -150,6 +151,13 @@ class _MyHomePageState extends State<MyHomePage> {
               ]);
             }),
           ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          style: FilledButton.styleFrom(backgroundColor: kGreen, foregroundColor: kBg, padding: const EdgeInsets.symmetric(vertical: 14)),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => VrPage(scene: 'myroom', title: L('My room • أوضتي')))),
+          icon: const Icon(Icons.meeting_room),
+          label: Text(L('Walk inside your room • ادخل أوضتك'), style: const TextStyle(fontWeight: FontWeight.w800)),
         ),
         const SizedBox(height: 12),
         const QuestsCard(),
