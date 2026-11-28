@@ -354,6 +354,9 @@ const B=(w,h,d,mat,x,y,z)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),
 const facade=(c)=>{const t=cv0(128,128,(g,w,h)=>{g.fillStyle=c;g.fillRect(0,0,w,h);for(let r=0;r<3;r++)for(let k=0;k<3;k++){const x=10+k*40,y=10+r*40;g.fillStyle='#34414f';g.fillRect(x,y,20,26);g.fillStyle='#b9a98c';g.fillRect(x-3,y+26,26,4)}});return t};
 function city(x0,x1,z0,z1,n,hmin,hmax){const cs=['#d9c7a3','#cdb99a','#e2d4b6','#c9b08a','#bfae95'];const T=cs.map(c=>{const t=facade(c);return t});for(let i=0;i<n;i++){const w=14+r2()*16,d=14+r2()*16,h=hmin+r2()*(hmax-hmin);const t=T[i%5].clone();t.needsUpdate=true;t.repeat.set(w/30,h/30);const m=new THREE.MeshLambertMaterial({map:t});B(w,h,d,m,x0+r2()*(x1-x0),h/2,z0+r2()*(z1-z0))}}
 function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.CylinderGeometry(.35,.5,h,6),new THREE.MeshLambertMaterial({color:0x6b5438}));tr.position.set(x,y+h/2,z);tr.rotation.z=(r2()-.5)*.2;S.add(tr);for(let i=0;i<8;i++){const l=new THREE.Mesh(new THREE.BoxGeometry(7,.15,1.1),new THREE.MeshLambertMaterial({color:0x4a7d34}));l.position.set(x,y+h,z);l.rotation.y=i*Math.PI/4;l.rotation.z=-.35;l.translateX(3.2);S.add(l)}}
+ const Mx=(c)=>new THREE.MeshLambertMaterial({color:c});
+ const sol=(x,z,w,d)=>{COLS.push([x-w/2,x+w/2,z+S.position.z-d/2,z+S.position.z+d/2])};
+ const tm=(k,w,h,tile,col)=>{if(!TEXD[k])return Mx(col||0xcccccc);const rx=Math.max(.5,w/(tile||10)),ry=Math.max(.5,h/(tile||10));const m={map:ext(k,[rx,ry]),shininess:5};if(TEXD[k+'N'])m.normalMap=ext(k+'N',[rx,ry]);if(col)m.color=col;return new THREE.MeshPhongMaterial(m)};
  if(Q=='qaitbay'){S.position.z=250;LIMIT=190;
  sea('#1d6f95');
  const lm=new THREE.MeshLambertMaterial({color:0xc9b48c});const stm=new THREE.MeshLambertMaterial({map:stone('#c8b48a')});stm.userData.pbr='pyr';
@@ -401,13 +404,21 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  for(let i=0;i<40;i++)palm(-1300+r2()*2400,150+r2()*80,1);
  }
  if(Q=='citadel'){S.position.set(0,0,-60);LIMIT=200;
- const st=new THREE.MeshLambertMaterial({color:0xcdbd98}),st2=new THREE.MeshLambertMaterial({color:0xe6e1d2}),dm=new THREE.MeshLambertMaterial({color:0x9aa3a6});
+ const st=tm('wS',60,30,16,0xe0d0a8),st2=tm('wW',60,30,14,0xe8e3d4),dm=new THREE.MeshLambertMaterial({color:0x9aa3a6});
  B(1800,2,1800,new THREE.MeshLambertMaterial({color:0xb7a77f}),0,-1,0);
  // enclosure walls with towers
- [[0,-150,300,0],[0,150,300,0],[-150,0,300,1],[150,0,300,1]].forEach(([x,z,l,v])=>{const w=v?B(8,26,l,st,x,13,z):B(l,26,8,st,x,13,z)});
+ [[0,-150,300,0],[0,150,300,0],[-150,0,300,1],[150,0,300,1]].forEach(([x,z,l,v])=>{const w=v?B(8,26,l,st,x,13,z):B(l,26,8,st,x,13,z);if(v)sol(x,z,9,l);else if(z>0){sol(-90,z,120,9);sol(90,z,120,9)}else sol(x,z,l,9)});
  [[-150,-150],[150,-150],[-150,150],[150,150],[0,150]].forEach(([x,z])=>{const t=new THREE.Mesh(new THREE.CylinderGeometry(14,16,36,16),st);t.position.set(x,18,z);t.castShadow=true;S.add(t);const c=new THREE.Mesh(new THREE.ConeGeometry(15,8,16),st);c.position.set(x,40,z);S.add(c)});
  // Muhammad Ali mosque: courtyard, central dome, 4 half domes, 2 pencil minarets
- B(70,.4,70,st2,0,.2,-60);B(52,22,52,st2,0,13,-60);
+ B(70,.04,70,tm('fM',70,70,10),0,.03,-60);
+ // mosque hall: hollow, doorway on the courtyard side (south), carpet, piers, lamps
+ B(52,22,2,st2,0,11,-86);B(2,22,52,st2,-26,11,-60);B(2,22,52,st2,26,11,-60);B(20,22,2,st2,-16,11,-34);B(20,22,2,st2,16,11,-34);B(12,8,2,st2,0,18,-34);
+ sol(0,-86,52,2.4);sol(-26,-60,2.4,52);sol(26,-60,2.4,52);sol(-16,-34,20,2.4);sol(16,-34,20,2.4);
+ B(48,.04,48,new THREE.MeshLambertMaterial({color:0x8a1f2b}),0,.06,-60);
+ [[-12,-12],[12,-12],[-12,12],[12,12]].forEach(([a,b])=>{B(5,22,5,st2,a,11,-60+b);sol(a,-60+b,5,5)});
+ for(let i=0;i<8;i++){const a=i/8*6.28,l=new THREE.Mesh(new THREE.SphereGeometry(.7,10,8),new THREE.MeshBasicMaterial({color:0xffe2a8}));l.position.set(Math.cos(a)*8,9,-60+Math.sin(a)*8);S.add(l)}
+ B(52,1.2,52,st2,0,22.6,-60);
+
  const dome=new THREE.Mesh(new THREE.SphereGeometry(20,24,12,0,Math.PI*2,0,Math.PI/2),dm);dome.position.set(0,24,-60);dome.castShadow=true;S.add(dome);
  [[-24,-60],[24,-60],[0,-84],[0,-36]].forEach(([x,z])=>{const d=new THREE.Mesh(new THREE.SphereGeometry(10,16,8,0,Math.PI*2,0,Math.PI/2),dm);d.position.set(x,24,z);S.add(d)});
  [[-26,-12],[26,-12]].forEach(([x,z])=>{const m=new THREE.Mesh(new THREE.CylinderGeometry(2.4,3.2,80,12),st2);m.position.set(x,40,z);m.castShadow=true;S.add(m);const g=new THREE.Mesh(new THREE.CylinderGeometry(4,4,2,12),st2);g.position.set(x,62,z);S.add(g);const c=new THREE.Mesh(new THREE.ConeGeometry(2.8,16,12),dm);c.position.set(x,88,z);S.add(c)});
@@ -446,9 +457,6 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  B(1600,1.5,30,new THREE.MeshLambertMaterial({color:0x8e8b84}),0,.2,-545);
  city(-700,700,60,260,60,25,60);
  }
- const Mx=(c)=>new THREE.MeshLambertMaterial({color:c});
- const sol=(x,z,w,d)=>{COLS.push([x-w/2,x+w/2,z+S.position.z-d/2,z+S.position.z+d/2])};
- const tm=(k,w,h,tile,col)=>{if(!TEXD[k])return Mx(col||0xcccccc);const rx=Math.max(.5,w/(tile||10)),ry=Math.max(.5,h/(tile||10));const m={map:ext(k,[rx,ry]),shininess:5};if(TEXD[k+'N'])m.normalMap=ext(k+'N',[rx,ry]);if(col)m.color=col;return new THREE.MeshPhongMaterial(m)};
  if(Q=='philae'){S.position.z=250;LIMIT=150;
  sea('#2a7a8c',-2);
  const sm=tm('wS',40,30,14,0xe6d6ac),sm2=tm('wS',20,20,10,0xd9c590),gm2=new THREE.MeshLambertMaterial({color:0x7d6a50});
