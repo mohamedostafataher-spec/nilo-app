@@ -78,9 +78,10 @@ print('screen', W, H, flush=True)
 time.sleep(40)
 adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
 adb('shell', 'monkey', '-p', 'eg.nilo.nilo_app', '-c', 'android.intent.category.LAUNCHER', '1')
-time.sleep(10); anr(); step('first_screen')
+time.sleep(10); anr(); step('onboarding_translate')
+tap_text('Skip'); time.sleep(4); anr(); step('entry')
 tap_class('EditText'); time.sleep(1); adb('shell', 'input', 'text', 'Traveler'); time.sleep(1); hide_kb()
-tap_text('I am 18'); time.sleep(1); step('first_filled')
+tap_text('I am 18'); time.sleep(1); step('entry_filled')
 tap_text('Continue as guest'); time.sleep(6); anr(); step('after_guest')
 for _ in range(4):
     if not tap_any('Skip', 'Got it', 'Not now', 'Later', 'Close'): break
