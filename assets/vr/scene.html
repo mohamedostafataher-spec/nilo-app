@@ -211,6 +211,7 @@ function buildGeneric(){
   lab=50;ly=15;dist=120;r0=240;h0=70;LIMIT=140;break}
  case 'pagoda':case 'fuji':{
   const red=MT(0xb3262c),roof=MT(0x3a3a46),wd=MT(KC);
+  COLS.push([-13,13,-13,13]);
   for(let i=0;i<5;i++){const w=26-i*4;bx(w,9,w,0,i*13,0,wd);const rr=cone((w+10)/1.35,5,0,i*13+9,0,roof,4);rr.rotation.y=Math.PI/4;rr.scale.y=.9}
   cyl(.5,.2,14,0,66,0,MT(0xd9a441),6);
   const torii=(z)=>{[-6,6].forEach(x=>cyl(1.1,1,16,x,0,z,red,10));bx(18,1.6,2.6,0,16,z,red);bx(22,1.4,3,0,18.5,z,dark);bx(16,1.2,1.4,0,13,z,red)};torii(50);torii(70);
@@ -226,6 +227,7 @@ function buildGeneric(){
   const mo=new THREE.Mesh(new THREE.RingGeometry(58,72,40),new THREE.MeshLambertMaterial({color:0x2e8fc4}));mo.rotation.x=-Math.PI/2;mo.position.y=.15;S.add(mo);bx(14,.6,16,0,0,66,MT(0x7a5a3a));
   lab=95;ly=30;dist=125;r0=270;h0=100;for(let i=0;i<12;i++){tree(-120+i*22,110);tree(-120+i*22,-110)}break}
  case 'cathedral':{
+  COLS.push([-15,15,-45,45],[-35,35,-19,3],[-18,-4,45,59],[4,18,45,59]);
   const m=W,roof=MT(0x6a7580);bx(30,26,90,0,0,0,m);const rf=ADD(new THREE.CylinderGeometry(19,19,90,3),roof,0,26,0);rf.rotation.set(Math.PI/2,0,Math.PI/2*0);rf.rotation.set(Math.PI/2,Math.PI/2,0);rf.rotation.set(0,0,0);rf.rotation.x=Math.PI/2;rf.rotation.z=0;rf.position.y=27;rf.scale.set(1,1,.45);
   bx(70,24,22,0,0,-8,m);[-1,1].forEach(s=>{bx(14,64,14,s*11,0,52,m);cone(10.5,34,s*11,64,52,roof,4).rotation.y=Math.PI/4;bx(6,12,.6,s*11,34,59.4,dark)});
   cone(5,50,0,34,-8,roof,6);ADD(new THREE.CircleGeometry(6,24),MT(0x4a6fb3),0,36,60.1);
