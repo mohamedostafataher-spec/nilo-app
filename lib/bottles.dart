@@ -174,6 +174,7 @@ class Sb {
   /// Deletes the account and everything tied to it on the server, then clears this phone.
   static Future<String?> deleteAccount() async {
     try {
+      await wipeMyFiles();
       await rpc('delete_my_account');
       await signOut();
       final p = await SharedPreferences.getInstance();
@@ -238,6 +239,22 @@ class Sb {
     return r.statusCode < 300;
   }
 
+  /// Deletes every file this user stored (stories and gallery) through the Storage API, so nothing is left behind when the account goes.
+  static Future<void> wipeMyFiles() async {
+    final u = uid;
+    if (u == null) return;
+    for (final b in ['stories', 'gallery']) {
+      try {
+        final r = await http.post(Uri.parse('$_sbUrl/storage/v1/object/list/$b'), headers: _h(), body: jsonEncode({'prefix': u, 'limit': 200})).timeout(const Duration(seconds: 20));
+        if (r.statusCode != 200) continue;
+        for (final o in (jsonDecode(r.body) as List)) {
+          final n = (o as Map)['name']?.toString();
+          if (n == null || n.isEmpty) continue;
+          await http.delete(Uri.parse('$_sbUrl/storage/v1/object/$b/$u/$n'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20));
+        }
+      } catch (_) {}
+    }
+  }
   static Future<void> galRemove(String path) async {
     try { await http.delete(Uri.parse('$_sbUrl/storage/v1/object/gallery/$path'), headers: {'apikey': _sbKey, 'Authorization': 'Bearer $_token'}).timeout(const Duration(seconds: 20)); } catch (_) {}
   }
