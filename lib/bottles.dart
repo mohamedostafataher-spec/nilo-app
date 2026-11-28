@@ -12,6 +12,7 @@ import 'chatlayer.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'home.dart' show TouristHome;
 import 'i18n.dart';
+import 'outing.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -1002,6 +1003,18 @@ class _ThreadPageState extends State<ThreadPage> {
     }
   }
 
+  Future<void> _outing() async {
+    if (await Sb.needAccount(context)) return;
+    final pick = await Navigator.push<Map>(context, MaterialPageRoute(builder: (_) => const OutingPicker()));
+    if (pick == null || !mounted) return;
+    try {
+      await Sb.post('replies', {'bottle_id': bid, 'author': Sb.uid, 'body': outingText(pick, newRoomCode())});
+      await _load();
+    } catch (e) {
+      if (mounted) toast(context, L('Could not send. Check your connection and try again.'));
+    }
+  }
+
   Future<void> _translate(String key, String text) async {
     final r = await trText(text, 'auto', widget.lang);
     if (!mounted) return;
@@ -1069,7 +1082,7 @@ class _ThreadPageState extends State<ThreadPage> {
               const SizedBox(width: 6),
               Flexible(child: Text(((_prof['nick'] ?? '').toString().isEmpty ? L('Papyrus friend') : _prof['nick'].toString()) + ((_prof['gender'] ?? '').toString().isEmpty ? '' : ' ' + Gender.icon(_prof['gender'].toString())), overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: kGreen))),
             ]))),
-            if (text.startsWith('🎭') && text.split('\n').length == 4) _truthCard(key, text, mine) else Text(text),
+            if (text.startsWith('🎭') && text.split('\n').length == 4) _truthCard(key, text, mine) else if (parseOuting(text) != null) OutingCard(body: text, mine: mine) else Text(text),
             if (text.startsWith('🔤 ') && text.contains(' = ') && !mine) Align(alignment: AlignmentDirectional.centerStart, child: TextButton.icon(
               onPressed: () async { final i = text.indexOf(' = '); await saveWord(text.substring(3, i), text.substring(i + 3)); if (mounted) toast(context, L('Saved to your word book.')); },
               icon: const Icon(Icons.bookmark_add_outlined, size: 16), label: Text(L('Save to my word book')))),
@@ -1117,6 +1130,7 @@ class _ThreadPageState extends State<ThreadPage> {
             padding: const EdgeInsets.all(8),
             child: Row(children: [
               Expanded(child: TextField(controller: c, maxLength: 400, decoration: InputDecoration(hintText: L('Write a reply (text only, no links or numbers)'), counterText: '', border: OutlineInputBorder()))),
+              IconButton(icon: const Icon(Icons.directions_walk), tooltip: L('Let\'s go out • يلا نخرج'), onPressed: _outing),
               IconButton(icon: const Text('🔤', style: TextStyle(fontSize: 22)), tooltip: L('Word swap'), onPressed: _wordSwap),
               IconButton(icon: const Icon(Icons.send, color: kGreen), onPressed: _send),
             ]),

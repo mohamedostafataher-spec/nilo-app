@@ -71,7 +71,9 @@ String vrColor(String cc) {
 class VrPage extends StatefulWidget {
   final String scene, title, biome, color;
   final double? lat, lon;
-  const VrPage({super.key, required this.scene, required this.title, this.biome = 'green', this.color = 'd8c9a8', this.lat, this.lon});
+  /// Private room code from an outing invite (overrides the saved private room for this visit only).
+  final String room;
+  const VrPage({super.key, required this.scene, required this.title, this.biome = 'green', this.color = 'd8c9a8', this.lat, this.lon, this.room = ''});
   @override
   State<VrPage> createState() => _VrPageState();
 }
@@ -238,7 +240,7 @@ class _VrPageState extends State<VrPage> {
       return jsonEncode({
         'url': Sb.baseUrl, 'key': Sb.anonKey, 'uid': Sb.uid, 'nick': sp.getString('b_nick') ?? '', 'cc': Passport.country,
         'room': () {
-          final pc = (sp.getString('vr_room') ?? '').toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+          final pc = (widget.room.isNotEmpty ? widget.room : (sp.getString('vr_room') ?? '')).toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
           final base = widget.scene == 'osm' ? 'osm-${widget.lat!.toStringAsFixed(3)}_${widget.lon!.toStringAsFixed(3)}' : widget.scene;
           return pc.length >= 4 ? 'pr$pc-$base' : (widget.scene == 'osm' ? base : '');
         }(),

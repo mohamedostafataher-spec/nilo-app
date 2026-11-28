@@ -9,6 +9,7 @@ import 'chatlayer.dart';
 import 'net.dart';
 import 'circles.dart' show niloJoined, niloJoinGate;
 import 'i18n.dart';
+import 'outing.dart';
 import 'main.dart';
 import 'profile.dart' show AvatarView;
 import 'screens.dart' show toast;
@@ -258,6 +259,18 @@ class _DmPageState extends State<DmPage> {
     if (mounted) setState(() => sending = false);
   }
 
+  Future<void> _outing() async {
+    final pick = await Navigator.push<Map>(context, MaterialPageRoute(builder: (_) => const OutingPicker()));
+    if (pick == null || !mounted) return;
+    setState(() => sending = true);
+    try {
+      final room = newRoomCode();
+      final ok = await Sb.rpc('send_outing', {'p_uid': widget.uid, 'p_name': pick['n'], 'p_lat': pick['lat'], 'p_lon': pick['lon'], 'p_room': room});
+      if (ok == true) { await _load(); } else if (mounted) { toast(context, 'Could not send. You must be friends, and not blocked.'); }
+    } catch (_) { if (mounted) toast(context, 'Could not send. Check your connection and try again.'); }
+    if (mounted) setState(() => sending = false);
+  }
+
   Future<void> _photo() async {
     setState(() => sending = true);
     final err = await DmMedia.pickAndSendPhoto(widget.uid);
@@ -317,7 +330,7 @@ class _DmPageState extends State<DmPage> {
                             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
                             decoration: BoxDecoration(color: mine ? const Color(0xFF1B5E4B) : const Color(0xFF12304D), borderRadius: BorderRadius.circular(12)),
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              if ((m['kind'] ?? 'text') == 'text') Text(m['body'].toString()) else DmMediaBubble(kind: m['kind'].toString(), path: (m['media_path'] ?? '').toString()),
+                              if ((m['kind'] ?? 'text') == 'text') Text(m['body'].toString()) else if (m['kind'] == 'outing') OutingCard(body: m['body'].toString(), mine: mine) else DmMediaBubble(kind: m['kind'].toString(), path: (m['media_path'] ?? '').toString()),
                               if (tr[id] != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(tr[id]!, style: const TextStyle(color: Colors.white70, fontSize: 13))),
                               Padding(padding: const EdgeInsets.only(top: 3), child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.end, children: [
                                 Text(_hm(m['created_at']?.toString()), style: const TextStyle(fontSize: 10, color: Colors.white54)),
@@ -334,6 +347,7 @@ class _DmPageState extends State<DmPage> {
               padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
               child: Row(children: [
                 Expanded(child: TextField(controller: c, maxLength: 500, minLines: 1, maxLines: 4, decoration: InputDecoration(counterText: '', hintText: L('Message • رسالة'), border: const OutlineInputBorder()))),
+                IconButton(icon: const Icon(Icons.directions_walk), tooltip: L('Let\'s go out • يلا نخرج'), onPressed: sending ? null : _outing),
                 IconButton(icon: const Icon(Icons.photo_outlined), tooltip: L('Photo • صورة'), onPressed: sending ? null : _photo),
                 DmVoiceButton(toUid: widget.uid, onSent: _load),
                 IconButton(icon: const Icon(Icons.send), onPressed: sending ? null : _send),
@@ -520,6 +534,17 @@ class _GroupChatPageState extends State<GroupChatPage> {
     if (mounted) setState(() => sending = false);
   }
 
+  Future<void> _outing() async {
+    final pick = await Navigator.push<Map>(context, MaterialPageRoute(builder: (_) => const OutingPicker()));
+    if (pick == null || !mounted) return;
+    setState(() => sending = true);
+    try {
+      final ok = await Sb.rpc('send_group_msg', {'p_grp': widget.id, 'p_body': outingText(pick, newRoomCode())});
+      if (ok == true) { await _load(); } else if (mounted) { toast(context, 'Could not send.'); }
+    } catch (_) { if (mounted) toast(context, 'Could not send. Check your connection and try again.'); }
+    if (mounted) setState(() => sending = false);
+  }
+
   Future<void> _menu(Map m, bool mine) async {
     final v = await showModalBottomSheet<String>(context: context, builder: (_) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
       ListTile(leading: const Icon(Icons.translate), title: Text(L('Translate • ترجم')), onTap: () => Navigator.pop(context, 'tr')),
@@ -574,7 +599,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
                             decoration: BoxDecoration(color: mine ? const Color(0xFF1B5E4B) : const Color(0xFF12304D), borderRadius: BorderRadius.circular(12)),
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               if (!mine) Text((m['nick'] ?? '').toString(), style: const TextStyle(fontSize: 11, color: Colors.white60, fontWeight: FontWeight.w700)),
-                              Text(m['body'].toString()),
+                              if (parseOuting(m['body'].toString()) != null) OutingCard(body: m['body'].toString(), mine: mine) else Text(m['body'].toString()),
                               if (tr[id] != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(tr[id]!, style: const TextStyle(color: Colors.white70, fontSize: 13))),
                               Padding(padding: const EdgeInsets.only(top: 3), child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.end, children: [
                                 Text(ChatLayer.hm(m['created_at']?.toString()), style: const TextStyle(fontSize: 10, color: Colors.white54)),
@@ -591,6 +616,7 @@ class _GroupChatPageState extends State<GroupChatPage> {
               padding: const EdgeInsets.fromLTRB(10, 4, 10, 8),
               child: Row(children: [
                 Expanded(child: TextField(controller: c, maxLength: 500, minLines: 1, maxLines: 4, decoration: InputDecoration(counterText: '', hintText: L('Message • رسالة'), border: const OutlineInputBorder()))),
+                IconButton(icon: const Icon(Icons.directions_walk), tooltip: L('Let\'s go out • يلا نخرج'), onPressed: sending ? null : _outing),
                 IconButton(icon: const Icon(Icons.send), onPressed: sending ? null : _send),
               ]),
             ),
