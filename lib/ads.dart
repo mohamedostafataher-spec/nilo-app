@@ -1,5 +1,7 @@
 import 'health.dart';
 import 'dart:async';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -22,8 +24,40 @@ class Ads {
   static String get rewardedId => useTestUnits ? _testRewarded : _realRewarded;
   static String get nativeId => useTestUnits ? _testNative : _realNative;
   static String get interstitialId => useTestUnits ? _testInterstitial : _realInterstitial;
-  static const interMinGapMin = 30, interDailyCap = 4;
-  static const dailyCap = 5; // rewarded ads per day
+  // Defaults; overridden by the remote config (nilo-dl/ads_config.json, a free static file) without an app update.
+  static int interMinGapMin = 30, interDailyCap = 4;
+  static bool interstitialOn = true, rewardedOn = true, nativeOn = true;
+  static const configUrl = 'https://mohamedostafataher-spec.github.io/nilo-dl/ads_config.json';
+
+  /// Pure rule, unit-tested: may an interstitial be shown now?
+  static bool interAllowed({required int nowMs, required int lastMs, required int shownToday, required int gapMin, required int dailyCap}) =>
+      shownToday < dailyCap && nowMs - lastMs >= gapMin * 60000;
+
+  static void applyConfig(Map c) {
+    int i(String k, int d, int lo, int hi) { final v = c[k]; return v is num ? v.toInt().clamp(lo, hi) : d; }
+    bool b(String k, bool d) { final v = c[k]; return v is bool ? v : d; }
+    interMinGapMin = i('inter_gap_min', 30, 5, 1440);
+    interDailyCap = i('inter_daily', 4, 0, 20);
+    dailyCap = i('rewarded_daily', 5, 0, 20);
+    interstitialOn = b('interstitial', true);
+    rewardedOn = b('rewarded', true);
+    nativeOn = b('native', true);
+  }
+
+  /// Reads the remote caps (cached 6 h). Any failure keeps the safe defaults above.
+  static Future<void> loadConfig() async {
+    try {
+      final p = await SharedPreferences.getInstance();
+      final at = p.getInt('adcfg_at') ?? 0;
+      String? raw = p.getString('adcfg');
+      if (raw == null || DateTime.now().millisecondsSinceEpoch - at > 6 * 3600 * 1000) {
+        final r = await http.get(Uri.parse(configUrl)).timeout(const Duration(seconds: 8));
+        if (r.statusCode == 200) { raw = utf8.decode(r.bodyBytes); await p.setString('adcfg', raw); await p.setInt('adcfg_at', DateTime.now().millisecondsSinceEpoch); }
+      }
+      if (raw != null) { final j = jsonDecode(raw); if (j is Map) applyConfig(j); }
+    } catch (e, st) { Health.log(e, st); }
+  }
+  static int dailyCap = 5; // rewarded ads per day (remote-configurable)
   static const rewardReeds = 5;
   static bool _init = false;
 
@@ -31,12 +65,29 @@ class Ads {
     if (_init) return;
     _init = true;
     try {
+      await loadConfig();
+      await _consent();
+      if (!await ConsentInformation.instance.canRequestAds()) { _init = false; return; }
       await MobileAds.instance.updateRequestConfiguration(RequestConfiguration(
         tagForChildDirectedTreatment: TagForChildDirectedTreatment.no,
         maxAdContentRating: MaxAdContentRating.pg,
       ));
       await MobileAds.instance.initialize();
     } catch (e, st) { Health.log(e, st); }
+  }
+
+  /// Google's consent form (UMP). Shown only where it is required (for example the EEA and UK), otherwise it does nothing.
+  static Future<void> _consent() async {
+    final c = Completer<void>();
+    ConsentInformation.instance.requestConsentInfoUpdate(
+      ConsentRequestParameters(),
+      () async {
+        try { await ConsentForm.loadAndShowConsentFormIfRequired((FormError? e) { if (e != null) Health.log(e.message, StackTrace.current); }); } catch (e, st) { Health.log(e, st); }
+        if (!c.isCompleted) c.complete();
+      },
+      (FormError e) { Health.log(e.message, StackTrace.current); if (!c.isCompleted) c.complete(); },
+    );
+    await c.future.timeout(const Duration(seconds: 25), onTimeout: () {});
   }
 
   static const _req = AdRequest(nonPersonalizedAds: true);
@@ -58,6 +109,7 @@ class Ads {
   /// Loads and shows a rewarded ad. Returns true if Reeds were granted.
   static Future<String> watchRewarded({bool reeds = true, void Function()? onReward}) async {
     await init();
+    if (!rewardedOn) return 'none';
     if (await usedToday() >= dailyCap) return 'cap';
     final done = Completer<String>();
     RewardedAd.load(
@@ -83,7 +135,7 @@ class Ads {
   static bool _interLoading = false;
 
   static Future<void> preloadInterstitial() async {
-    if (_inter != null || _interLoading || interstitialId.isEmpty) return;
+    if (_inter != null || _interLoading || interstitialId.isEmpty || !interstitialOn) return;
     final p = await SharedPreferences.getInstance();
     if (p.getBool('ads_off') ?? false) return;
     _interLoading = true;
@@ -107,7 +159,7 @@ class Ads {
       final now = DateTime.now().millisecondsSinceEpoch;
       final last = p.getInt('ia_last') ?? 0;
       final n = p.getString('ia_day') == _today() ? (p.getInt('ia_n') ?? 0) : 0;
-      if (now - last < interMinGapMin * 60000 || n >= interDailyCap) return;
+      if (!interAllowed(nowMs: now, lastMs: last, shownToday: n, gapMin: interMinGapMin, dailyCap: interDailyCap)) return;
       await p.setInt('ia_last', now);
       await p.setString('ia_day', _today());
       await p.setInt('ia_n', n + 1);
@@ -154,7 +206,7 @@ class _NativeAdTileState extends State<NativeAdTile> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_ok || _ad == null) return const SizedBox.shrink();
+    if (!Ads.nativeOn || !_ok || _ad == null) return const SizedBox.shrink();
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       height: 100,
