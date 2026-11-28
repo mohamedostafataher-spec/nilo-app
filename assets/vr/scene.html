@@ -428,7 +428,7 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  if(Q=='library'){S.position.z=300;LIMIT=230;
  sea('#1d6f95',-2);
  const plaza=cv0(256,256,(g,w,h)=>{g.fillStyle='#b9b2a2';g.fillRect(0,0,w,h);for(let y=0;y<h;y+=32)for(let x=0;x<w;x+=32){g.fillStyle=`rgba(${r2()<.5?'255,255,255':'60,55,45'},${r2()*.08})`;g.fillRect(x,y,32,32);g.strokeStyle='rgba(70,65,55,.3)';g.strokeRect(x,y,32,32)}});plaza.repeat.set(40,25);
- const pg=new THREE.Mesh(new THREE.PlaneGeometry(1600,1000),new THREE.MeshLambertMaterial({map:plaza}));pg.rotation.x=-Math.PI/2;pg.position.set(0,0,-300);pg.receiveShadow=true;S.add(pg);
+ const pg=new THREE.Mesh(new THREE.PlaneGeometry(1600,1000),tm('sF',1600,1000,12,0xd8d3c4));pg.rotation.x=-Math.PI/2;pg.position.set(0,0,-300);pg.receiveShadow=true;S.add(pg);
  // granite wall texture with carved letters
  const letters='ΑΒΓΔΩ ABCDEF ا ب ت ث ج ح خ د ר ש ת 字 あ ж ф ñ ß ø ś ī'.split(' ');
  const gr=cv0(512,128,(g,w,h)=>{g.fillStyle='#6d7176';g.fillRect(0,0,w,h);for(let i=0;i<2500;i++){g.fillStyle=`rgba(${r2()<.5?'210,210,215':'20,22,25'},${r2()*.25})`;g.fillRect(r2()*w,r2()*h,1+r2()*3,1+r2()*2)}g.font='bold 20px DejaVu Sans';for(let y=18;y<h;y+=24)for(let x=4;x<w;x+=24){g.fillStyle=`rgba(25,28,32,${.55+r2()*.3})`;g.fillText(letters[(r2()*letters.length)|0],x,y)}});gr.repeat.set(5,1);
@@ -449,7 +449,7 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  // plaza elements: reflecting pool, planetarium sphere, steps, palms
  const pool=B(120,.5,34,new THREE.MeshPhongMaterial({color:0x4b8aa0,specular:0xffffff,shininess:80}),-10,.25,-165);
  const sph=new THREE.Mesh(new THREE.SphereGeometry(13,32,20),new THREE.MeshPhongMaterial({color:0xbcc4c9,shininess:60}));sph.position.set(-110,13,-230);sph.castShadow=true;S.add(sph);
- B(34,2,34,new THREE.MeshLambertMaterial({color:0x9a9a92}),-110,1,-230);
+ B(34,2,34,new THREE.MeshLambertMaterial({color:0x9a9a92}),-110,1,-230);sol(-110,-230,28,28);
  B(40,6,20,new THREE.MeshLambertMaterial({color:0xc9c4b4}),90,3,-175);
  for(let i=0;i<30;i++)palm(-380+i*26,-110+r2()*20,0);
  B(1600,3,60,new THREE.MeshLambertMaterial({color:0xaaa08a}),0,-.5,-560);
