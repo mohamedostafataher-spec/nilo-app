@@ -39,13 +39,17 @@ Translation: the text you type or say is sent to online translation services to 
 
 Stories and papyri disappear from view after 24 hours and are deleted from storage afterwards. Content that gets reported is hidden. Do not post phone numbers, links or personal details.
 
-We do not sell data. There are no ads in this version. Nothing is sent to anyone automatically.
+We do not sell data. Nothing is sent to anyone automatically.
+
+Ads: Nilo shows optional rewarded ads, one native ad in the Store, and an occasional full-screen ad after you send a papyrus (Google AdMob). Where the law requires it (for example the EEA and UK) Google shows a consent form first. Ads are non-personalised. Google may process device identifiers such as the advertising ID to serve ads. You can hide the ads in the Store.
+
+Analytics: after the consent step, Nilo uses Firebase Analytics (Google) to count anonymous app events such as opens and ads watched, to improve the app. No message text, photos or nickname are sent to analytics.
 
 Age: Nilo social features are for people 18 or older. This is a self-declaration and we cannot verify it.
 
 Delete your data: write to us from Settings > Report a problem and give your nickname. Local data is removed by clearing the app data or uninstalling.
 
-This text is a plain-language draft, not legal advice. Last updated: 26 Nov 2026.''';
+This text is a plain-language draft, not legal advice. Last updated: 28 Nov 2026.''';
 
 const kTerms = '''Terms of Use • شروط الاستخدام
 

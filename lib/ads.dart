@@ -1,4 +1,5 @@
 import 'health.dart';
+import 'analytics.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -68,6 +69,7 @@ class Ads {
       await loadConfig();
       await _consent();
       if (!await ConsentInformation.instance.canRequestAds()) { _init = false; return; }
+      await Stats.start();
       await MobileAds.instance.updateRequestConfiguration(RequestConfiguration(
         tagForChildDirectedTreatment: TagForChildDirectedTreatment.no,
         maxAdContentRating: MaxAdContentRating.pg,
@@ -122,7 +124,7 @@ class Ads {
             onAdDismissedFullScreenContent: (a) { a.dispose(); if (!done.isCompleted) done.complete(earned ? 'ok' : 'skipped'); },
             onAdFailedToShowFullScreenContent: (a, e) { a.dispose(); if (!done.isCompleted) done.complete('none'); },
           );
-          ad.show(onUserEarnedReward: (_, __) async { earned = true; if (reeds) Passport.addReeds(rewardReeds); onReward?.call(); await _count(); });
+          ad.show(onUserEarnedReward: (_, __) async { earned = true; Stats.log('rewarded_earned'); if (reeds) Passport.addReeds(rewardReeds); onReward?.call(); await _count(); });
         },
         onAdFailedToLoad: (e) { if (!done.isCompleted) done.complete('none'); },
       ),
@@ -168,6 +170,7 @@ class Ads {
         onAdDismissedFullScreenContent: (a) { a.dispose(); preloadInterstitial(); },
         onAdFailedToShowFullScreenContent: (a, e) { a.dispose(); },
       );
+      Stats.log('interstitial_shown');
       await ad.show();
     } catch (e, st) { Health.log(e, st); }
   }

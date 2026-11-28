@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "129505300135",
+    "project_id": "nilo-b726c",
+    "storage_bucket": "nilo-b726c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129505300135:android:348b02e44d040ff061d582",
+        "android_client_info": {
+          "package_name": "eg.nilo.nilo_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAItn_OLWVpgVcieDNpwD5HzhFXvgOXN-w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
