@@ -17,7 +17,7 @@ class Ads {
   static const useTestUnits = false;
   static const _realRewarded = 'ca-app-pub-4446395628942302/8607240916';
   static const _realNative = 'ca-app-pub-4446395628942302/7645513031';
-  static const _realInterstitial = ''; // not created yet: no interstitial is shown until this is filled in
+  static const _realInterstitial = 'ca-app-pub-4446395628942302/3148341155';
   static const _testRewarded = 'ca-app-pub-3940256099942544/5224354917';
   static const _testNative = 'ca-app-pub-3940256099942544/2247696110';
   static const _testInterstitial = 'ca-app-pub-3940256099942544/1033173712';
