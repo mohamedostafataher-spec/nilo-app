@@ -70,12 +70,12 @@ class _FriendsPageState extends State<FriendsPage> {
   }
 
   Future<void> _answer(String uid, bool ok) async {
-    try { await Sb.rpc('respond_friend', {'p_uid': uid, 'p_accept': ok}); } catch (_) {}
+    try { await Sb.rpc('respond_friend', {'p_uid': uid, 'p_accept': ok}); } catch (_) { if (mounted) toast(context, L('Could not do that. Check your connection.')); }
     _load();
   }
 
   Future<void> _remove(String uid) async {
-    try { await Sb.rpc('remove_friend', {'p_uid': uid}); } catch (_) {}
+    try { await Sb.rpc('remove_friend', {'p_uid': uid}); } catch (_) { if (mounted) toast(context, L('Could not do that. Check your connection.')); }
     _load();
   }
 
@@ -201,7 +201,7 @@ class _DmPageState extends State<DmPage> {
     try {
       final ok = await Sb.rpc('send_dm', {'p_uid': widget.uid, 'p_body': x});
       if (ok == true) { c.clear(); await _load(); } else if (mounted) { toast(context, 'Could not send. You must be friends, and not blocked.'); }
-    } catch (_) { if (mounted) toast(context, 'No links or phone numbers, please. • من غير روابط أو أرقام'); }
+    } catch (_) { if (mounted) toast(context, 'Could not send. Check your connection and try again.'); }
     if (mounted) setState(() => sending = false);
   }
 

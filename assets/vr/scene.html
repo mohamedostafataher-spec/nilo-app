@@ -359,10 +359,10 @@ function palm(x,z,y=0){const h=9+r2()*5;const tr=new THREE.Mesh(new THREE.Cylind
  const tm=(k,w,h,tile,col)=>{if(!TEXD[k])return Mx(col||0xcccccc);const rx=Math.max(.5,w/(tile||10)),ry=Math.max(.5,h/(tile||10));const m={map:ext(k,[rx,ry]),shininess:5};if(TEXD[k+'N'])m.normalMap=ext(k+'N',[rx,ry]);if(col)m.color=col;return new THREE.MeshPhongMaterial(m)};
  if(Q=='qaitbay'){S.position.z=250;LIMIT=190;
  sea('#1d6f95');
- const lm=new THREE.MeshLambertMaterial({color:0xc9b48c});const stm=new THREE.MeshLambertMaterial({map:stone('#c8b48a')});stm.userData.pbr='pyr';
+ const lm=new THREE.MeshLambertMaterial({color:0xc9b48c});const stm=tm('wS',60,30,14,0xe0cfa6);
  const isl=B(420,3,420,new THREE.MeshLambertMaterial({color:0x9c8f74}),0,-1.5,-250);
  // Qaitbay citadel
- B(130,15,130,stm,0,9,-260);
+ B(130,15,130,stm,0,9,-260);sol(0,-260,130,130);
  [[-65,-325],[65,-325],[-65,-195],[65,-195]].forEach(([x,z])=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(14,16,26,16),stm);c.position.set(x,15,z);c.castShadow=true;S.add(c);const cap=new THREE.Mesh(new THREE.CylinderGeometry(15,15,3,16),lm);cap.position.set(x,29,z);S.add(cap)});
  for(let i=-6;i<=6;i++){B(6,4,3,stm,i*9,18,-195);B(6,4,3,stm,i*9,18,-325)}
  B(60,26,60,stm,0,33,-260);B(36,40,36,stm,0,66,-260);

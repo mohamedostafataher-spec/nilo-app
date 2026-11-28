@@ -780,4 +780,6 @@ Some apps block recording, and calls are not recorded. Try first; if it comes ou
   [r'''Created & Founded by Mohamed Mostafa Taher
 تطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa''', r'''Created & Founded by Mohamed Mostafa Taher
 A proudly Egyptian app • Made by Mohamed Mostafa'''],
+  [r'''Could not do that. Check your connection.''', r'''معرفناش نعمل ده. اتأكد من النت.'''],
+  [r'''Could not send. Check your connection and try again.''', r'''معرفناش نبعت. اتأكد من النت وحاول تاني.'''],
 ];
