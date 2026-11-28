@@ -15,6 +15,7 @@ import 'extras.dart';
 import 'screens.dart';
 import 'health.dart';
 import 'world.dart';
+import 'applock.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 void main() {
@@ -43,7 +44,7 @@ class NiloApp extends StatelessWidget {
             textTheme: GoogleFonts.cairoTextTheme(ThemeData.dark(useMaterial3: true).textTheme),
             scaffoldBackgroundColor: kBg,
             colorScheme: const ColorScheme.dark(primary: kGreen)),
-        builder: (c, w) => Directionality(textDirection: Ui.rtl ? TextDirection.rtl : TextDirection.ltr, child: w!),
+        builder: (c, w) => Directionality(textDirection: Ui.rtl ? TextDirection.rtl : TextDirection.ltr, child: LockGate(child: w!)),
         home: const SplashGate(),
       );
 }

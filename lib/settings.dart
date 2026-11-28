@@ -1,4 +1,5 @@
 import 'i18n.dart';
+import 'applock.dart';
 import 'notice.dart';
 import 'places.dart';
 import 'profile.dart';
@@ -165,6 +166,17 @@ class _SettingsPageState extends State<SettingsPage> {
           },
         ),
         sw('Sound • الصوت', 'Sound effects in the app', 'sound'),
+        SwitchListTile(
+          secondary: const Icon(Icons.fingerprint),
+          title: Text(L('App lock')),
+          subtitle: Text(L('Ask for your fingerprint, face or phone lock when you open Nilo. Android checks it, Nilo never sees it.'), style: const TextStyle(fontSize: 12)),
+          value: AppLock.enabled,
+          onChanged: (v) async {
+            final err = await AppLock.setEnabled(v);
+            if (err != null && mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(err)));
+            if (mounted) setState(() {});
+          },
+        ),
         SwitchListTile(title: Text(L('Reduce motion • حركة أقل')), subtitle: Text(L('Skips the send animation'), style: TextStyle(fontSize: 12)), value: Passport.flag('reduce_motion', false), onChanged: (v) => setState(() => Passport.setFlag('reduce_motion', v))),
         SwitchListTile(
           title: Text(L('Calm mode • وضع الهدوء')),
