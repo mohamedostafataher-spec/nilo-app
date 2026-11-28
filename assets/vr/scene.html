@@ -344,11 +344,45 @@ if(SC==='giza'){
  var START=[0,0,0],YAW=0.4;var PITCH0=0.02;var camelsTick=()=>{};
  var introPath=(u)=>{const a=u*1.6,r=260-u*210;return [Math.sin(a)*r,150-u*140,Math.cos(a)*r,0,12,0]};
  const flat=(pts,y,color)=>{try{const sh=new THREE.Shape(pts.map(q=>new THREE.Vector2(q[0],-q[1])));const g=new THREE.ShapeGeometry(sh);g.rotateX(-Math.PI/2);const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color,side:THREE.DoubleSide}));m.position.y=y;S.add(m)}catch(e){}};
+
+ const beam=(a,b,r,m)=>{const A=new THREE.Vector3(...a),B=new THREE.Vector3(...b),L=A.distanceTo(B);const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,L,5),m);o.position.copy(A).add(B).multiplyScalar(.5);o.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),B.clone().sub(A).normalize());S.add(o);return o};
+ const LMK={
+  // Eiffel Tower: approximate lattice (real height 330 m, base about 125 m wide). Stylized, not a scan.
+  eiffel(){const iron=MT(0x5b4a3a);const lv=[[0,62],[57,34],[115,18],[190,7],[276,2.2]];
+   [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx,sz])=>{for(let i=0;i<lv.length-1;i++){const a=[sx*lv[i][1],lv[i][0],sz*lv[i][1]],b=[sx*lv[i+1][1],lv[i+1][0],sz*lv[i+1][1]];beam(a,b,i<2?2.1:1.3,iron);
+     const a2=[sx*(lv[i][1]-5),lv[i][0],sz*(lv[i][1]-5)],b2=[sx*(lv[i+1][1]-2),lv[i+1][0],sz*(lv[i+1][1]-2)];beam(a2,b2,.8,iron)}});
+   [0,1,2,3].forEach(i=>{const s1=[-1,1,1,-1][i],s2=[-1,-1,1,1][i],t1=[1,1,-1,-1][i],t2=[-1,1,1,-1][i];for(let k=0;k<lv.length-1;k++){const w1=lv[k][1],w2=lv[k+1][1];beam([s1*w1,lv[k][0],s2*w1],[t1*w2*(k%2?1:-1)*(s1*t1>0?1:1),lv[k+1][0],s2*w2],.5,iron)}});
+   [[57,34],[115,18]].forEach(([y,w])=>{bx(w*2+8,3,w*2+8,0,y,0,MT(0x6a5a48))});
+   for(const [a,b,sz] of [[-1,-1,1],[1,-1,1],[1,1,-1],[-1,1,-1]]){}
+   [[0,-1],[0,1],[-1,0],[1,0]].forEach(([ax,az])=>{const g=new THREE.TorusGeometry(26,1.6,6,16,Math.PI);const m=new THREE.Mesh(g,iron);m.position.set(ax*55,26,az*55);m.rotation.y=ax?Math.PI/2:0;m.scale.y=1.1;S.add(m)});
+   cyl(2.2,.4,54,0,276,0,iron,6);cyl(3,3,6,0,274,0,MT(0x6a5a48),8)},
+  // Louvre glass pyramid (real: 35 m base, 21.6 m high)
+  louvre(){const g=new THREE.ConeGeometry(24.7,21.6,4,1);const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:0x9fd0e6,transparent:true,opacity:.62}));m.position.y=10.8;m.rotation.y=Math.PI/4;S.add(m);
+   const fr=new THREE.LineSegments(new THREE.EdgesGeometry(g),new THREE.LineBasicMaterial({color:0xdfeaf0}));fr.position.copy(m.position);fr.rotation.y=Math.PI/4;S.add(fr);
+   [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([a,b])=>{bx(10,4,10,a*30,0,b*30,MT(0x9fd0e6))})},
+  // Arc de Triomphe (real: 50 m high, 45 m wide, 22 m deep, central arch 29 m high)
+  arc(){const st=MT(0xe3d6bd,{map:facade0()});const sh=new THREE.Shape();sh.moveTo(-22.5,0);sh.lineTo(22.5,0);sh.lineTo(22.5,50);sh.lineTo(-22.5,50);sh.lineTo(-22.5,0);
+   const h=new THREE.Path();h.moveTo(-7,0);h.lineTo(7,0);h.lineTo(7,24);h.absarc(0,24,7,0,Math.PI,false);h.lineTo(-7,0);sh.holes.push(h);
+   const g=new THREE.ExtrudeGeometry(sh,{depth:22,bevelEnabled:false});g.translate(0,0,-11);const m=new THREE.Mesh(g,st);S.add(m);
+   const sh2=new THREE.Shape();sh2.moveTo(-5,0);sh2.lineTo(5,0);sh2.lineTo(5,12);sh2.absarc(0,12,5,0,Math.PI,false);sh2.lineTo(-5,0);const hh=new THREE.Path();hh.moveTo(-3,0);hh.lineTo(3,0);hh.lineTo(3,10);hh.absarc(0,10,3,0,Math.PI,false);hh.lineTo(-3,0);sh.holes.length=0;}
+ };
+ function facade0(){const t=canvasTex(64,64,(g,w,h)=>{g.fillStyle='#efe3c8';g.fillRect(0,0,w,h);g.fillStyle='rgba(0,0,0,.06)';for(let i=0;i<10;i++)g.fillRect(0,i*7,w,1)});t.userData.tri=1/10;return t}
  window.nilo_loadOsm=function(d){const wallC=[0xe9e2d3,0xd8cdb8,0xcfc3b0,0xe4d6c0,0xc9bfae,0xdad4c8];let nb=0;
   (d.g||[]).forEach(a=>flat(a,.02,0x7fae62));(d.w||[]).forEach(a=>flat(a,.04,0x5b9bd5));
   (d.r||[]).forEach(r=>{const w=r.w,pts=r.p;const pos=[];const idx=[];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];const dx=b[0]-a[0],dz=b[1]-a[1],L2=Math.hypot(dx,dz)||1;const nx=-dz/L2*w/2,nz=dx/L2*w/2;const k=pos.length/3;pos.push(a[0]+nx,.08,a[1]+nz,a[0]-nx,.08,a[1]-nz,b[0]+nx,.08,b[1]+nz,b[0]-nx,.08,b[1]-nz);idx.push(k,k+1,k+2,k+1,k+3,k+2)}
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();S.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:r.c==='w'?0x5b9bd5:(w<3?0xd9c9a5:0x6b6f75),side:THREE.DoubleSide})))});
-  (d.b||[]).forEach((b,i)=>{try{const sh=new THREE.Shape(b.p.map(q=>new THREE.Vector2(q[0],-q[1])));const g=new THREE.ExtrudeGeometry(sh,{depth:b.h,bevelEnabled:false});g.rotateX(-Math.PI/2);const c=wallC[(i*7)%6];const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:c}));S.add(m);nb++}catch(e){}});
+  const facade=(()=>{const t=canvasTex(128,128,(g,w,h)=>{g.fillStyle='#f3efe6';g.fillRect(0,0,w,h);
+    for(let r=0;r<4;r++)for(let c=0;c<4;c++){const x=c*32+7,y=r*32+6;g.fillStyle='#e0dacb';g.fillRect(x-2,y-2,22,24);g.fillStyle='#35505f';g.fillRect(x,y,18,20);g.fillStyle='rgba(180,210,230,.55)';g.fillRect(x,y,18,8);g.fillStyle='#e8e2d4';g.fillRect(x+8,y,2,20)}
+    g.fillStyle='rgba(0,0,0,.05)';for(let i=0;i<400;i++)g.fillRect(Math.random()*w,Math.random()*h,2,1)});t.userData.tri=1/13;return t})();
+  const roofM=MT(0x8d8a86);const walls=[0xf0e6d2,0xe3d3b8,0xd9c9ae,0xf2ebdc,0xd7cdbd,0xe9dccb,0xcfc2ad,0xe8d9c0].map(c=>MT(c,{map:facade}));
+  const cur=(d.b||[]);
+  const LR={eiffel:70,louvre:45,arc:40}[d.lm]||0;
+  cur.forEach((b,i)=>{try{if(LR){let cx=0,cz=0;b.p.forEach(q=>{cx+=q[0];cz+=q[1]});cx/=b.p.length;cz/=b.p.length;if(Math.hypot(cx,cz)<LR)return}const sh=new THREE.Shape(b.p.map(q=>new THREE.Vector2(q[0],-q[1])));const g=new THREE.ExtrudeGeometry(sh,{depth:b.h,bevelEnabled:false});g.rotateX(-Math.PI/2);const m=new THREE.Mesh(g,[roofM,walls[(i*7)%walls.length]]);S.add(m);nb++}catch(e){}});
+  if(d.lm&&LMK[d.lm]){try{LMK[d.lm]()}catch(e){console.log('JSERR lm '+e)}}
+  // street trees along parks and between buildings (cheap: few draw calls via merged-style loop, capped)
+  let nt=0;(d.g||[]).forEach((poly,gi)=>{if(nt>140||poly.length<3)return;let mnx=1e9,mxx=-1e9,mnz=1e9,mxz=-1e9;poly.forEach(q=>{mnx=Math.min(mnx,q[0]);mxx=Math.max(mxx,q[0]);mnz=Math.min(mnz,q[1]);mxz=Math.max(mxz,q[1])});
+    const inside=(x,z)=>{let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])c=!c}return c};
+    for(let k=0;k<30&&nt<140;k++){const x=mnx+Math.random()*(mxx-mnx),z=mnz+Math.random()*(mxz-mnz);if(inside(x,z)){tree(x,z,'oak');nt++}}});
   const n=document.getElementById('note');n.textContent=(AR?'بيانات الخريطة © مساهمو OpenStreetMap (ODbL). أشكال بس من غير خامات، وارتفاعات كتير من المباني تقديرية. ':'Map data © OpenStreetMap contributors (ODbL). Shapes only, no textures; many building heights are guessed. ')+nb+(AR?' مبنى':' buildings');
   window.OSM_NOTE=n.textContent}
 } else if(SC==='qaitbay'||SC==='library'||SC==='cairo'||SC==='citadel'||SC==='philae'||SC==='luxor'||SC==='myroom'||SC==='bluemosque'||SC==='cappadocia'||SC==='pamukkale'||SC==='gyeong'||SC==='bulguksa'){
