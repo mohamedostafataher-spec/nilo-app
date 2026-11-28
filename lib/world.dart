@@ -14,6 +14,7 @@ import 'package:http/http.dart' as http;
 import 'main.dart';
 import 'settings.dart';
 import 'journey.dart';
+import 'trip.dart';
 import 'papyrus_globe.dart';
 import 'screens.dart' show toast, ToolsPage;
 
@@ -478,6 +479,7 @@ class _WorldCardState extends State<WorldCard> {
         ActionChip(avatar: Icon(Icons.today, size: 18), label: Text(L('Daily word')), onPressed: () => _word(c)),
         ActionChip(avatar: Icon(Passport.puzzleDone ? Icons.check_circle : Icons.extension, size: 18), label: Text(Passport.puzzleDone ? 'Puzzle done' : 'Daily puzzle'), onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => const PuzzlePage())); if (mounted) setState(() {}); }),
         ActionChip(avatar: Icon(Icons.auto_stories, size: 18), label: Text('${Ui.rtl ? 'حكاية' : 'Story'} ${math.min(Passport.chapter + 1, kChapters.length)}/${kChapters.length}'), onPressed: () async { await Navigator.push(context, MaterialPageRoute(builder: (_) => StoryPage())); if (mounted) setState(() {}); }),
+        ActionChip(avatar: Icon(Icons.flight_takeoff, size: 18), label: Text(L('Trip')), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TripPage()))),
         ActionChip(avatar: Icon(Icons.badge, size: 18), label: Text(L('Passport')), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => PassportPage()))),
       ]),
     ])));
