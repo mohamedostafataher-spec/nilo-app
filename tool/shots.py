@@ -60,58 +60,41 @@ def hide_kb():
     if kb_shown():
         adb('shell', 'input', 'keyevent', '4'); time.sleep(1.5)
 
+
+def dumptxt(tag):
+    t = [x[0].strip() for x in nodes() if x[0].strip()]
+    open(f'{OUT}/txt_{tag}.txt', 'w').write('\n'.join(t))
+def step(name):
+    shot(name); dumptxt(name)
+def anr():
+    for txt, c, (x, y) in nodes():
+        if txt.strip() == 'Wait':
+            adb('shell', 'input', 'tap', str(x), str(y)); time.sleep(2); return
+def size():
+    m = re.search(r'(\d+)x(\d+)', adb('shell', 'wm', 'size'))
+    return int(m.group(1)), int(m.group(2))
+W, H = size()
+print('screen', W, H, flush=True)
 time.sleep(40)
-adb('shell', 'pm', 'grant', 'eg.nilo.nilo_app', 'android.permission.RECORD_AUDIO')
+adb('shell', 'settings', 'put', 'system', 'font_scale', '1.0')
 adb('shell', 'monkey', '-p', 'eg.nilo.nilo_app', '-c', 'android.intent.category.LAUNCHER', '1')
-time.sleep(4); shot('splash')
-time.sleep(5)
-shot('auth_signin')
-tap_text('Create an account'); time.sleep(1); shot('auth_signup'); tap_text('Back to sign in'); time.sleep(1)
-tap_text('Forgot password'); time.sleep(1); shot('auth_forgot'); tap_text('Back to sign in'); time.sleep(1)
-tap_text('Continue as guest'); time.sleep(3)
-for _i in range(25):
-    ns = nodes()
-    if any('Wait' == t.strip() for t, c, q in ns):
-        tap_text('Wait'); continue
-    if not any('continue as guest' in t.lower() for t, c, q in ns):
-        break
-    if _i % 6 == 5: tap_text('Continue as guest')
-    time.sleep(3)
-print('past auth', flush=True)
-time.sleep(4); tap_text('Skip'); time.sleep(3); tap_text('Skip'); time.sleep(8); shot('first_run')
-import subprocess
-def dump(tag):
-    o = subprocess.run('adb logcat -d | grep -E "FATAL|AndroidRuntime|flutter|Exception|Error" | tail -60', shell=True, capture_output=True, text=True).stdout
-    open(f'{OUT}/log_{tag}.txt','w').write(o)
-dump('first_run')
-adb('shell','input','tap','124','1484'); time.sleep(1); adb('shell','input','tap','540','1328'); time.sleep(1); adb('shell','input','text','Traveler'); time.sleep(1); adb('shell','input','keyevent','66'); time.sleep(2); shot('first_run_filled')
-adb('shell','input','tap','540','1640'); time.sleep(8); shot('home'); time.sleep(4); shot('home2')
-tap_any('رسايل','Messages'); time.sleep(12); shot('tab_messages')
-tap_any('حكاياتي','My stories'); time.sleep(4); shot('tab_story')
-tap_any('قصص','حكاياتي','My stories'); time.sleep(4); shot('tab_stories')
-tap_any('جواز','Passport'); time.sleep(4); shot('tab_passport')
-tap_any('النيل','Nile'); time.sleep(3)
-tap_any('ابعت بردية','Send papyrus'); time.sleep(5); shot('write_page'); tap_any('Not now') or adb('shell','input','tap','429','1398'); time.sleep(2); shot('after_gate'); tap_any('Got it'); time.sleep(1)
-tap_class('EditText'); adb('shell','input','text','Hello%sfrom%sEgypt'); time.sleep(1); shot('write_typed'); hide_kb(); time.sleep(1)
-tap_text('Send into the Nile'); 
-for i in range(1, 6):
-    time.sleep(0.8); shot('send_%d' % i)
-time.sleep(6); shot('journey')
-dump('after_send')
-tap_any('قصص','حكاياتي','My stories'); time.sleep(5); shot('tab_stories'); tap_any('النيل','Nile'); time.sleep(2); adb('shell','input','tap','680','319'); time.sleep(3); shot('tab_Tools'); tap_text('Earth today'); time.sleep(12); shot('earth_a'); time.sleep(10); shot('earth_b'); back(); time.sleep(1); tap_text('Translation hub'); time.sleep(2); shot('hub_translate'); back(); tap_text('Travel help hub'); time.sleep(2); shot('hub_travel'); back()
-for tile in ['Earth today', 'Translate', 'Phrasebook', 'Stay Safe', 'Places', 'Emergency', 'Official services', 'Floating button', 'Face to face', 'Saved']:
-    if tap_text(tile):
-        time.sleep(4); shot(tile.replace(' ', '_')); back(); time.sleep(1)
-# Nile Bottles
-if tap_text('Papyrus'):
-    time.sleep(3); shot('bottles_gate')
-    tap_class('EditText'); adb('shell', 'input', 'text', 'ShotBot'); hide_kb(); time.sleep(1)
-    tap_text('18 or older'); time.sleep(1); shot('bottles_gate_filled')
-    tap_text('Enter'); time.sleep(6); shot('papyrus_home')
-    if tap_text('Send a papyrus'):
-        time.sleep(2); shot('bottles_throw'); back()
-    if tap_text('Catch a papyrus'):
-        time.sleep(2); shot('bottles_catch')
-        tap_text('Look for a papyrus'); time.sleep(5); shot('bottles_catch_result'); back()
-    if tap_text('My papyri'):
-        time.sleep(4); shot('bottles_inbox')
+time.sleep(10); anr(); step('first_screen')
+tap_class('EditText'); time.sleep(1); adb('shell', 'input', 'text', 'Traveler'); time.sleep(1); hide_kb()
+tap_text('I am 18'); time.sleep(1); step('first_filled')
+tap_text('Continue as guest'); time.sleep(6); anr(); step('after_guest')
+for _ in range(4):
+    if not tap_any('Skip', 'Got it', 'Not now', 'Later', 'Close'): break
+    time.sleep(3); anr()
+time.sleep(8); anr(); step('home')
+time.sleep(3); step('home_b')
+# bottom bar: try 5 equal slots
+for i in range(5):
+    x = int(W * (i + 0.5) / 5)
+    adb('shell', 'input', 'tap', str(x), str(H - 110)); time.sleep(5); anr(); step('nav%d' % i)
+    for _ in range(2):
+        if tap_any('Skip', 'Got it', 'Not now', 'Later'): time.sleep(2)
+adb('shell', 'input', 'tap', str(int(W * 0.1)), str(H - 110)); time.sleep(4)
+for chip in ['Trip', 'Passport', 'Name card', 'Daily word']:
+    if tap_text(chip):
+        time.sleep(6); anr(); step('chip_' + chip.replace(' ', '_')); back(); time.sleep(2)
+dump('final')
