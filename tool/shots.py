@@ -84,10 +84,17 @@ def T(x, y, w=3):
     adb('shell', 'input', 'tap', str(x), str(y)); time.sleep(w)
 T(540, 1232, 1); adb('shell', 'input', 'text', 'Traveler'); time.sleep(1); adb('shell', 'input', 'keyevent', '4'); time.sleep(1.5)
 T(124, 1388, 1); step('entry_filled')
-T(540, 1544, 8); step('after_guest')
-time.sleep(6); step('home')
-for _ in range(3):
-    T(540, 2000, 1) if False else None
-for i in range(5):
-    T(int(W * (i + 0.5) / 5), 2170, 6); step('nav%d' % i)
+T(540, 1544, 9); step('after_guest')
+T(630, 1400, 3); step('after_lang')
+T(625, 1400, 5); step('home')
+time.sleep(4); step('home2')
+def B(): adb('shell', 'input', 'keyevent', '4'); time.sleep(2)
+T(540, 351, 7); step('daily_journey'); B()
+T(630, 1927, 6); step('send_papyrus'); B()
+T(153, 513, 6); step('tools'); B()
+T(410, 513, 9); step('globe'); B()
+T(666, 513, 6); step('play'); B()
+T(1243 if False else 940, 513, 6); step('friends'); B()
+for nm, x in [('messages', 338), ('stories', 540), ('myhome', 738), ('passport', 940), ('nile', 135)]:
+    T(x, 2152, 7); step('nav_' + nm)
 dump('final')
