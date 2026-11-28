@@ -150,6 +150,26 @@ class _VrPageState extends State<VrPage> {
       String json = '';
       if (await f.exists() && DateTime.now().difference(await f.lastModified()).inDays < 7) json = await f.readAsString();
       if (json.isEmpty) {
+        // Pre-built pack (real OpenStreetMap data fetched once by the Nilo pipeline and hosted on the download page).
+        try {
+          const base = 'https://mohamedostafataher-spec.github.io/nilo-dl/packs/';
+          final ir = await http.get(Uri.parse('${base}index.json')).timeout(const Duration(seconds: 20));
+          if (ir.statusCode == 200) {
+            String? best;
+            var bd = 220.0;
+            for (final e in (jsonDecode(utf8.decode(ir.bodyBytes)) as List)) {
+              final dy = ((e[1] as num) - lat) * 111320, dx = ((e[2] as num) - lon) * 111320 * math.cos(lat * math.pi / 180);
+              final d = math.sqrt(dx * dx + dy * dy);
+              if (d < bd) { bd = d; best = e[0].toString(); }
+            }
+            if (best != null) {
+              final pr = await http.get(Uri.parse('$base$best.json')).timeout(const Duration(seconds: 30));
+              if (pr.statusCode == 200 && pr.bodyBytes.length > 20) { json = utf8.decode(pr.bodyBytes); await f.writeAsString(json); }
+            }
+          }
+        } catch (e, st) { Health.log(e, st); }
+      }
+      if (json.isEmpty) {
         final q = '[out:json][timeout:40][maxsize:20000000];(way["building"](around:350,$lat,$lon);way["highway"](around:350,$lat,$lon);way["natural"="water"](around:350,$lat,$lon);way["leisure"~"^(park|garden)\$"](around:350,$lat,$lon););out geom tags 5000;';
         dynamic data;
         for (final host in ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter']) {

@@ -347,7 +347,7 @@ if(SC==='giza'){
  window.nilo_loadOsm=function(d){const wallC=[0xe9e2d3,0xd8cdb8,0xcfc3b0,0xe4d6c0,0xc9bfae,0xdad4c8];let nb=0;
   (d.g||[]).forEach(a=>flat(a,.02,0x7fae62));(d.w||[]).forEach(a=>flat(a,.04,0x5b9bd5));
   (d.r||[]).forEach(r=>{const w=r.w,pts=r.p;const pos=[];const idx=[];for(let i=0;i<pts.length-1;i++){const a=pts[i],b=pts[i+1];const dx=b[0]-a[0],dz=b[1]-a[1],L2=Math.hypot(dx,dz)||1;const nx=-dz/L2*w/2,nz=dx/L2*w/2;const k=pos.length/3;pos.push(a[0]+nx,.08,a[1]+nz,a[0]-nx,.08,a[1]-nz,b[0]+nx,.08,b[1]+nz,b[0]-nx,.08,b[1]-nz);idx.push(k,k+1,k+2,k+1,k+3,k+2)}
-   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();S.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:w<3?0xd9c9a5:0x6b6f75,side:THREE.DoubleSide})))});
+   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();S.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:r.c==='w'?0x5b9bd5:(w<3?0xd9c9a5:0x6b6f75),side:THREE.DoubleSide})))});
   (d.b||[]).forEach((b,i)=>{try{const sh=new THREE.Shape(b.p.map(q=>new THREE.Vector2(q[0],-q[1])));const g=new THREE.ExtrudeGeometry(sh,{depth:b.h,bevelEnabled:false});g.rotateX(-Math.PI/2);const c=wallC[(i*7)%6];const m=new THREE.Mesh(g,new THREE.MeshLambertMaterial({color:c}));S.add(m);nb++}catch(e){}});
   const n=document.getElementById('note');n.textContent=(AR?'بيانات الخريطة © مساهمو OpenStreetMap (ODbL). أشكال بس من غير خامات، وارتفاعات كتير من المباني تقديرية. ':'Map data © OpenStreetMap contributors (ODbL). Shapes only, no textures; many building heights are guessed. ')+nb+(AR?' مبنى':' buildings');
   window.OSM_NOTE=n.textContent}
