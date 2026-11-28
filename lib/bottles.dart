@@ -1137,3 +1137,6 @@ class _PeerProfilePageState extends State<PeerProfilePage> {
     );
   }
 }
+
+/// Exposed so unit tests can check the safety filter.
+String papyrusFilterForTest(String s) => _bad(s);
