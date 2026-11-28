@@ -34,11 +34,13 @@ const kHomeAirports = <String, Airport>{
   'BR': Airport('GRU', 'Sao Paulo Guarulhos Airport', 'Sao Paulo', -23.4356, -46.4731),
 };
 const kCdg = Airport('CDG', 'Paris Charles de Gaulle Airport', 'Paris', 49.0097, 2.5479);
+const kLhr = Airport('LHR', 'London Heathrow Airport', 'London', 51.4700, -0.4543);
 const kFco = Airport('FCO', 'Rome Fiumicino Airport', 'Rome', 41.8003, 12.2389);
 /// Arrival airport, the walkable airport pack to open, and the country name, by destination country.
 const kArrival = <String, List<dynamic>>{
   'FR': [kCdg, 49.009, 2.559, 'France'],
   'IT': [kFco, 41.800, 12.250, 'Italy'],
+  'GB': [kLhr, 51.470, -0.454, 'United Kingdom'],
 };
 
 double kmBetween(double la1, double lo1, double la2, double lo2) {
@@ -82,7 +84,7 @@ class _TripPageState extends State<TripPage> {
       backgroundColor: kBg,
       appBar: AppBar(title: Text(L('Trip • رحلة')), backgroundColor: kBg),
       body: Column(children: [
-        Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 4), child: Text(L('France and Italy: ${places.length} real places from OpenStreetMap. More countries are coming. • فرنسا وإيطاليا'), style: const TextStyle(color: Colors.white70, fontSize: 12))),
+        Padding(padding: const EdgeInsets.fromLTRB(12, 8, 12, 4), child: Text(L('France, Italy and the UK: ${places.length} real places from OpenStreetMap. More countries are coming. • فرنسا وإيطاليا وبريطانيا'), style: const TextStyle(color: Colors.white70, fontSize: 12))),
         Padding(padding: const EdgeInsets.all(12), child: TextField(onChanged: (v) => setState(() => q = v), decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: L('Search a place • دور على مكان'), border: const OutlineInputBorder()))),
         if (busy) const Padding(padding: EdgeInsets.all(30), child: CircularProgressIndicator()),
         if (err.isNotEmpty) Padding(padding: const EdgeInsets.all(16), child: Text(err)),
