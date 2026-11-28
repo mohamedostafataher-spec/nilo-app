@@ -176,7 +176,7 @@ class _ShopPageState extends State<ShopPage> {
             FilledButton(onPressed: busy ? null : _answer, child: Text(L('Answer'))),
           ]),
           const SizedBox(height: 4),
-          Text(L('Right answer: +10 gems.'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
+          Text(L('Right answer: +6 gems.'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
         ])),
         Text(L('More powerups (compass, translator bird, torch) arrive once they work end to end.'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
       ]);

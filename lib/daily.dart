@@ -131,7 +131,7 @@ class _DailyJourneyPageState extends State<DailyJourneyPage> {
       pickedIdx = i; pickedReward = (r['reward'] ?? 0) as int; cardsUsed += 1;
       st = {...st, 'gems': r['gems']};
       if (mounted) toast(context, '${L('Collected')} +$pickedReward 💎');
-    } catch (_) { if (mounted) toast(context, L('Could not open the card. Try again.')); await _load(); }
+    } on Object catch (e) { if (mounted) toast(context, e.toString().contains('engage') ? L('Send or answer a papyrus today to open your card.') : L('Could not open the card. Try again.')); await _load(); }
     if (mounted) setState(() => cardBusy = false);
   }
 
@@ -206,7 +206,7 @@ class _DailyJourneyPageState extends State<DailyJourneyPage> {
         const SizedBox(height: 18),
         Text(L('Daily cards'), style: const TextStyle(fontWeight: FontWeight.w800)),
         const SizedBox(height: 4),
-        Text(cardsUsed >= 1 ? L('Today\'s free card is used. More cards will come with rewarded ads, which are not switched on yet.') : L('Pick one card. The first one each day is free.'), style: const TextStyle(fontSize: 11, color: Colors.white60)),
+        Text(cardsUsed >= 1 ? L('Today\'s free card is used. More cards will come with rewarded ads, which are not switched on yet.') : L('Send or answer a papyrus today, then pick one card.'), style: const TextStyle(fontSize: 11, color: Colors.white60)),
         const SizedBox(height: 8),
         GridView.count(crossAxisCount: 3, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 1.25, children: [
           for (var i = 0; i < 9; i++)
@@ -258,7 +258,7 @@ class _DailyJourneyPageState extends State<DailyJourneyPage> {
         const SizedBox(height: 18),
         Text(L('Your route'), style: const TextStyle(fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
-        for (final s in stations)
+        for (final s in stations.where((s) => ((s['idx'] ?? 0) as int) <= cur + 2))
           Builder(builder: (_) {
             final i = (s['idx'] ?? 0) as int;
             final done = i < cur || (i == cur && claimed);
@@ -271,6 +271,7 @@ class _DailyJourneyPageState extends State<DailyJourneyPage> {
               trailing: Icon(done ? Icons.check_circle : (here ? Icons.place : Icons.lock_outline), color: done ? Colors.greenAccent : (here ? kGreen : Colors.white30), size: 20),
             );
           }),
+        if (stations.length > cur + 3) Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Text('${stations.length - cur - 3} ${L('more stops stay hidden until you get there.')}', style: const TextStyle(fontSize: 11, color: Colors.white38))),
         const SizedBox(height: 8),
         Text(L('Gems are stored on the server. Every stop is a real place with a real fact.'), style: const TextStyle(fontSize: 11, color: Colors.white54)),
       ]);
