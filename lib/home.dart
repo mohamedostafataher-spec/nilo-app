@@ -225,7 +225,7 @@ class _NileSceneState extends State<NileScene> with SingleTickerProviderStateMix
               final pcc = _peek.isNotEmpty ? (_peek[i]['cc'] ?? '').toString() : '';
               final ph = (_c.value + i / 3) % 1.0;
               final x = w * (0.06 + 0.5 * ((i * 0.37) % 1.0)) + math.sin((ph + i) * 2 * math.pi) * 10;
-              final y = hh * (0.76 + 0.04 * i) + math.sin(ph * 2 * math.pi * 2) * 6;
+              final y = hh * (0.70 + 0.035 * i) + math.sin(ph * 2 * math.pi * 2) * 6;
               kids.add(Positioned(
                 left: x, top: y,
                 child: GestureDetector(
