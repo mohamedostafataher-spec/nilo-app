@@ -80,7 +80,7 @@ class _ProfileEditPageState extends State<ProfileEditPage> {
       if (out == null || out.length > 900 * 1024) throw Exception('size');
       final p = '${Sb.uid}/av_${DateTime.now().millisecondsSinceEpoch}.png';
       if (!await Sb.upload(p, out, 'image/png')) throw Exception('upload');
-      setState(() => path = p);
+      if (mounted) setState(() => path = p);
     } catch (_) {
       if (mounted) toast(context, 'Could not use this photo. Try another.');
     }
