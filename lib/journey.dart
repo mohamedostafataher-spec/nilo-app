@@ -5,6 +5,7 @@ import 'bottles.dart' show Sb;
 import 'circles.dart' show niloJoined, niloJoinGate;
 import 'screens.dart' show toast;
 import 'profile.dart' show AvatarView;
+import 'shop.dart';
 
 /// Levels come from xp (earned on the server). Names are ours, unlock rewards come later.
 const kLevels = [
@@ -175,6 +176,8 @@ class _JourneyPageState extends State<JourneyPage> {
           _pill('🔥 $streak ${L('day streak')}'),
           _pill('⭐ ${ar ? kLevels[lv][1] : kLevels[lv][0]}'),
         ]),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(onPressed: () async { await Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ShopPage())); _load(); }, icon: const Icon(Icons.storefront), label: Text(L('Shop and riddle'))),
         if (next != null) Padding(padding: const EdgeInsets.only(top: 10), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           LinearProgressIndicator(value: ((xp - (kLevels[lv][2] as int)) / (next - (kLevels[lv][2] as int))).clamp(0.0, 1.0), minHeight: 6, borderRadius: BorderRadius.circular(6)),
           const SizedBox(height: 4),
