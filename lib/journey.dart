@@ -4,6 +4,7 @@ import 'main.dart';
 import 'bottles.dart' show Sb;
 import 'circles.dart' show niloJoined, niloJoinGate;
 import 'screens.dart' show toast;
+import 'profile.dart' show AvatarView;
 
 /// Levels come from xp (earned on the server). Names are ours, unlock rewards come later.
 const kLevels = [
@@ -12,6 +13,32 @@ const kLevels = [
   ['Ambassador', 'سفير', 300],
   ['Legend', 'أسطورة', 700],
 ];
+
+const kFrameKeys = ['none', 'gold', 'jade', 'aurora'];
+const kFrameNames = ['Plain', 'Gold', 'Jade', 'Aurora'];
+const kSkinKeys = ['classic', 'nile', 'dusk', 'legend'];
+const kSkinNames = ['Classic', 'Nile', 'Dusk', 'Legend'];
+
+/// Decorative ring around an avatar. Unlocked by level on the server.
+class FramedAvatar extends StatelessWidget {
+  final String frame;
+  final Widget child;
+  const FramedAvatar({super.key, required this.frame, required this.child});
+  @override
+  Widget build(BuildContext context) {
+    if (frame == 'none' || frame.isEmpty) return child;
+    final cols = frame == 'gold'
+        ? [const Color(0xFFFFE082), const Color(0xFFFFB300)]
+        : frame == 'jade'
+            ? [const Color(0xFF7CF5C8), const Color(0xFF1FA67A)]
+            : [const Color(0xFF7CF5C8), const Color(0xFF6C8CFF), const Color(0xFFD67CFF)];
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(shape: BoxShape.circle, gradient: LinearGradient(colors: cols, begin: Alignment.topLeft, end: Alignment.bottomRight), boxShadow: [BoxShadow(color: cols.last.withOpacity(0.5), blurRadius: 10)]),
+      child: child,
+    );
+  }
+}
 
 int levelOf(int xp) {
   var l = 0;
@@ -56,6 +83,9 @@ class _JourneyPageState extends State<JourneyPage> {
   bool loading = true, joined = false, busy = false, failed = false;
   List<dynamic> stations = [];
   Map<String, dynamic> st = {};
+  int cardsUsed = 0, pickedIdx = -1, pickedReward = 0;
+  String frame = 'none', skin = 'classic';
+  bool cardBusy = false;
 
   @override
   void initState() {
@@ -71,6 +101,8 @@ class _JourneyPageState extends State<JourneyPage> {
         if (!await Sb.signIn()) throw Exception('auth');
         stations = (await Sb.get('journey_stations?select=idx,cc,city,country&order=idx') as List?) ?? [];
         st = Map<String, dynamic>.from(await Sb.rpc('journey_state') as Map);
+        final cs = Map<String, dynamic>.from(await Sb.rpc('card_state') as Map);
+        cardsUsed = (cs['used'] ?? 0) as int; frame = (cs['frame'] ?? 'none').toString(); skin = (cs['skin'] ?? 'classic').toString();
       } catch (_) { failed = true; }
     }
     if (mounted) setState(() => loading = false);
@@ -87,6 +119,26 @@ class _JourneyPageState extends State<JourneyPage> {
       await _load();
     }
     if (mounted) setState(() => busy = false);
+  }
+
+  Future<void> _pick(int i) async {
+    if (cardBusy) return;
+    if (cardsUsed >= 1) { toast(context, L('More cards need a rewarded ad. Ads are not switched on yet.')); return; }
+    setState(() => cardBusy = true);
+    try {
+      final r = Map<String, dynamic>.from(await Sb.rpc('card_reveal', {'p_pick': i}) as Map);
+      pickedIdx = i; pickedReward = (r['reward'] ?? 0) as int; cardsUsed += 1;
+      st = {...st, 'gems': r['gems']};
+      if (mounted) toast(context, '${L('Collected')} +$pickedReward 💎');
+    } catch (_) { if (mounted) toast(context, L('Could not open the card. Try again.')); await _load(); }
+    if (mounted) setState(() => cardBusy = false);
+  }
+
+  Future<void> _setCos(String kind, String key) async {
+    try {
+      await Sb.rpc('set_cosmetic', {'p_kind': kind, 'p_key': key});
+      setState(() { if (kind == 'frame') { frame = key; } else { skin = key; } });
+    } catch (_) { if (mounted) toast(context, L('Locked. Reach the next level first.')); }
   }
 
   Widget _pill(String t) => Container(
@@ -148,6 +200,58 @@ class _JourneyPageState extends State<JourneyPage> {
             )),
           ]),
         ),
+        const SizedBox(height: 18),
+        Text(L('Daily cards'), style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 4),
+        Text(cardsUsed >= 1 ? L('Today\'s free card is used. More cards will come with rewarded ads, which are not switched on yet.') : L('Pick one card. The first one each day is free.'), style: const TextStyle(fontSize: 11, color: Colors.white60)),
+        const SizedBox(height: 8),
+        GridView.count(crossAxisCount: 3, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), mainAxisSpacing: 8, crossAxisSpacing: 8, childAspectRatio: 1.25, children: [
+          for (var i = 0; i < 9; i++)
+            GestureDetector(
+              onTap: () => _pick(i),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: i == pickedIdx ? kGreen.withOpacity(0.25) : Colors.white.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(14), border: Border.all(color: i == pickedIdx ? kGreen : Colors.white24)),
+                alignment: Alignment.center,
+                child: Text(i == pickedIdx ? '+$pickedReward 💎' : '🎴', style: TextStyle(fontSize: i == pickedIdx ? 20 : 28, fontWeight: FontWeight.w900)),
+              ),
+            ),
+        ]),
+        const SizedBox(height: 18),
+        Text(L('Levels and frames'), style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: 8),
+        for (var i = 0; i < kLevels.length; i++)
+          ListTile(
+            dense: true, contentPadding: EdgeInsets.zero,
+            leading: Icon(i <= lv ? Icons.verified : Icons.lock_outline, color: i <= lv ? kGreen : Colors.white30),
+            title: Text('${ar ? kLevels[i][1] : kLevels[i][0]}  •  ${kLevels[i][2]} XP', style: TextStyle(fontWeight: i == lv ? FontWeight.w900 : FontWeight.w500)),
+            subtitle: i == 0 ? Text(L('Starting level'), style: const TextStyle(fontSize: 11)) : Text('${L('Unlocks the')} ${kFrameNames[i]} ${L('frame and the')} ${kSkinNames[i]} ${L('papyrus skin')}', style: const TextStyle(fontSize: 11)),
+          ),
+        const SizedBox(height: 8),
+        Text(L('Your frame'), style: const TextStyle(fontSize: 12, color: Colors.white60)),
+        const SizedBox(height: 6),
+        Wrap(spacing: 10, children: [
+          for (var i = 0; i < kFrameKeys.length; i++)
+            GestureDetector(
+              onTap: () => i <= lv ? _setCos('frame', kFrameKeys[i]) : toast(context, L('Locked. Reach the next level first.')),
+              child: Opacity(opacity: i <= lv ? 1 : 0.35, child: Column(children: [
+                FramedAvatar(frame: kFrameKeys[i], child: const AvatarView(size: 46)),
+                const SizedBox(height: 4),
+                Text(kFrameNames[i], style: TextStyle(fontSize: 10, fontWeight: frame == kFrameKeys[i] ? FontWeight.w900 : FontWeight.w400, color: frame == kFrameKeys[i] ? kGreen : Colors.white70)),
+              ])),
+            ),
+        ]),
+        const SizedBox(height: 10),
+        Text(L('Papyrus skin'), style: const TextStyle(fontSize: 12, color: Colors.white60)),
+        const SizedBox(height: 6),
+        Wrap(spacing: 8, children: [
+          for (var i = 0; i < kSkinKeys.length; i++)
+            ChoiceChip(
+              label: Text(kSkinNames[i]), selected: skin == kSkinKeys[i],
+              onSelected: (_) => i <= lv ? _setCos('skin', kSkinKeys[i]) : toast(context, L('Locked. Reach the next level first.')),
+            ),
+        ]),
         const SizedBox(height: 18),
         Text(L('Your route'), style: const TextStyle(fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
