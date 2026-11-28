@@ -43,6 +43,12 @@ class Sfx {
     }
   });
 
+  /// Sticker sounds: a short synthesized tone sequence, cached by key.
+  static Future<void> playTones(String key, List<double> freqs, double secs) async {
+    _cache.putIfAbsent('t_$key', () => _tone(freqs, secs, vol: 0.55));
+    await play('t_$key');
+  }
+
   static Future<void> play(String k) async {
     try {
       if (!Passport.flag('sound')) return;

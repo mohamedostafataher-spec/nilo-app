@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 import 'dart:async';
 import 'bottles.dart';
 import 'dmmedia.dart';
+import 'stickers.dart';
 import 'chatlayer.dart';
 import 'net.dart';
 import 'circles.dart' show niloJoined, niloJoinGate;
@@ -258,6 +259,17 @@ class _DmPageState extends State<DmPage> {
     if (mounted) setState(() => sending = false);
   }
 
+  Future<void> _sticker() async {
+    final code = await NiloStickers.pick(context);
+    if (code == null || !mounted) return;
+    setState(() => sending = true);
+    try {
+      final ok = await Sb.rpc('send_dm', {'p_uid': widget.uid, 'p_body': NiloStickers.wire(code)});
+      if (ok == true) { await _load(); } else if (mounted) { toast(context, 'Could not send. You must be friends, and not blocked.'); }
+    } catch (_) { if (mounted) toast(context, 'Could not send. Check your connection and try again.'); }
+    if (mounted) setState(() => sending = false);
+  }
+
   Future<void> _photo() async {
     setState(() => sending = true);
     final err = await DmMedia.pickAndSendPhoto(widget.uid);
@@ -317,7 +329,7 @@ class _DmPageState extends State<DmPage> {
                             constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.78),
                             decoration: BoxDecoration(color: mine ? const Color(0xFF1B5E4B) : const Color(0xFF12304D), borderRadius: BorderRadius.circular(12)),
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              if ((m['kind'] ?? 'text') == 'text') Text(m['body'].toString()) else DmMediaBubble(kind: m['kind'].toString(), path: (m['media_path'] ?? '').toString()),
+                              if ((m['kind'] ?? 'text') == 'text') (NiloStickers.parse(m['body'].toString()) != null ? StickerBubble(code: NiloStickers.parse(m['body'].toString())!, autoSound: !mine) : Text(m['body'].toString())) else DmMediaBubble(kind: m['kind'].toString(), path: (m['media_path'] ?? '').toString()),
                               if (tr[id] != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(tr[id]!, style: const TextStyle(color: Colors.white70, fontSize: 13))),
                               Padding(padding: const EdgeInsets.only(top: 3), child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.end, children: [
                                 Text(_hm(m['created_at']?.toString()), style: const TextStyle(fontSize: 10, color: Colors.white54)),
@@ -335,6 +347,7 @@ class _DmPageState extends State<DmPage> {
               child: Row(children: [
                 Expanded(child: TextField(controller: c, maxLength: 500, minLines: 1, maxLines: 4, decoration: InputDecoration(counterText: '', hintText: L('Message • رسالة'), border: const OutlineInputBorder()))),
                 IconButton(icon: const Icon(Icons.photo_outlined), tooltip: L('Photo • صورة'), onPressed: sending ? null : _photo),
+                IconButton(icon: const Icon(Icons.emoji_emotions_outlined), tooltip: L('Stickers • ستيكرز'), onPressed: sending ? null : _sticker),
                 DmVoiceButton(toUid: widget.uid, onSent: _load),
                 IconButton(icon: const Icon(Icons.send), onPressed: sending ? null : _send),
               ]),
