@@ -183,6 +183,7 @@ function buildGeneric(){
   lab=55;ly=15;dist=100;r0=240;h0=90;for(let i=0;i<8;i++)tree(-80+i*24,90,'oak');break}
  case 'statue':case 'liberty':case 'christ':{
   const lib=SC==='liberty',chr=SC==='christ',m=MT(lib?0x6fb7a2:0xe9e6df);
+  if(lib||SC==='statue')COLS.push([-25,25,-25,25]);
   if(lib||SC==='statue'){water(-.4,2400);bx(50,3,50,0,0,0,MT(0x8a8f82));groundH=()=>0}
   if(chr){cone(60,52,0,0,0,MT(0x6c7f5b),10);groundH=(x,z)=>0;}
   const by=chr?52:3;bx(18,16,18,0,by,0,MT(0xcfc9ba));bx(14,6,14,0,by+16,0,MT(0xbdb7a6));const y0=by+22;
@@ -236,6 +237,7 @@ function buildGeneric(){
   for(let i=0;i<8;i++){bx(2,14,5,-17.5,0,-30+i*11,m);bx(2,14,5,17.5,0,-30+i*11,m)}
   lab=85;ly=32;dist=120;r0=260;h0=90;for(let i=0;i<10;i++){tree(-100+i*22,100,'oak')}break}
  case 'steppyr':{
+  COLS.push([-45,45,-45,45]);
   const m=W;for(let i=0;i<9;i++){const w=90-i*9;bx(w,6,w,0,i*6,0,m)}bx(18,8,18,0,54,0,m);cone(11,5,0,62,0,roof2(),4);
   bx(14,54,2,0,0,45.5,MT(0xd9d3c4));for(let i=0;i<9;i++)bx(14,.6,2.4,0,i*6,46.6+(0)*i,MT(0xd9d3c4));
   lab=80;ly=28;dist=120;r0=260;h0=90;for(let i=0;i<14;i++){tree(-100+i*16,-80+Math.sin(i)*20)}
