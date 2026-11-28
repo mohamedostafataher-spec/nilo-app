@@ -43,6 +43,12 @@ class Sfx {
     }
   });
 
+  /// Short synthesized tone sequence, cached by key (used for the wax seal and the hello words).
+  static Future<void> playTones(String key, List<double> freqs, double secs) async {
+    _cache.putIfAbsent('t_$key', () => _tone(freqs, secs, vol: 0.55));
+    await play('t_$key');
+  }
+
   static Future<void> play(String k) async {
     try {
       if (!Passport.flag('sound')) return;

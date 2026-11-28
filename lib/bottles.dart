@@ -1,4 +1,6 @@
 import 'gallery.dart';
+import 'hello.dart';
+import 'seal.dart';
 import 'gender.dart';
 import 'friends.dart' show DmPage;
 import 'journey.dart';
@@ -735,7 +737,7 @@ class _CatchPageState extends State<CatchPage> {
       } else {
         setState(() => busy = false);
         Passport.useCatch();
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => ThreadPage(bottle: Map<String, dynamic>.from(j as Map), lang: widget.lang)));
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => SealPage(next: ThreadPage(bottle: Map<String, dynamic>.from(j as Map), lang: widget.lang))));
       }
     } catch (e) {
       if (mounted) setState(() { busy = false; err = 'Could not catch: $e'; });
@@ -1099,6 +1101,7 @@ class _ThreadPageState extends State<ThreadPage> {
       body: Column(children: [
         Expanded(
           child: ListView(padding: const EdgeInsets.all(12), children: [
+            HelloCard(bid: bid, iAmAuthor: b['author'] == Sb.uid),
             _msg('b', (b['body'] ?? '').toString(), b['author'] == Sb.uid, at: b['created_at']?.toString(), tick: _tick(null, true)),
             for (final r in replies) _msg(r['id'].toString(), (r['body'] ?? '').toString(), r['author'] == Sb.uid, at: r['created_at']?.toString(), tick: _tick(r as Map, false)),
             if (err.isNotEmpty) Row(children: [Expanded(child: Text(err, style: const TextStyle(color: Colors.white70))), TextButton(onPressed: _load, child: Text(L('Retry')))]),
