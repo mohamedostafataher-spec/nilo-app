@@ -776,4 +776,8 @@ Some apps block recording, and calls are not recorded. Try first; if it comes ou
   [r'''Add photo''', r'''أضف صورة'''],
   [r'''Photos are shrunk and stripped of metadata. No faces of minors, no nudity, no contact details. Others can report a photo.''', r'''الصور بتتصغّر وبتتشال منها بيانات الموقع. ممنوع وشوش قاصرين أو عري أو بيانات تواصل. أي حد يقدر يبلّغ عن صورة.'''],
   [r'''Photos''', r'''صور'''],
+  [r'''صُنع بواسطة Mohamed Mostafa''', r'''Made by Mohamed Mostafa'''],
+  [r'''Created & Founded by Mohamed Mostafa Taher
+تطبيق مصري خالص • صُنع بواسطة Mohamed Mostafa''', r'''Created & Founded by Mohamed Mostafa Taher
+A proudly Egyptian app • Made by Mohamed Mostafa'''],
 ];
