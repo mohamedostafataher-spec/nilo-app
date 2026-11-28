@@ -172,25 +172,88 @@ class _DmPageState extends State<DmPage> {
   List msgs = [];
   final c = TextEditingController();
   final tr = <String, String>{};
-  Timer? t;
+  Timer? t, ts;
   bool sending = false;
+  Map st = {};
+  bool myReceipts = true;
+  DateTime _typedAt = DateTime(2000);
 
   @override
   void initState() {
     super.initState();
     _load();
-    t = Timer.periodic(const Duration(seconds: 6), (_) => _load());
+    _status();
+    Sb.rpc('my_chat_privacy', {}).then((v) { if (v is Map && mounted) setState(() => myReceipts = v['receipts'] != false); }).catchError((_) {});
+    t = Timer.periodic(const Duration(seconds: 5), (_) => _load());
+    ts = Timer.periodic(const Duration(seconds: 3), (_) => _status());
+    c.addListener(_onType);
   }
 
   @override
-  void dispose() { t?.cancel(); c.dispose(); super.dispose(); }
+  void dispose() { t?.cancel(); ts?.cancel(); c.removeListener(_onType); c.dispose(); super.dispose(); }
+
+  /// Tells the other person's chat that I am typing (at most once every 3 seconds).
+  void _onType() {
+    if (c.text.isEmpty || DateTime.now().difference(_typedAt).inSeconds < 3) return;
+    _typedAt = DateTime.now();
+    Sb.rpc('dm_typing', {'p_peer': widget.uid}).catchError((_) {});
+  }
+
+  Future<void> _status() async {
+    try {
+      final v = await Sb.rpc('dm_status', {'p_peer': widget.uid});
+      if (v is Map && mounted) setState(() => st = v);
+    } catch (e, st2) { Health.log(e, st2); }
+  }
+
+  String _statusLine() {
+    if (st['typing'] == true) return L('typing… • بيكتب…');
+    if (st['online'] == true) return L('online • متصل');
+    final sec = st['seen_s'];
+    if (sec is num) {
+      final m = sec ~/ 60;
+      if (m < 60) return L('last seen $m min ago • اخر ظهور من $m د');
+      if (m < 1440) return L('last seen ${m ~/ 60} h ago • اخر ظهور من ${m ~/ 60} ساعة');
+      return L('last seen ${m ~/ 1440} d ago • اخر ظهور من ${m ~/ 1440} يوم');
+    }
+    return '';
+  }
+
+  Future<void> _privacy() async {
+    var on = true, rc = myReceipts;
+    try { final v = await Sb.rpc('my_chat_privacy', {}); if (v is Map) { on = v['online'] != false; rc = v['receipts'] != false; } } catch (e, st2) { Health.log(e, st2); }
+    if (!mounted) return;
+    await showDialog(context: context, builder: (ctx) => StatefulBuilder(builder: (ctx, set) => AlertDialog(
+      title: Text(L('Chat privacy • خصوصية الشات')),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        SwitchListTile(value: on, onChanged: (v) => set(() => on = v), title: Text(L('Show when I am online • اظهر إني متصل'))),
+        SwitchListTile(value: rc, onChanged: (v) => set(() => rc = v), title: Text(L('Read receipts (blue ticks) • علامة القراءة'))),
+        Text(L('Like WhatsApp: if you turn these off, you also cannot see them for others. Typing is always shown to your friends in an open chat.'), style: const TextStyle(fontSize: 11, color: Colors.white60)),
+      ]),
+      actions: [TextButton(onPressed: () async { try { await Sb.rpc('set_chat_privacy', {'p_online': on, 'p_receipts': rc}); } catch (e, st2) { Health.log(e, st2); } if (mounted) setState(() => myReceipts = rc); if (ctx.mounted) Navigator.pop(ctx); _status(); }, child: Text(L('Save • حفظ')))],
+    )));
+  }
+
+  String _hm(String? iso) {
+    final d = DateTime.tryParse(iso ?? '')?.toLocal();
+    if (d == null) return '';
+    return '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+  }
+
+  /// WhatsApp-style ticks: one grey = sent, two grey = delivered, two blue = read (only when both people allow read receipts).
+  Widget _ticks(Map m) {
+    final read = m['read_at'] != null && myReceipts && st['receipts'] != false;
+    final deliv = m['delivered_at'] != null || m['read_at'] != null;
+    return Icon(deliv ? Icons.done_all : Icons.done, size: 15, color: read ? const Color(0xFF53BDEB) : Colors.white54);
+  }
 
   Future<void> _load() async {
     try {
       final me = Sb.uid;
       final o = widget.uid;
-      final r = await Sb.get('dms?select=id,sender,recipient,body,kind,media_path,created_at&or=(and(sender.eq.$me,recipient.eq.$o),and(sender.eq.$o,recipient.eq.$me))&order=created_at.desc&limit=100') as List;
+      final r = await Sb.get('dms?select=id,sender,recipient,body,kind,media_path,created_at,delivered_at,read_at&or=(and(sender.eq.$me,recipient.eq.$o),and(sender.eq.$o,recipient.eq.$me))&order=created_at.desc&limit=100') as List;
       if (mounted) setState(() => msgs = r.reversed.toList());
+      if (r.any((m) => (m as Map)['sender'] == widget.uid && (m['read_at'] == null || m['delivered_at'] == null))) { Sb.rpc('dm_open', {'p_peer': widget.uid}).catchError((_) {}); }
     } catch (e, st) { Health.log(e, st); }
   }
 
@@ -236,7 +299,14 @@ class _DmPageState extends State<DmPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: kBg,
-        appBar: AppBar(title: Text(widget.nick.isEmpty ? L('Chat') : widget.nick), backgroundColor: kBg),
+        appBar: AppBar(
+          backgroundColor: kBg, titleSpacing: 0,
+          title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(widget.nick.isEmpty ? L('Chat') : widget.nick, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
+            if (_statusLine().isNotEmpty) Text(_statusLine(), style: TextStyle(fontSize: 12, color: st['typing'] == true || st['online'] == true ? kGreen : Colors.white60)),
+          ]),
+          actions: [IconButton(icon: const Icon(Icons.lock_outline), tooltip: L('Chat privacy'), onPressed: _privacy)],
+        ),
         body: Column(children: [
           Expanded(
             child: msgs.isEmpty
@@ -261,6 +331,10 @@ class _DmPageState extends State<DmPage> {
                             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                               if ((m['kind'] ?? 'text') == 'text') Text(m['body'].toString()) else DmMediaBubble(kind: m['kind'].toString(), path: (m['media_path'] ?? '').toString()),
                               if (tr[id] != null) Padding(padding: const EdgeInsets.only(top: 4), child: Text(tr[id]!, style: const TextStyle(color: Colors.white70, fontSize: 13))),
+                              Padding(padding: const EdgeInsets.only(top: 3), child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.end, children: [
+                                Text(_hm(m['created_at']?.toString()), style: const TextStyle(fontSize: 10, color: Colors.white54)),
+                                if (mine) ...[const SizedBox(width: 4), _ticks(m)],
+                              ])),
                             ]),
                           ),
                         ),

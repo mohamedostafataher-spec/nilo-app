@@ -1054,12 +1054,18 @@ class _ThreadPageState extends State<ThreadPage> {
     final closed = b['status'] == 'closed';
     final waiting = b['catcher'] == null && b['author'] == Sb.uid;
     return Scaffold(
-      appBar: AppBar(title: Row(children: [if (_prof.isNotEmpty) Padding(padding: const EdgeInsets.only(right: 10), child: AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 34)), Flexible(child: Text(b['kind'] == 'place' ? 'About ${b['place']}' : 'Papyrus', overflow: TextOverflow.ellipsis)), if ((_prof['gender'] ?? '').toString().isNotEmpty) Padding(padding: const EdgeInsets.only(left: 8), child: Text(Gender.icon(_prof['gender'].toString()), style: const TextStyle(fontSize: 18)))]), backgroundColor: kBg, actions: [
-        if (b['author'] == Sb.uid) IconButton(icon: const Icon(Icons.delete_outline), tooltip: L('Delete'), onPressed: _deleteMine),
+      appBar: AppBar(titleSpacing: 0, title: Row(children: [if (_prof.isNotEmpty) Padding(padding: const EdgeInsets.only(right: 10), child: AvatarView(avatar: (_prof['avatar'] ?? '').toString(), path: (_prof['avatar_path'] ?? '').toString(), size: 34)),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+          Text(((_prof['nick'] ?? '').toString().isNotEmpty ? _prof['nick'].toString() : L('Papyrus friend')) + ((_prof['gender'] ?? '').toString().isEmpty ? '' : ' ' + Gender.icon(_prof['gender'].toString())), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700)),
+          Text(b['kind'] == 'place' ? 'About ${b['place']}' : L('Papyrus • بردية'), maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.white60)),
+        ]))]), backgroundColor: kBg, actions: [
         IconButton(icon: Icon(Icons.translate, color: auto ? kGreen : Colors.white54), tooltip: L('Language bridge'), onPressed: _toggleAuto),
-        IconButton(icon: const Icon(Icons.public), tooltip: L('Journey'), onPressed: _journey),
-        IconButton(icon: Icon(Icons.flag_outlined), tooltip: L('Report'), onPressed: _report),
-        IconButton(icon: Icon(Icons.block), tooltip: L('Block'), onPressed: _block),
+        PopupMenuButton<String>(onSelected: (v) { if (v == 'j') _journey(); if (v == 'r') _report(); if (v == 'b') _block(); if (v == 'd') _deleteMine(); }, itemBuilder: (_) => [
+          PopupMenuItem(value: 'j', child: Text(L('Journey • الرحلة'))),
+          PopupMenuItem(value: 'r', child: Text(L('Report • أبلغ'))),
+          PopupMenuItem(value: 'b', child: Text(L('Block • احظر'))),
+          if (b['author'] == Sb.uid) PopupMenuItem(value: 'd', child: Text(L('Delete • احذف'))),
+        ]),
       ]),
       body: Column(children: [
         Expanded(

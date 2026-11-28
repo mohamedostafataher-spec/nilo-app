@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'health.dart';
 import 'gender.dart';
 import 'cache.dart';
@@ -37,15 +38,18 @@ class TouristHome extends StatefulWidget {
 }
 
 class _TouristHomeState extends State<TouristHome> {
+  Timer? _hb;
+  /// Heartbeat while the app is open: shows me as online to friends and marks messages sent to me as delivered.
+  Future<void> _beat() async { try { if (await Sb.signIn()) await Sb.rpc('touch_seen', {}); } catch (e, st) { Health.log(e, st); } }
   @override
-  void dispose() { Sb.expired.removeListener(_onExpired); super.dispose(); }
+  void dispose() { _hb?.cancel(); Sb.expired.removeListener(_onExpired); super.dispose(); }
   int tab = 0;
   int hub = 0; // stories hub: 0 story, 1 stories, 2 circles, 3 place letters
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { _askLang(); Health.offerUpdate(context); Health.refreshUnread(); Gender.ensure(context); Sb.expired.addListener(_onExpired); _onExpired(); } });
+    WidgetsBinding.instance.addPostFrameCallback((_) { if (mounted) { _askLang(); Health.offerUpdate(context); Health.refreshUnread(); Gender.ensure(context); Sb.expired.addListener(_onExpired); _onExpired(); _beat(); _hb = Timer.periodic(const Duration(seconds: 45), (_) => _beat()); } });
   }
 
   void _onExpired() {
